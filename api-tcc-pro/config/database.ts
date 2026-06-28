@@ -2,21 +2,22 @@ import env from '#start/env'
 import { defineConfig } from '@adonisjs/lucid'
 
 const dbConfig = defineConfig({
-  connection: 'tccpro',
+  connection: env.get('DB_CONNECTION'),
   connections: {
-    tccpro: {
+    pg: {
       debug: true,
       client: 'pg',
       connection: {
-        host: env.get('TCC_PRO_PG_HOST'),
-        port: Number(env.get('TCC_PRO_PG_PORT')),
-        user: env.get('TCC_PRO_PG_USER'),
-        password: env.get('TCC_PRO_PG_PASSWORD'),
-        database: env.get('TCC_PRO_PG_DB_NAME'),
+        host: env.get('DB_HOST'),
+        port: Number(env.get('DB_PORT')),
+        user: env.get('DB_USER'),
+        password: env.get('DB_PASSWORD'),
+        database: env.get('DB_DATABASE'),
+        ssl: { rejectUnauthorized: false },
       },
       migrations: {
         naturalSort: true,
-        paths: ['database/migrations/tccpro'],
+        paths: ['database/migrations'],
       }
     }
   }
