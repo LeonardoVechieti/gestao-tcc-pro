@@ -1,0 +1,32 @@
+{
+  "extends": "@adonisjs/tsconfig/tsconfig.app.json",
+  "compilerOptions": {
+    "strictPropertyInitialization": false,
+    "rootDir": "./",
+    "outDir": "./build",
+    "paths": {
+      "#controllers/*": ["./app/controllers/*.ts"],
+      "#exceptions/*": ["./app/exceptions/*.ts"],
+      "#models/*": ["./app/models/*.ts"],
+      "#mails/*": ["./app/mails/*.ts"],
+      "#services/*": ["./app/services/*.ts"],
+      "#repositories/*": ["./app/repositories/*.ts"],
+      "#interfaces/*": ["./app/interfaces/*.ts"],
+      "#enum/*": ["./app/enum/*.ts"],
+      "#listeners/*": ["./app/listeners/*.ts"],
+      "#events/*": ["./app/events/*.ts"],
+      "#middleware/*": ["./app/middleware/*.ts"],
+      "#validators/*": ["./app/validators/*.ts"],
+      "#providers/*": ["./providers/*.ts"],
+      "#policies/*": ["./app/policies/*.ts"],
+      "#abilities/*": ["./app/abilities/*.ts"],
+      "#database/*": ["./database/*.ts"],
+      "#tests/*": ["./tests/*.ts"],
+      "#start/*": ["./start/*.ts"],
+      "#config/*": ["./config/*.ts"],
+      "#tasks/*": ["./app/tasks/*.ts"]
+    }
+  },
+  "include": ["**/*"],
+  "exclude": ["node_modules", "build"]
+}
