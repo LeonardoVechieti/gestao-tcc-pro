@@ -20,11 +20,13 @@
       "#providers/*": ["./providers/*.ts"],
       "#policies/*": ["./app/policies/*.ts"],
       "#abilities/*": ["./app/abilities/*.ts"],
+      "#helpers/*": ["./app/helpers/*.ts"],
       "#database/*": ["./database/*.ts"],
       "#tests/*": ["./tests/*.ts"],
       "#start/*": ["./start/*.ts"],
       "#config/*": ["./config/*.ts"],
-      "#tasks/*": ["./app/tasks/*.ts"]
+      "#tasks/*": ["./app/tasks/*.ts"],
+      "#swagger/*": ["./app/swagger/*.ts"]
     }
   },
   "include": ["**/*"],
