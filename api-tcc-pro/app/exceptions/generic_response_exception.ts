@@ -11,7 +11,7 @@ export default class GenericResponseException extends Exception {
     super(message)
   }
 
-  public async handle(error: this, ctx: HttpContext): Promise<void> {
+  async handle(error: this, ctx: HttpContext): Promise<void> {
     const statusCode = this.statusCode
     ctx.response.status(statusCode).send({
       message: error.message,

@@ -6,3 +6,5 @@ export const DataIndexPaginateValidatorBase = {
   sortColumn: vine.string().optional(),
   sortDirection: vine.enum(['asc', 'desc']).optional(),
 }
+
+export const PaginationSortValidator = DataIndexPaginateValidatorBase
