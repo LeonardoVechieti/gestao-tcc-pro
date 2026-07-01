@@ -2,13 +2,13 @@ import { ApplicationService } from '@adonisjs/core/types'
 export default class AppProvider {
   constructor(protected app: ApplicationService) {}
 
-  public register() {}
+  register() {}
 
-  public async boot() {}
+  async boot() {}
 
-  public async ready() {
+  async ready() {
     console.log('Aplicacão iniciada.')
   }
 
-  public async shutdown() {}
+  async shutdown() {}
 }

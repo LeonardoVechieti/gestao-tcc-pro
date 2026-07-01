@@ -1,4 +1,4 @@
-import GenericResponseException from '#exceptions/generic-response-exception'
+import GenericResponseException from '#exceptions/generic_response_exception'
 import db from '@adonisjs/lucid/services/db'
 
 export async function getSequence(seq: string): Promise<number> {

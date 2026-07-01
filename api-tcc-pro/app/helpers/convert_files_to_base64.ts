@@ -1,5 +1,5 @@
 import { MultipartFile } from '@adonisjs/core/bodyparser'
-import { promises as fs } from 'fs' // Importar o módulo 'fs' do Node.js para ler arquivos e deletá-los
+import { promises as fs } from 'node:fs' // Importar o módulo 'fs' do Node.js para ler arquivos e deletá-los
 
 export async function convertFileToBase64(file: MultipartFile): Promise<string> {
   if (!file.isValid) {
