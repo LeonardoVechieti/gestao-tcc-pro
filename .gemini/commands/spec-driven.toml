@@ -1,0 +1,88 @@
+# Gemini CLI project-scoped custom command → invoke as /spec-driven
+# Canonical/maintained copy of this skill: .claude/skills/spec-driven/SKILL.md
+# Mirror changes here and in .codex/prompts/spec-driven.md when updating.
+
+description = "Spec-Driven Development workflow — plan and implement with an adaptive SPECIFY → DESIGN → TASKS → EXECUTE pipeline"
+
+prompt = """
+# Spec-Driven Development
+
+Plan and implement with precision. Granular tasks. Clear dependencies. Right tools. Zero ceremony.
+
+## Pipeline Stages
+
+SPECIFY (required) → DESIGN (optional) → TASKS (optional) → EXECUTE (required)
+
+## Auto-Sizing: The Core Principle
+
+The complexity determines the depth, not a fixed pipeline.
+
+| Scope       | When to Use              | Specify             | Design                    | Tasks                     | Execute         |
+| ----------- | ------------------------ | ------------------- | ------------------------- | ------------------------- | --------------- |
+| Small       | ≤3 files, one sentence   | Skip                | -                         | -                         | Implement       |
+| Medium      | Clear feature, <10 tasks | Brief spec          | Inline                    | Implicit                  | Verify          |
+| Large       | Multi-component feature  | Full spec + IDs     | Architecture + components | Full breakdown            | Per task        |
+| Complex     | Ambiguity, new domain    | Full spec + discuss | Research + architecture   | Breakdown + parallel plan | Interactive UAT |
+
+Rules:
+- Specify & Execute are always required (know WHAT + DO it).
+- Design is skipped when the change is straightforward (no architectural decisions).
+- Tasks is skipped when ≤3 obvious steps (become implicit in Execute).
+- Discuss triggers in Specify only when gray areas need user input.
+- Interactive UAT triggers in Execute only for user-facing features with complex behavior.
+- Quick mode is the express lane for bug fixes, config changes, small tweaks.
+
+Safety valve: even when Tasks is skipped, Execute ALWAYS starts by listing atomic steps
+inline. If that reveals >5 steps or complex dependencies, stop and create a formal
+tasks.md instead.
+
+## Project Structure
+
+For each project part (e.g. frontend, backend-api), maintain a `.spec` folder:
+
+```
+.specs/
+├── project/                # PROJECT.md, ROADMAP.md, STATE.md, GOALS.md, DECISIONS.md, GENERAL_TODOS.md
+├── <part>/.spec/            # STACK.md, ARCHITECTURE.md, CONVENTIONS.md, STRUCTURE.md, TESTING.md, INTEGRATIONS.md, CONCERNS.md
+├── features/
+│   ├── [feature]/            # spec.md, context.md (if discussed), design.md + tasks.md (Large/Complex)
+│   ├── DONE - [feature]/     # completed
+│   └── REVISE - [feature]/   # needs status review
+└── quick/NNN-slug/           # TASK.md, SUMMARY.md
+```
+
+Load the relevant `.spec` folder based on which part you're working on.
+
+## Workflow
+
+New project: initialize the 5 project docs, then a `.spec/` folder per part, then
+Specify → (Design) → (Tasks) → Execute per feature.
+
+Existing codebase: initialize project docs first, then map each codebase part into
+brownfield `.spec/` docs, then the same adaptive per-feature workflow.
+
+Quick mode (≤3 files, one sentence): Describe → Implement → Verify → Commit.
+
+## Context Loading
+
+Base load: PROJECT.md, ROADMAP.md, STATE.md. On demand: part-specific `.spec/` docs,
+CONCERNS.md, TESTING.md, and the active feature's spec/context/design/tasks docs.
+Never load multiple feature specs or multiple architecture docs at once.
+
+## Knowledge Verification Chain
+
+In strict order: (1) codebase — existing code/conventions, (2) project docs, (3) any
+available documentation-lookup tool for current library APIs, (4) web search, (5) flag
+as uncertain. Never skip to (5) if (1)-(4) are available. Never fabricate an API —
+say so explicitly if you can't verify it.
+
+## STATE.md Health
+
+Keep it lean. Only cross-cutting decisions belong in its Decisions section. When a
+feature is archived to `DONE - <feature>/`, remove or condense its Decisions entry and
+move completed todos out of the Todos section.
+
+---
+
+Requested action / args: {{args}}
+"""
