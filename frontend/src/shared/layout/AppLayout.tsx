@@ -126,20 +126,6 @@ export function AppLayout() {
             <strong>Meu TCC</strong>
             <span>Acompanhe tema, entregas e apresentacao</span>
           </div>
-          <span className="topbar__search p-input-icon-left">
-            <i className="pi pi-search" aria-hidden="true" />
-            <InputText placeholder="Buscar temas, orientacoes, documentos..." />
-            <kbd>Ctrl + K</kbd>
-          </span>
-          <Button
-            aria-label="Notificacoes"
-            className="notification-button"
-            icon="pi pi-bell"
-            rounded
-            text
-          >
-            <span className="notification-dot">3</span>
-          </Button>
           <div className="topbar__divider" />
           <div className="topbar__user">
             <Avatar label="JS" shape="circle" />
