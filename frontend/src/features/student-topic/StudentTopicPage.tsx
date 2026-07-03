@@ -1,12 +1,19 @@
+import { useRef, useState, useEffect } from 'react'
+
+// Guard to avoid double auto-loading in React Strict Mode during development
+let __devAutoLoaded = false
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { Dropdown } from 'primereact/dropdown'
 import { InputText } from 'primereact/inputtext'
 import { InputTextarea } from 'primereact/inputtextarea'
-import { Message } from 'primereact/message'
+import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
+import { Message } from 'primereact/message'
+import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { createTemaTcc, getTemaTccList, type TemaTcc } from '../../shared/api/tema-tcc-api'
 
 const topicSchema = z.object({
   title: z.string().min(8, 'Informe um titulo com pelo menos 8 caracteres.').max(150),
@@ -42,6 +49,14 @@ const requirements = [
 ]
 
 export function StudentTopicPage() {
+  useEffect(() => {
+    console.log('StudentTopicPage mounted')
+    if (import.meta.env.DEV && !__devAutoLoaded) {
+      __devAutoLoaded = true
+      console.log('DEV: guarded auto-loading temas for debug')
+      void loadTemas()
+    }
+  }, [])
   const {
     control,
     handleSubmit,
@@ -60,12 +75,82 @@ export function StudentTopicPage() {
   const title = watch('title')
   const description = watch('description')
 
+  const toast = useRef<Toast | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingTemas, setIsLoadingTemas] = useState(false)
+  const [hasLoadedTemas, setHasLoadedTemas] = useState(false)
+  const [temas, setTemas] = useState<TemaTcc[]>([])
+
+  const studentId: string | undefined = undefined
+
   function handleSaveDraft(data: TopicForm) {
     console.log('draft', data)
+
+    toast.current?.show({
+      severity: 'info',
+      summary: 'Rascunho salvo',
+      detail: 'Rascunho salvo localmente. Ainda nao esta integrado ao backend.',
+      life: 5000,
+    })
   }
 
-  function handleSendTopic(data: TopicForm) {
-    console.log('send topic', data)
+  async function handleSendTopic(data: TopicForm) {
+    setIsSubmitting(true)
+
+    try {
+      await createTemaTcc({
+        titulo: data.title,
+        descricao: data.description,
+        area: data.area,
+        linhaPesquisa: data.researchLine,
+      })
+
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Tema cadastrado',
+        detail: 'Seu tema foi enviado com sucesso para o backend.',
+        life: 5000,
+      })
+    } catch (error) {
+      console.error(error)
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao cadastrar',
+        detail: 'Nao foi possivel cadastrar o tema. Tente novamente.',
+        life: 5000,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function loadTemas() {
+    setIsLoadingTemas(true)
+    console.log('loadTemas called', { studentId })
+
+    try {
+      const params = studentId ? { uuidAluno: studentId } : undefined
+      const data = await getTemaTccList(params)
+      setTemas(data)
+
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Temas carregados',
+        detail: `Encontrados ${data.length} temas${studentId ? ` para o aluno ${studentId}` : ''}.`,
+        life: 5000,
+      })
+    } catch (error) {
+      console.error(error)
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao carregar temas',
+        detail: 'Falha ao buscar os temas. Tente novamente.',
+        life: 5000,
+      })
+    } finally {
+      setIsLoadingTemas(false)
+      setHasLoadedTemas(true)
+    }
   }
 
   return (
@@ -82,6 +167,10 @@ export function StudentTopicPage() {
 
       <section className="student-topic-grid">
         <form className="form-panel" onSubmit={handleSubmit(handleSendTopic)}>
+          <Toast ref={toast} />
+          <div className={`form-loading ${isSubmitting ? 'active' : ''}`}>
+            <ProgressSpinner strokeWidth="4" />
+          </div>
           <div className="field-group">
             <label htmlFor="title">Titulo provisorio *</label>
             <Controller
@@ -92,6 +181,7 @@ export function StudentTopicPage() {
                   id="title"
                   invalid={Boolean(errors.title)}
                   placeholder="Digite um titulo provisorio para o seu tema de TCC"
+                  disabled={isSubmitting}
                   {...field}
                 />
               )}
@@ -113,6 +203,7 @@ export function StudentTopicPage() {
                   invalid={Boolean(errors.area)}
                   options={areaOptions}
                   placeholder="Selecione a area de interesse"
+                  disabled={isSubmitting}
                   {...field}
                 />
               )}
@@ -131,6 +222,7 @@ export function StudentTopicPage() {
                   invalid={Boolean(errors.researchLine)}
                   options={lineOptions}
                   placeholder="Selecione a linha de pesquisa"
+                  disabled={isSubmitting}
                   {...field}
                 />
               )}
@@ -152,6 +244,7 @@ export function StudentTopicPage() {
                   invalid={Boolean(errors.description)}
                   placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e a relevancia para a area escolhida..."
                   rows={6}
+                  disabled={isSubmitting}
                   {...field}
                 />
               )}
@@ -169,8 +262,23 @@ export function StudentTopicPage() {
               onClick={handleSubmit(handleSaveDraft)}
               outlined
               type="button"
+              disabled={isSubmitting || isLoadingTemas}
             />
-            <Button icon="pi pi-send" label="Cadastrar Tema" type="submit" />
+            <Button
+              icon="pi pi-cloud-download"
+              label={isLoadingTemas ? 'Carregando...' : 'Buscar meus temas'}
+              onClick={loadTemas}
+              outlined
+              type="button"
+              disabled={isSubmitting || isLoadingTemas}
+            />
+            <Button
+              icon="pi pi-send"
+              label="Cadastrar Tema"
+              loading={isSubmitting}
+              type="submit"
+              disabled={isSubmitting || isLoadingTemas}
+            />
           </div>
         </form>
 
@@ -211,6 +319,34 @@ export function StudentTopicPage() {
               clique em <strong>Cadastrar Tema</strong> para enviar para analise.
             </p>
             <Tag severity="warning" value="Aguardando envio" />
+          </div>
+
+          <div className="info-panel">
+            <div className="panel-heading">
+              <i className="pi pi-book" aria-hidden="true" />
+              <h2>Temas do aluno</h2>
+            </div>
+            {isLoadingTemas ? (
+              <div className="loading-panel">
+                <ProgressSpinner strokeWidth="4" />
+              </div>
+            ) : temas.length > 0 ? (
+              <ul className="tema-list">
+                {temas.map((tema) => (
+                  <li key={tema.uuidTemaTcc}>
+                    <strong>{tema.titulo}</strong>
+                    <span>{tema.area}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : hasLoadedTemas ? (
+              <div className="empty-state">
+                <p>O aluno ainda não tem nenhum tema de TCC registrado.</p>
+                <p>Clique em Buscar meus temas para verificar se há temas no sistema.</p>
+              </div>
+            ) : (
+              <p>Clique em Buscar meus temas para ver os temas do aluno.</p>
+            )}
           </div>
         </aside>
       </section>

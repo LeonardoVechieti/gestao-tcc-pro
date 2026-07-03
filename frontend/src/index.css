@@ -315,6 +315,10 @@ input {
   padding: 2rem;
 }
 
+.form-status-message {
+  margin-top: 1rem;
+}
+
 .page-stack {
   display: grid;
   gap: 1.25rem;
@@ -568,6 +572,22 @@ input {
   display: grid;
   gap: 1.35rem;
   padding: 1.5rem;
+  position: relative;
+}
+
+.form-loading {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 8px;
+  display: none;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 1;
+}
+
+.form-loading.active {
+  display: flex;
 }
 
 .field-group {
