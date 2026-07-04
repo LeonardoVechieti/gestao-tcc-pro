@@ -245,9 +245,14 @@ input {
 
 .topbar__user {
   align-items: center;
+  background: none;
+  border: none;
   color: var(--color-text-strong);
+  cursor: pointer;
   display: flex;
+  font: inherit;
   gap: var(--space-2);
+  text-align: left;
 }
 
 .topbar__user .p-avatar {
@@ -890,5 +895,152 @@ input {
   // do formulário nessa faixa (inputs/botões ficam apertados) — empilha.
   .student-topic-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+// Tela de login — layout de duas colunas (mobile: empilhado, desktop: lado a
+// lado). O painel azul usa as mesmas cores fixas da sidebar (não muda entre
+// temas); o card de formulário segue os tokens normais de superfície/texto.
+.auth-page {
+  display: grid;
+  min-height: 100svh;
+}
+
+.auth-hero {
+  background: linear-gradient(
+    160deg,
+    var(--sidebar-from) 0%,
+    var(--sidebar-via) 48%,
+    var(--sidebar-to) 100%
+  );
+  color: var(--sidebar-text);
+  display: none;
+  flex-direction: column;
+  gap: var(--space-8);
+  justify-content: center;
+  padding: var(--space-12);
+}
+
+.auth-hero__brand {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+}
+
+.auth-hero__brand-mark {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  display: flex;
+  font-size: var(--font-size-2xl);
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.auth-hero__brand h1 {
+  font-size: var(--font-size-3xl);
+  margin: 0;
+}
+
+.auth-hero__tagline {
+  color: var(--sidebar-text-soft);
+  font-size: var(--font-size-lg);
+  max-width: 26rem;
+}
+
+.auth-hero__features {
+  display: grid;
+  gap: var(--space-5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.auth-hero__features li {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+}
+
+.auth-hero__feature-icon {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.auth-content {
+  align-items: center;
+  background: var(--color-bg);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.auth-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--color-shadow);
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 26rem;
+}
+
+.auth-card h2 {
+  color: var(--color-text-strong);
+  margin: 0;
+}
+
+.auth-google-button {
+  width: 100%;
+}
+
+.auth-divider {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: var(--font-size-sm);
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  background: var(--color-border);
+  content: '';
+  height: 1px;
+  flex: 1;
+}
+
+.auth-card .p-password,
+.auth-card .p-password-input {
+  width: 100%;
+}
+
+.auth-forgot-link {
+  justify-self: end;
+  padding: 0;
+}
+
+.auth-footnote {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+@include bp.mq(lg) {
+  .auth-page {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .auth-hero {
+    display: flex;
   }
 }

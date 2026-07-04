@@ -7,6 +7,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { to: '/', label: 'Meu TCC', icon: 'pi pi-home' },
   { to: '/tema', label: 'Registrar Tema', icon: 'pi pi-file-edit' },
+  { to: '/tccs', label: 'TCCs', icon: 'pi pi-briefcase' },
   { to: '/documentos', label: 'Documentos', icon: 'pi pi-folder' },
   { to: '/orientacoes', label: 'Orientacoes', icon: 'pi pi-users' },
   { to: '/cronograma', label: 'Cronograma', icon: 'pi pi-calendar' },

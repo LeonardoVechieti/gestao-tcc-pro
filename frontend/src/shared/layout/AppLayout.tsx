@@ -4,16 +4,37 @@ import { Divider } from 'primereact/divider'
 import { Menu } from 'primereact/menu'
 import type { MenuItem } from 'primereact/menuitem'
 import { Sidebar } from 'primereact/sidebar'
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../stores/auth-store'
 import { useLayoutStore } from '../stores/layout-store'
 import { ThemeToggle } from '../ui/atoms/ThemeToggle/ThemeToggle'
 import { navItems } from './nav-items'
+
+function getInitials(nome: string): string {
+  const [first, second] = nome.trim().split(/\s+/)
+  return `${first?.[0] ?? ''}${second?.[0] ?? ''}`.toUpperCase()
+}
 
 export function AppLayout() {
   const [mobileSidebarVisible, setMobileSidebarVisible] = useState(false)
   const sidebarOpen = useLayoutStore((state) => state.sidebarOpen)
   const toggleSidebar = useLayoutStore((state) => state.toggleSidebar)
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+  const navigate = useNavigate()
+  const userMenu = useRef<Menu | null>(null)
+
+  const userMenuItems: MenuItem[] = [
+    {
+      label: 'Sair',
+      icon: 'pi pi-sign-out',
+      command: () => {
+        logout()
+        navigate('/login')
+      },
+    },
+  ]
 
   function createMenuItems(showLabels: boolean, onNavigate?: () => void): MenuItem[] {
     return navItems.map((item) => ({
@@ -112,14 +133,19 @@ export function AppLayout() {
           </div>
           <ThemeToggle />
           <div className="topbar__divider" />
-          <div className="topbar__user">
-            <Avatar label="JS" shape="circle" />
+          <Menu model={userMenuItems} popup ref={userMenu} />
+          <button
+            className="topbar__user"
+            onClick={(event) => userMenu.current?.toggle(event)}
+            type="button"
+          >
+            <Avatar label={user ? getInitials(user.nome) : 'AL'} shape="circle" />
             <div>
-              <strong>Joao Silva</strong>
+              <strong>{user?.nome ?? 'Aluno'}</strong>
               <span>Aluno</span>
             </div>
             <i className="pi pi-chevron-down" aria-hidden="true" />
-          </div>
+          </button>
         </header>
 
         <main className="content">
