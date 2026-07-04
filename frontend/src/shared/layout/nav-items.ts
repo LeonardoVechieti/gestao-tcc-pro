@@ -13,5 +13,6 @@ export const navItems: NavItem[] = [
   { to: '/cronograma', label: 'Cronograma', icon: 'pi pi-calendar' },
   { to: '/apresentacao', label: 'Apresentacao', icon: 'pi pi-desktop' },
   { to: '/mensagens', label: 'Mensagens', icon: 'pi pi-comments' },
+  { to: '/admin', label: 'Administração', icon: 'pi pi-cog' },
   { to: '/perfil', label: 'Meu Perfil', icon: 'pi pi-user' },
 ]
