@@ -14,6 +14,8 @@ import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createTemaTcc, getTemaTccList, type TemaTcc } from '../../shared/api/tema-tcc-api'
+import { FormField } from '../../shared/ui/molecules/FormField/FormField'
+import { InfoPanel } from '../../shared/ui/organisms/InfoPanel/InfoPanel'
 
 const topicSchema = z.object({
   title: z.string().min(8, 'Informe um titulo com pelo menos 8 caracteres.').max(150),
@@ -41,13 +43,6 @@ const lineOptions = [
   { label: 'Gestao e processos', value: 'gestao-processos' },
 ]
 
-const requirements = [
-  'Titulo provisorio',
-  'Area de interesse',
-  'Linha de pesquisa',
-  'Descricao / justificativa',
-]
-
 export function StudentTopicPage() {
   useEffect(() => {
     console.log('StudentTopicPage mounted')
@@ -73,7 +68,16 @@ export function StudentTopicPage() {
   })
 
   const title = watch('title')
+  const area = watch('area')
+  const researchLine = watch('researchLine')
   const description = watch('description')
+
+  const requirements = [
+    { label: 'Titulo provisorio', done: title.trim().length >= 8 },
+    { label: 'Area de interesse', done: area.trim().length > 0 },
+    { label: 'Linha de pesquisa', done: researchLine.trim().length > 0 },
+    { label: 'Descricao / justificativa', done: description.trim().length >= 80 },
+  ]
 
   const toast = useRef<Toast | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -171,8 +175,13 @@ export function StudentTopicPage() {
           <div className={`form-loading ${isSubmitting ? 'active' : ''}`}>
             <ProgressSpinner strokeWidth="4" />
           </div>
-          <div className="field-group">
-            <label htmlFor="title">Titulo provisorio *</label>
+
+          <FormField
+            label="Titulo provisorio *"
+            htmlFor="title"
+            error={errors.title?.message}
+            counter={{ current: title.length, max: 150 }}
+          >
             <Controller
               control={control}
               name="title"
@@ -186,14 +195,9 @@ export function StudentTopicPage() {
                 />
               )}
             />
-            <div className="field-footer">
-              <small>{errors.title?.message}</small>
-              <span>{title.length}/150</span>
-            </div>
-          </div>
+          </FormField>
 
-          <div className="field-group">
-            <label htmlFor="area">Area de interesse *</label>
+          <FormField label="Area de interesse *" htmlFor="area" error={errors.area?.message}>
             <Controller
               control={control}
               name="area"
@@ -208,11 +212,13 @@ export function StudentTopicPage() {
                 />
               )}
             />
-            <small>{errors.area?.message}</small>
-          </div>
+          </FormField>
 
-          <div className="field-group">
-            <label htmlFor="researchLine">Linha de pesquisa *</label>
+          <FormField
+            label="Linha de pesquisa *"
+            htmlFor="researchLine"
+            error={errors.researchLine?.message}
+          >
             <Controller
               control={control}
               name="researchLine"
@@ -227,14 +233,15 @@ export function StudentTopicPage() {
                 />
               )}
             />
-            <small>{errors.researchLine?.message}</small>
-          </div>
+          </FormField>
 
-          <div className="field-group">
-            <label htmlFor="description">Descricao / justificativa *</label>
-            <span>
-              Explique a relevancia, o problema de pesquisa e os objetivos do seu tema.
-            </span>
+          <FormField
+            label="Descricao / justificativa *"
+            htmlFor="description"
+            hint="Explique a relevancia, o problema de pesquisa e os objetivos do seu tema."
+            error={errors.description?.message}
+            counter={{ current: description.length, max: 2000 }}
+          >
             <Controller
               control={control}
               name="description"
@@ -249,11 +256,7 @@ export function StudentTopicPage() {
                 />
               )}
             />
-            <div className="field-footer">
-              <small>{errors.description?.message}</small>
-              <span>{description.length}/2000</span>
-            </div>
-          </div>
+          </FormField>
 
           <div className="form-actions">
             <Button
@@ -283,28 +286,23 @@ export function StudentTopicPage() {
         </form>
 
         <aside className="student-topic-aside">
-          <div className="info-panel">
-            <div className="panel-heading">
-              <i className="pi pi-clipboard" aria-hidden="true" />
-              <h2>Requisitos</h2>
-            </div>
+          <InfoPanel icon="pi pi-clipboard" title="Requisitos">
             <p>Para cadastrar seu tema, todos os itens abaixo devem ser preenchidos.</p>
             <ul className="check-list">
               {requirements.map((item) => (
-                <li key={item}>
-                  <i className="pi pi-check-circle" aria-hidden="true" />
-                  <span>{item}</span>
+                <li key={item.label}>
+                  <i
+                    className={item.done ? 'pi pi-check-circle is-done' : 'pi pi-circle'}
+                    aria-hidden="true"
+                  />
+                  <span>{item.label}</span>
                 </li>
               ))}
             </ul>
             <Message severity="info" text="Todos os campos sao obrigatorios." />
-          </div>
+          </InfoPanel>
 
-          <div className="info-panel">
-            <div className="panel-heading">
-              <i className="pi pi-list-check" aria-hidden="true" />
-              <h2>Status do envio</h2>
-            </div>
+          <InfoPanel icon="pi pi-list-check" title="Status do envio">
             <div className="draft-status">
               <div className="draft-status__icon">
                 <i className="pi pi-pencil" aria-hidden="true" />
@@ -319,13 +317,9 @@ export function StudentTopicPage() {
               clique em <strong>Cadastrar Tema</strong> para enviar para analise.
             </p>
             <Tag severity="warning" value="Aguardando envio" />
-          </div>
+          </InfoPanel>
 
-          <div className="info-panel">
-            <div className="panel-heading">
-              <i className="pi pi-book" aria-hidden="true" />
-              <h2>Temas do aluno</h2>
-            </div>
+          <InfoPanel icon="pi pi-book" title="Temas do aluno">
             {isLoadingTemas ? (
               <div className="loading-panel">
                 <ProgressSpinner strokeWidth="4" />
@@ -347,7 +341,7 @@ export function StudentTopicPage() {
             ) : (
               <p>Clique em Buscar meus temas para ver os temas do aluno.</p>
             )}
-          </div>
+          </InfoPanel>
         </aside>
       </section>
     </div>

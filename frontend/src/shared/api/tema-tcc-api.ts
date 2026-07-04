@@ -1,3 +1,5 @@
+import temasMock from '../../assets/mocks/temas.mock.json'
+import { isBackendActive } from '../config/env'
 import { apiClient } from './api-client'
 
 export type CreateTemaTccPayload = {
@@ -23,7 +25,11 @@ export type TemaTcc = {
   status?: string
 }
 
-export async function createTemaTcc(payload: CreateTemaTccPayload) {
+export async function createTemaTcc(payload: CreateTemaTccPayload): Promise<TemaTcc> {
+  if (!isBackendActive()) {
+    return { uuidTemaTcc: crypto.randomUUID(), ativo: true, status: 'em-analise', ...payload }
+  }
+
   const { data } = await apiClient.post<TemaTcc>('/tcc-pro/tema-tcc', payload)
   return data
 }
@@ -35,7 +41,11 @@ export async function getTemaTccList(params?: {
   status?: string
   page?: number
   limit?: number
-}) {
+}): Promise<TemaTcc[]> {
+  if (!isBackendActive()) {
+    return temasMock as TemaTcc[]
+  }
+
   const queryParams = params
     ? Object.fromEntries(
         Object.entries(params).filter(([, value]) => value !== undefined && value !== null),

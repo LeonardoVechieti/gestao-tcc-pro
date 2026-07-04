@@ -1,24 +1,14 @@
 import { Avatar } from 'primereact/avatar'
 import { Button } from 'primereact/button'
 import { Divider } from 'primereact/divider'
-import { InputText } from 'primereact/inputtext'
 import { Menu } from 'primereact/menu'
 import type { MenuItem } from 'primereact/menuitem'
 import { Sidebar } from 'primereact/sidebar'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useLayoutStore } from '../stores/layout-store'
-
-const navItems = [
-  { to: '/', label: 'Meu TCC', icon: 'pi pi-home' },
-  { to: '/tema', label: 'Registrar Tema', icon: 'pi pi-file-edit' },
-  { to: '/documentos', label: 'Documentos', icon: 'pi pi-folder' },
-  { to: '/orientacoes', label: 'Orientacoes', icon: 'pi pi-users' },
-  { to: '/cronograma', label: 'Cronograma', icon: 'pi pi-calendar' },
-  { to: '/apresentacao', label: 'Apresentacao', icon: 'pi pi-desktop' },
-  { to: '/mensagens', label: 'Mensagens', icon: 'pi pi-comments' },
-  { to: '/perfil', label: 'Meu Perfil', icon: 'pi pi-user' },
-]
+import { ThemeToggle } from '../ui/atoms/ThemeToggle/ThemeToggle'
+import { navItems } from './nav-items'
 
 export function AppLayout() {
   const [mobileSidebarVisible, setMobileSidebarVisible] = useState(false)
@@ -100,14 +90,8 @@ export function AppLayout() {
       <Sidebar
         blockScroll
         className="mobile-sidebar"
-        contentStyle={{ background: 'transparent', padding: '1rem' }}
         onHide={() => setMobileSidebarVisible(false)}
         position="left"
-        style={{
-          background: 'linear-gradient(180deg, #064fbd 0%, #003f9d 48%, #003177 100%)',
-          border: '0',
-          color: '#dbeafe',
-        }}
         visible={mobileSidebarVisible}
       >
         {renderSidebarContent(true, () => setMobileSidebarVisible(false))}
@@ -126,6 +110,7 @@ export function AppLayout() {
             <strong>Meu TCC</strong>
             <span>Acompanhe tema, entregas e apresentacao</span>
           </div>
+          <ThemeToggle />
           <div className="topbar__divider" />
           <div className="topbar__user">
             <Avatar label="JS" shape="circle" />
