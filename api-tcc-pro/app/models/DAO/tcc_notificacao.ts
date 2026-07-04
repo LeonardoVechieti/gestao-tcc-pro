@@ -38,13 +38,13 @@ export default class TccNotificacao extends BaseModel {
 
   @belongsTo(() => Tcc, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuid_tcc',
+    foreignKey: 'uuidTcc',
   })
   declare tcc: relations.BelongsTo<typeof Tcc>
 
   @belongsTo(() => Usuario, {
     localKey: 'uuidUsuario',
-    foreignKey: 'uuid_usuario',
+    foreignKey: 'uuidUsuario',
   })
   declare usuario: relations.BelongsTo<typeof Usuario>
 }

@@ -43,25 +43,25 @@ export default class Usuario extends BaseModel {
 
   @belongsTo(() => Perfil, {
     localKey: 'uuidPerfil',
-    foreignKey: 'uuid_perfil',
+    foreignKey: 'uuidPerfil',
   })
   declare perfil: relations.BelongsTo<typeof Perfil>
 
   @belongsTo(() => Aluno, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuid_aluno',
+    foreignKey: 'uuidAluno',
   })
   declare aluno: relations.BelongsTo<typeof Aluno>
 
   @hasMany(() => TccNotificacao, {
     localKey: 'uuidUsuario',
-    foreignKey: 'uuid_usuario',
+    foreignKey: 'uuidUsuario',
   })
   declare notificacoes: relations.HasMany<typeof TccNotificacao>
 
   @hasMany(() => AgendaParticipante, {
     localKey: 'uuidUsuario',
-    foreignKey: 'uuid_usuario',
+    foreignKey: 'uuidUsuario',
   })
   declare agendaParticipantes: relations.HasMany<typeof AgendaParticipante>
 }

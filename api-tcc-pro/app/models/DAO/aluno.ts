@@ -48,19 +48,19 @@ export default class Aluno extends BaseModel {
 
   @hasMany(() => Tcc, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuid_aluno',
+    foreignKey: 'uuidAluno',
   })
   declare tccs: relations.HasMany<typeof Tcc>
 
   @hasMany(() => TemaTcc, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuid_aluno',
+    foreignKey: 'uuidAluno',
   })
   declare temaTccs: relations.HasMany<typeof TemaTcc>
 
   @hasMany(() => Usuario, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuid_aluno',
+    foreignKey: 'uuidAluno',
   })
   declare usuarios: relations.HasMany<typeof Usuario>
 }

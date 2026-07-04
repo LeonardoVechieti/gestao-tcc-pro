@@ -29,13 +29,13 @@ export default class AgendaParticipante extends BaseModel {
 
   @belongsTo(() => Agenda, {
     localKey: 'uuidAgenda',
-    foreignKey: 'uuid_agenda',
+    foreignKey: 'uuidAgenda',
   })
   declare agenda: relations.BelongsTo<typeof Agenda>
 
   @belongsTo(() => Usuario, {
     localKey: 'uuidUsuario',
-    foreignKey: 'uuid_usuario',
+    foreignKey: 'uuidUsuario',
   })
   declare usuario: relations.BelongsTo<typeof Usuario>
 }
