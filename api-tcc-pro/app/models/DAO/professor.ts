@@ -21,6 +21,12 @@ export default class Professor extends BaseModel {
   declare email: string
 
   @column()
+  declare areasInteresse: string[] | null
+
+  @column()
+  declare linhasPesquisa: string[] | null
+
+  @column()
   declare ativo: boolean
 
   @column.dateTime({ autoCreate: true })
