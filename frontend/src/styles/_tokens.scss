@@ -1,0 +1,113 @@
+// Design tokens do produto: cores, sombra e dimensões reutilizáveis.
+// Expostos como CSS custom properties (não variáveis SCSS) porque precisam
+// mudar em runtime quando o tema (claro/escuro) é alternado.
+//
+// Tema padrão = claro. `[data-theme='dark']` sobrescreve explicitamente.
+// Sem preferência salva, respeitamos `prefers-color-scheme` do sistema.
+
+:root {
+  // Superfícies e texto
+  --color-bg: #f7f8fb;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f1f5f9;
+  --color-border: #dbe3ef;
+  --color-text: #475569;
+  --color-text-strong: #0f1b3d;
+  --color-text-muted: #64748b;
+  --color-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+
+  // Marca e estados
+  --color-brand: #006bff;
+  --color-brand-dark: #003c96;
+  --color-purple: #7c3aed;
+  --color-green: #15803d;
+  --color-orange: #c2410c;
+  --color-danger: #dc2626;
+
+  // Tons (fundo suave + cor do ícone) usados em cards, alertas e badges
+  --tint-blue-bg: #dbeafe;
+  --tint-blue-fg: var(--color-brand);
+  --tint-green-bg: #dcfce7;
+  --tint-green-fg: var(--color-green);
+  --tint-purple-bg: #ede9fe;
+  --tint-purple-fg: var(--color-purple);
+  --tint-orange-bg: #ffedd5;
+  --tint-orange-fg: var(--color-orange);
+  --tint-danger-bg: #fee2e2;
+  --tint-danger-fg: var(--color-danger);
+
+  // Sidebar: cor de marca fixa, não muda entre temas claro/escuro
+  --sidebar-from: #064fbd;
+  --sidebar-via: #003f9d;
+  --sidebar-to: #003177;
+  --sidebar-text: #dbeafe;
+  --sidebar-text-soft: #cfe1ff;
+
+  // Layout
+  --sidebar-width: 16rem;
+  --sidebar-collapsed-width: 5.25rem;
+
+  // Espaçamento: escala em base 4px (1rem = 16px). Usar em todo padding,
+  // margin e gap novo em vez de valores soltos.
+  --space-1: 0.25rem; // 4px
+  --space-2: 0.5rem; // 8px
+  --space-3: 0.75rem; // 12px
+  --space-4: 1rem; // 16px
+  --space-5: 1.25rem; // 20px
+  --space-6: 1.5rem; // 24px
+  --space-7: 1.75rem; // 28px
+  --space-8: 2rem; // 32px
+  --space-10: 2.5rem; // 40px
+  --space-12: 3rem; // 48px
+  --space-16: 4rem; // 64px
+
+  // Tipografia
+  --font-size-xs: 0.75rem; // 12px
+  --font-size-sm: 0.875rem; // 14px
+  --font-size-md: 1rem; // 16px — base
+  --font-size-lg: 1.125rem; // 18px
+  --font-size-xl: 1.25rem; // 20px
+  --font-size-2xl: 1.5rem; // 24px
+  --font-size-3xl: 2rem; // 32px
+  --font-size-4xl: 2.5rem; // 40px
+
+  // Border radius: `sm` para elementos aninhados dentro de um cartão,
+  // `lg` para o cartão/painel externo. `pill` para badges/tags circulares.
+  --radius-sm: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+}
+
+@mixin dark-theme-tokens {
+  --color-bg: #0b1120;
+  --color-surface: #131b2e;
+  --color-surface-soft: #1b2436;
+  --color-border: #26314a;
+  --color-text: #b6c2d9;
+  --color-text-strong: #f1f5f9;
+  --color-text-muted: #8b96ab;
+  --color-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+
+  --color-brand: #4c9aff;
+  --color-brand-dark: #8ec2ff;
+  --color-purple: #a78bfa;
+  --color-green: #4ade80;
+  --color-orange: #fb923c;
+  --color-danger: #f87171;
+
+  --tint-blue-bg: #17335c;
+  --tint-green-bg: #103821;
+  --tint-purple-bg: #2c2154;
+  --tint-orange-bg: #402408;
+  --tint-danger-bg: #451616;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark-theme-tokens;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark-theme-tokens;
+}

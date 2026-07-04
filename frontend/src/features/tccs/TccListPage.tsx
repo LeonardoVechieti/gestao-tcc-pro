@@ -1,47 +1,17 @@
-import { useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Dropdown } from 'primereact/dropdown'
 import { InputText } from 'primereact/inputtext'
+import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
+import { getTccList, type TccRow } from '../../shared/api/tcc-api'
 import {
   initialTccFilters,
   tccFiltersReducer,
   type TccStatus,
 } from './tcc-filter-reducer'
-
-type TccRow = {
-  id: string
-  aluno: string
-  titulo: string
-  orientador: string
-  status: Exclude<TccStatus, 'todos'>
-}
-
-const tccs: TccRow[] = [
-  {
-    id: 'TCC-001',
-    aluno: 'Marina Souza',
-    titulo: 'Sistema de apoio a orientacoes academicas',
-    orientador: 'Prof. Ana Martins',
-    status: 'em_andamento',
-  },
-  {
-    id: 'TCC-002',
-    aluno: 'Rafael Lima',
-    titulo: 'Analise de evasao em cursos superiores',
-    orientador: 'Prof. Carlos Weber',
-    status: 'banca',
-  },
-  {
-    id: 'TCC-003',
-    aluno: 'Bianca Rocha',
-    titulo: 'Aplicacao web para gestao de entregas',
-    orientador: 'Prof. Julia Freitas',
-    status: 'concluido',
-  },
-]
 
 const statusOptions: { label: string; value: TccStatus }[] = [
   { label: 'Todos', value: 'todos' },
@@ -64,9 +34,24 @@ const statusSeverity: Record<TccRow['status'], 'info' | 'warning' | 'success'> =
 
 export function TccListPage() {
   const [filters, dispatch] = useReducer(tccFiltersReducer, initialTccFilters)
+  const [tccs, setTccs] = useState<TccRow[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getTccList().then((result) => {
+      if (!cancelled) {
+        setTccs(result)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredTccs = useMemo(() => {
-    return tccs.filter((tcc) => {
+    return (tccs ?? []).filter((tcc) => {
       const matchesStatus = filters.status === 'todos' || tcc.status === filters.status
       const normalizedSearch = filters.search.trim().toLowerCase()
       const matchesSearch =
@@ -78,7 +63,15 @@ export function TccListPage() {
 
       return matchesStatus && matchesSearch
     })
-  }, [filters])
+  }, [filters, tccs])
+
+  if (!tccs) {
+    return (
+      <div className="page-loading">
+        <ProgressSpinner strokeWidth="4" />
+      </div>
+    )
+  }
 
   return (
     <div className="page-stack">
