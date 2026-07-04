@@ -31,9 +31,7 @@ export default class TemaTcc extends BaseModel {
   @column()
   declare linhaPesquisa?: string
 
-  @column({
-    prepare: (value: unknown) => (value === undefined ? value : JSON.stringify(value)),
-  })
+  @column()
   declare tags?: any
 
   @column()
@@ -50,19 +48,19 @@ export default class TemaTcc extends BaseModel {
 
   @belongsTo(() => Aluno, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuidAluno',
+    foreignKey: 'uuid_aluno',
   })
   declare aluno: relations.BelongsTo<typeof Aluno>
 
   @belongsTo(() => Professor, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuidProfessor',
+    foreignKey: 'uuid_professor',
   })
   declare professor: relations.BelongsTo<typeof Professor>
 
   @hasMany(() => Tcc, {
     localKey: 'uuidTemaTcc',
-    foreignKey: 'uuidTemaTcc',
+    foreignKey: 'uuid_tema_tcc',
   })
   declare tccs: relations.HasMany<typeof Tcc>
 }

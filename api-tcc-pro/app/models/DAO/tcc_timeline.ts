@@ -34,7 +34,7 @@ export default class TccTimeline extends BaseModel {
 
   @belongsTo(() => Tcc, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare tcc: relations.BelongsTo<typeof Tcc>
 }

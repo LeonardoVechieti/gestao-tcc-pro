@@ -44,13 +44,13 @@ export default class Avaliacao extends BaseModel {
 
   @belongsTo(() => Tcc, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare tcc: relations.BelongsTo<typeof Tcc>
 
   @belongsTo(() => Professor, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuidProfessor',
+    foreignKey: 'uuid_professor',
   })
   declare professor: relations.BelongsTo<typeof Professor>
 }

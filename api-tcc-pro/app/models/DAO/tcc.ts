@@ -40,43 +40,43 @@ export default class Tcc extends BaseModel {
 
   @belongsTo(() => Aluno, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuidAluno',
+    foreignKey: 'uuid_aluno',
   })
   declare aluno: relations.BelongsTo<typeof Aluno>
 
   @belongsTo(() => Professor, {
     localKey: 'uuidOrientador',
-    foreignKey: 'uuidOrientador',
+    foreignKey: 'uuid_orientador',
   })
   declare orientador: relations.BelongsTo<typeof Professor>
 
   @belongsTo(() => TemaTcc, {
     localKey: 'uuidTemaTcc',
-    foreignKey: 'uuidTemaTcc',
+    foreignKey: 'uuid_tema_tcc',
   })
   declare temaTcc: relations.BelongsTo<typeof TemaTcc>
 
   @hasMany(() => TccTimeline, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare timelines: relations.HasMany<typeof TccTimeline>
 
   @hasMany(() => TccNotificacao, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare notificacoes: relations.HasMany<typeof TccNotificacao>
 
   @hasMany(() => Avaliacao, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare avaliacoes: relations.HasMany<typeof Avaliacao>
 
   @hasMany(() => Agenda, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare agendas: relations.HasMany<typeof Agenda>
 }

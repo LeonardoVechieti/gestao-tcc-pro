@@ -42,19 +42,19 @@ export default class Agenda extends BaseModel {
 
   @belongsTo(() => Tcc, {
     localKey: 'uuidTcc',
-    foreignKey: 'uuidTcc',
+    foreignKey: 'uuid_tcc',
   })
   declare tcc: relations.BelongsTo<typeof Tcc>
 
   @belongsTo(() => Professor, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuidProfessor',
+    foreignKey: 'uuid_professor',
   })
   declare professor: relations.BelongsTo<typeof Professor>
 
   @hasMany(() => AgendaParticipante, {
     localKey: 'uuidAgenda',
-    foreignKey: 'uuidAgenda',
+    foreignKey: 'uuid_agenda',
   })
   declare participantes: relations.HasMany<typeof AgendaParticipante>
 }
