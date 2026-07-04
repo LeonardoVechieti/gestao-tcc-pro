@@ -43,13 +43,13 @@ export default class Usuario extends BaseModel {
 
   @belongsTo(() => Perfil, {
     localKey: 'uuidPerfil',
-    foreignKey: 'uuid_perfil',
+    foreignKey: 'uuidPerfil',
   })
   declare perfil: relations.BelongsTo<typeof Perfil>
 
   @belongsTo(() => Aluno, {
     localKey: 'uuidAluno',
-    foreignKey: 'uuid_aluno',
+    foreignKey: 'uuidAluno',
   })
   declare aluno: relations.BelongsTo<typeof Aluno>
 

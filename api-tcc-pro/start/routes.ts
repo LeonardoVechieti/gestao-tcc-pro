@@ -1,6 +1,7 @@
 import './routes/role.js'
 import './routes/perfil.js'
 import './routes/aluno.js'
+import './routes/usuario.js'
 import './routes/professor.js'
 import './routes/tema_tcc.js'
 import './routes/tcc.js'
