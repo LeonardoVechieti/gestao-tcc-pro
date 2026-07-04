@@ -31,25 +31,25 @@ export default class Professor extends BaseModel {
 
   @hasMany(() => Tcc, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuid_orientador',
+    foreignKey: 'uuidOrientador',
   })
   declare orientacoes: relations.HasMany<typeof Tcc>
 
   @hasMany(() => TemaTcc, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuid_professor',
+    foreignKey: 'uuidProfessor',
   })
   declare temaTccs: relations.HasMany<typeof TemaTcc>
 
   @hasMany(() => Avaliacao, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuid_professor',
+    foreignKey: 'uuidProfessor',
   })
   declare avaliacoes: relations.HasMany<typeof Avaliacao>
 
   @hasMany(() => Agenda, {
     localKey: 'uuidProfessor',
-    foreignKey: 'uuid_professor',
+    foreignKey: 'uuidProfessor',
   })
   declare agendas: relations.HasMany<typeof Agenda>
 }

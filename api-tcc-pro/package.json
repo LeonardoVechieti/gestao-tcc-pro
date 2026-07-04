@@ -22,6 +22,7 @@
     "#models/*": "./app/models/*.js",
     "#mails/*": "./app/mails/*.js",
     "#services/*": "./app/services/*.js",
+    "#helpers/*": "./app/helpers/*.js",
     "#repositories/*": [
       "./app/repositories/*.js"
     ],
