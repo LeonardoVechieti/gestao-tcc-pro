@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from '../../features/auth/LoginPage'
+import { RegisterPage } from '../../features/auth/RegisterPage'
 import { DashboardPage } from '../../features/dashboard/DashboardPage'
 import { StudentTopicPage } from '../../features/student-topic/StudentTopicPage'
 import { TccListPage } from '../../features/tccs/TccListPage'
@@ -28,6 +29,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="login" element={<LoginPage />} />
+      <Route path="register" element={<RegisterPage />} />
 
       <Route
         element={

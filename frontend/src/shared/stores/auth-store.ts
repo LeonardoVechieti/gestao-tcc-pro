@@ -1,10 +1,12 @@
 import { create } from 'zustand'
 
 export type AuthUser = {
+  uuidUsuario?: string
   uuidAluno?: string
   nome: string
   email: string
   role: 'aluno'
+  token: string
 }
 
 const STORAGE_KEY = 'gestaotcc:auth-user'

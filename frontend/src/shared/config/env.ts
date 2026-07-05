@@ -5,15 +5,18 @@ export function isBackendActive(): boolean {
   return import.meta.env.VITE_BACKEND_ACTIVE === 'true'
 }
 
-// E-mail do aluno usado para identificar "quem está logado" enquanto não
-// existe autenticação. Sem isso (ou se o e-mail não existir no backend),
-// as telas caem no fallback de dados fictícios.
 export function getDevAlunoEmail(): string | undefined {
   return import.meta.env.VITE_DEV_ALUNO_EMAIL || undefined
 }
 
-// Senha do aluno de teste usada pelo login enquanto não existe autenticação
-// de verdade (sem validação de senha no backend).
 export function getDevAlunoSenha(): string | undefined {
   return import.meta.env.VITE_DEV_ALUNO_SENHA || undefined
+}
+
+export function getGoogleClientId(): string | undefined {
+  return import.meta.env.VITE_OAUTH_GOOGLE_CLIENT_ID || undefined
+}
+
+export function getApiRedirectUri(): string | undefined {
+  return import.meta.env.VITE_API_REDIRECT_URI || undefined
 }

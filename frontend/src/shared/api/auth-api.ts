@@ -1,4 +1,3 @@
-import { getDevAlunoSenha, isBackendActive } from '../config/env'
 import { apiClient } from './api-client'
 import type { AuthUser } from '../stores/auth-store'
 
@@ -7,36 +6,44 @@ export type LoginPayload = {
   senha: string
 }
 
-type AlunoLookup = { uuidAluno: string; nome: string; email: string }
+export type RegisterPayload = {
+  nome?: string
+  email: string
+  senha: string
+}
 
-// Mensagem sempre genérica de propósito: não da pra dizer se o problema foi
-// e-mail inexistente ou senha errada (evita confirmar pra quem esta tentando
-// entrar quais e-mails existem no sistema).
-const INVALID_CREDENTIALS_MESSAGE = 'E-mail ou senha invalidos.'
+export type GoogleLoginPayload = {
+  idToken: string
+}
 
-// Login "de verdade" (senha validada no backend, OAuth do Google) ainda não
-// existe — só o middleware de autenticação, hoje desabilitado. Enquanto
-// isso, a senha e conferida contra VITE_DEV_ALUNO_SENHA (mesma senha de
-// teste para qualquer aluno) e o aluno e identificado pelo e-mail
-// cadastrado. Ver CLAUDE.md do frontend.
+type AuthResponse = {
+  token: string
+  user: AuthUser
+}
+
 export async function loginAluno({ email, senha }: LoginPayload): Promise<AuthUser> {
-  if (!isBackendActive()) {
-    return { nome: 'Joao Silva', email, role: 'aluno' }
-  }
-
-  const devSenha = getDevAlunoSenha()
-  if (devSenha && senha !== devSenha) {
-    throw new Error(INVALID_CREDENTIALS_MESSAGE)
-  }
-
-  const { data } = await apiClient.get<AlunoLookup[]>('/tcc-pro/aluno', {
-    params: { filterEmail: email },
+  const { data } = await apiClient.post<AuthResponse>('/tcc-pro/auth/login', {
+    email,
+    password: senha,
   })
 
-  const aluno = data[0]
-  if (!aluno) {
-    throw new Error(INVALID_CREDENTIALS_MESSAGE)
-  }
+  return { ...data.user, token: data.token }
+}
 
-  return { uuidAluno: aluno.uuidAluno, nome: aluno.nome, email: aluno.email, role: 'aluno' }
+export async function registerAluno({ nome, email, senha }: RegisterPayload): Promise<AuthUser> {
+  const { data } = await apiClient.post<AuthResponse>('/tcc-pro/auth/register', {
+    nome,
+    email,
+    password: senha,
+  })
+
+  return { ...data.user, token: data.token }
+}
+
+export async function loginWithGoogle({ idToken }: GoogleLoginPayload): Promise<AuthUser> {
+  const { data } = await apiClient.post<AuthResponse>('/tcc-pro/auth/google', {
+    idToken,
+  })
+
+  return { ...data.user, token: data.token }
 }

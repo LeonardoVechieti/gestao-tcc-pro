@@ -10,6 +10,14 @@ export default class UsuarioRepository {
       .firstOrFail()
   }
 
+  async findByEmail(email: string): Promise<Usuario | null> {
+    return await Usuario.query().where('email', email).first()
+  }
+
+  async create(payload: Partial<Usuario>): Promise<Usuario> {
+    return await Usuario.create(payload)
+  }
+
   async index(data: any): Promise<ModelPaginatorContract<Usuario> | Usuario[]> {
     const query = Usuario.query().preload('perfil').preload('aluno')
 

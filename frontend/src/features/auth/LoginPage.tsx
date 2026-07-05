@@ -2,12 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { Toast } from 'primereact/toast'
 import { z } from 'zod'
-import { loginAluno } from '../../shared/api/auth-api'
+import { getGoogleClientId } from '../../shared/config/env'
+import { loginAluno, loginWithGoogle } from '../../shared/api/auth-api'
 import { useAuthStore } from '../../shared/stores/auth-store'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 
@@ -23,6 +24,112 @@ export function LoginPage() {
   const login = useAuthStore((state) => state.login)
   const toast = useRef<Toast | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [googleReady, setGoogleReady] = useState(false)
+  const googleClientId = getGoogleClientId()
+  const googleButtonRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    let intervalId: number | undefined
+
+    const loadGoogleScript = async (): Promise<void> => {
+      if ((window as any).google?.accounts?.id) {
+        return
+      }
+
+      return new Promise((resolve, reject) => {
+        const existingScript = document.querySelector<HTMLScriptElement>(
+          'script[src="https://accounts.google.com/gsi/client"]',
+        )
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve())
+          existingScript.addEventListener('error', () => reject())
+          return
+        }
+
+        const script = document.createElement('script')
+        script.src = 'https://accounts.google.com/gsi/client'
+        script.async = true
+        script.defer = true
+        script.onload = () => resolve()
+        script.onerror = () => reject()
+        document.head.appendChild(script)
+      })
+    }
+
+    const initializeGoogle = async () => {
+      if (!googleClientId) {
+        return false
+      }
+
+      try {
+        await loadGoogleScript()
+      } catch (error) {
+        console.error('Erro ao carregar script Google:', error)
+        return false
+      }
+
+      const google = (window as any).google
+      if (!google || !google.accounts?.id) {
+        return false
+      }
+
+      if (!google.accounts.id._initialized) {
+        google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response: { credential?: string }) => {
+            if (!response.credential) {
+              return
+            }
+
+            setIsSubmitting(true)
+            try {
+              const user = await loginWithGoogle({ idToken: response.credential })
+              login(user)
+              navigate('/')
+            } catch (error) {
+              console.error(error)
+              toast.current?.show({
+                severity: 'error',
+                summary: 'Falha no login com Google',
+                detail: 'Não foi possível autenticar com Google.',
+                life: 5000,
+              })
+            } finally {
+              setIsSubmitting(false)
+            }
+          },
+        })
+      }
+
+      if (googleButtonRef.current) {
+        google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+        })
+      }
+
+      setGoogleReady(true)
+      return true
+    }
+
+    initializeGoogle().then((ready) => {
+      if (!ready) {
+        intervalId = window.setInterval(async () => {
+          const readyAgain = await initializeGoogle()
+          if (readyAgain && intervalId) {
+            window.clearInterval(intervalId)
+          }
+        }, 300)
+      }
+    })
+
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
+    }
+  }, [googleClientId, login, navigate])
 
   const {
     control,
@@ -96,14 +203,18 @@ export function LoginPage() {
           <h2>Bem-vindo de volta</h2>
           <p className="muted-text">Entre na sua conta para continuar</p>
 
-          <Button
-            className="auth-google-button"
-            disabled
-            icon="pi pi-google"
-            label="Entrar com Google (em breve)"
-            outlined
-            type="button"
-          />
+          <div ref={googleButtonRef} style={{ width: '100%' }} />
+
+          {!googleReady && (
+            <Button
+              className="auth-google-button"
+              disabled={true}
+              icon="pi pi-google"
+              label="Carregando Google..."
+              outlined
+              type="button"
+            />
+          )}
 
           <div className="auth-divider">
             <span>ou</span>
@@ -159,6 +270,14 @@ export function LoginPage() {
           />
 
           <Button label="Entrar" loading={isSubmitting} type="submit" />
+
+          <Button
+            className="auth-forgot-link"
+            label="Criar nova conta"
+            link
+            type="button"
+            onClick={() => navigate('/register')}
+          />
 
           <p className="auth-footnote">Acesso para Coordenacao, Aluno e Professor Avaliador.</p>
         </form>
