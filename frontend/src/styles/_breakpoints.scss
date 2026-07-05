@@ -1,0 +1,34 @@
+@use 'sass:map';
+
+// Escala de breakpoints do produto. Os valores seguem o que já era usado
+// no layout (colapso do sidebar em 860px) em vez de uma escala genérica,
+// para não mudar o comportamento visual existente.
+$breakpoints: (
+  sm: 480px,
+  md: 860px,
+  lg: 1024px,
+  xl: 1280px,
+);
+
+// Mobile-first: aplica o conteúdo a partir do breakpoint informado (min-width).
+@mixin mq($name) {
+  @if not map.has-key($breakpoints, $name) {
+    @error 'Breakpoint `#{$name}` não existe. Use um de: #{map.keys($breakpoints)}.';
+  }
+
+  @media (min-width: map.get($breakpoints, $name)) {
+    @content;
+  }
+}
+
+// Desktop-first: aplica o conteúdo até o breakpoint informado (max-width).
+// Útil para os casos hoje escritos como "layout mobile abaixo de X".
+@mixin mq-down($name) {
+  @if not map.has-key($breakpoints, $name) {
+    @error 'Breakpoint `#{$name}` não existe. Use um de: #{map.keys($breakpoints)}.';
+  }
+
+  @media (max-width: map.get($breakpoints, $name) - 1px) {
+    @content;
+  }
+}

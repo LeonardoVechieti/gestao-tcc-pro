@@ -1,0 +1,98 @@
+{
+  "summaryCards": [
+    {
+      "label": "Tema Atual",
+      "value": "Marketing Digital e Comportamento do Consumidor",
+      "icon": "pi pi-book",
+      "action": "Ver detalhes",
+      "tone": "blue"
+    },
+    {
+      "label": "Status",
+      "value": "Em revisao",
+      "icon": "pi pi-check-circle",
+      "action": "Ver andamento",
+      "tone": "green"
+    },
+    {
+      "label": "Proxima Entrega",
+      "value": "05/06/2025",
+      "icon": "pi pi-calendar",
+      "action": "Ver cronograma",
+      "tone": "purple"
+    },
+    {
+      "label": "Apresentacao",
+      "value": "22/06/2025",
+      "icon": "pi pi-clipboard",
+      "action": "Ver detalhes",
+      "tone": "orange"
+    }
+  ],
+  "meuTema": {
+    "titulo": "Marketing Digital e Comportamento do Consumidor no Varejo Online",
+    "areaInteresse": "Marketing",
+    "orientador": "Profa. Ana Paula Costa",
+    "ultimaAtualizacao": "20/05/2025 as 10:30",
+    "statusAtual": { "label": "Em revisao", "severity": "success" }
+  },
+  "timelineItems": [
+    {
+      "title": "Tema enviado",
+      "date": "02/04/2025 as 15:45",
+      "status": "Concluido",
+      "severity": "success",
+      "icon": "pi pi-check"
+    },
+    {
+      "title": "Em revisao pelo orientador",
+      "date": "05/05/2025 as 09:20",
+      "status": "Em andamento",
+      "severity": "info",
+      "icon": "pi pi-clock"
+    },
+    {
+      "title": "Orientador vinculado",
+      "date": "10/04/2025 as 11:10",
+      "status": "Concluido",
+      "severity": "success",
+      "icon": "pi pi-check"
+    },
+    {
+      "title": "Apresentacao agendada",
+      "date": "15/05/2025 as 16:30",
+      "status": "Agendado",
+      "severity": "warning",
+      "icon": "pi pi-calendar"
+    }
+  ],
+  "alerts": [
+    {
+      "icon": "pi pi-exclamation-circle",
+      "tone": "danger",
+      "title": "Ajustes solicitados",
+      "description": "Orientador solicitou ajustes na metodologia e nos objetivos especificos.",
+      "status": "Pendente",
+      "statusSeverity": "danger",
+      "action": "Ver detalhes"
+    },
+    {
+      "icon": "pi pi-file",
+      "tone": "orange",
+      "title": "Documentos pendentes",
+      "description": "Enviar o Termo de Autorizacao de Publicacao preenchido e assinado.",
+      "status": "Pendente",
+      "statusSeverity": "danger",
+      "action": "Enviar agora"
+    },
+    {
+      "icon": "pi pi-comments",
+      "tone": "blue",
+      "title": "Comentario do orientador",
+      "description": "Bom trabalho ate aqui. Atente-se aos ajustes sugeridos na metodologia.",
+      "status": "Novo",
+      "statusSeverity": "info",
+      "action": "Ler mensagem"
+    }
+  ]
+}
