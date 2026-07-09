@@ -1,6 +1,17 @@
 import vine from '@vinejs/vine'
 import { DataIndexPaginateValidatorBase } from '#validators/index_validator'
 
+export const TemaTccCreateValidator = vine.compile(
+  vine.object({
+    uuidAluno: vine.string(),
+    titulo: vine.string().minLength(1),
+    descricao: vine.string().optional(),
+    area: vine.string().minLength(1),
+    linhaPesquisa: vine.string().minLength(1),
+    tags: vine.any().optional(),
+  })
+)
+
 export const TemaTccValidator = vine.compile(
   vine.object({
     uuidTemaTcc: vine.string().optional(),

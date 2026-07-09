@@ -27,7 +27,7 @@ export type TemaTcc = {
 
 export async function createTemaTcc(payload: CreateTemaTccPayload): Promise<TemaTcc> {
   if (!isBackendActive()) {
-    return { uuidTemaTcc: crypto.randomUUID(), ativo: true, status: 'em-analise', ...payload }
+    return { uuidTemaTcc: crypto.randomUUID(), ativo: true, status: 'aguardando aprovacao', ...payload }
   }
 
   const { data } = await apiClient.post<TemaTcc>('/tcc-pro/tema-tcc', payload)
@@ -53,5 +53,14 @@ export async function getTemaTccList(params?: {
     : undefined
 
   const { data } = await apiClient.get<TemaTcc[]>('/tcc-pro/tema-tcc', { params: queryParams })
+  return data
+}
+
+export async function getMyTemaTcc(): Promise<TemaTcc | null> {
+  if (!isBackendActive()) {
+    return temasMock[0] as TemaTcc
+  }
+
+  const { data } = await apiClient.get<TemaTcc>('/tcc-pro/tema-tcc/me')
   return data
 }
