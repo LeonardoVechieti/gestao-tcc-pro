@@ -2,17 +2,63 @@ export type NavItem = {
   to: string
   label: string
   icon: string
+  requiredRoles?: string[]
 }
 
 export const navItems: NavItem[] = [
-  { to: '/', label: 'Meu TCC', icon: 'pi pi-home' },
-  { to: '/tema', label: 'Registrar Tema', icon: 'pi pi-file-edit' },
-  { to: '/tccs', label: 'TCCs', icon: 'pi pi-briefcase' },
-  { to: '/documentos', label: 'Documentos', icon: 'pi pi-folder' },
-  { to: '/orientacoes', label: 'Orientacoes', icon: 'pi pi-users' },
-  { to: '/cronograma', label: 'Cronograma', icon: 'pi pi-calendar' },
-  { to: '/apresentacao', label: 'Apresentacao', icon: 'pi pi-desktop' },
-  { to: '/mensagens', label: 'Mensagens', icon: 'pi pi-comments' },
-  { to: '/admin', label: 'Administração', icon: 'pi pi-cog' },
+  {
+    to: '/',
+    label: 'Meu TCC',
+    icon: 'pi pi-home',
+    requiredRoles: ['ROLE_DASH_ALUNO', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR'],
+  },
+  {
+    to: '/tema',
+    label: 'Registrar Tema',
+    icon: 'pi pi-file-edit',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/tccs',
+    label: 'TCCs',
+    icon: 'pi pi-briefcase',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/documentos',
+    label: 'Documentos',
+    icon: 'pi pi-folder',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/orientacoes',
+    label: 'Orientacoes',
+    icon: 'pi pi-users',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/cronograma',
+    label: 'Cronograma',
+    icon: 'pi pi-calendar',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/apresentacao',
+    label: 'Apresentacao',
+    icon: 'pi pi-desktop',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/mensagens',
+    label: 'Mensagens',
+    icon: 'pi pi-comments',
+    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+  },
+  {
+    to: '/admin',
+    label: 'Administração',
+    icon: 'pi pi-cog',
+    requiredRoles: ['ROLE_MENU_ADM'],
+  },
   { to: '/perfil', label: 'Meu Perfil', icon: 'pi pi-user' },
 ]

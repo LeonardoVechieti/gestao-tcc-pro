@@ -7,6 +7,20 @@ export type JwtPayload = {
   sub: string
   email: string
   nome?: string
+  role?: string
+  roles?: string[]
+  perfil?: {
+    uuidPerfil?: string
+    nomePerfil?: string
+  }
+}
+
+export function extractRoleCodes(usuario: Usuario): string[] {
+  return (
+    usuario.perfil?.perfilRoles
+      ?.map((perfilRole) => perfilRole.role?.codRole)
+      .filter((codRole): codRole is string => Boolean(codRole)) ?? []
+  )
 }
 
 export function generateToken(usuario: Usuario) {
@@ -15,6 +29,12 @@ export function generateToken(usuario: Usuario) {
       sub: usuario.uuidUsuario,
       email: usuario.email,
       nome: usuario.nome,
+      role: usuario.perfil?.nomePerfil,
+      roles: extractRoleCodes(usuario),
+      perfil: {
+        uuidPerfil: usuario.perfil?.uuidPerfil,
+        nomePerfil: usuario.perfil?.nomePerfil,
+      },
     },
     env.get('JWT_SECRET'),
     { expiresIn: '1h' }

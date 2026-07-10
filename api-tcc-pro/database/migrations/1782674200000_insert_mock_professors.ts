@@ -37,7 +37,15 @@ export default class extends BaseSchema {
 
   async down() {
     await this.db.query().from(this.tableName).where('email', 'ana.souza@universidade.edu.br').del()
-    await this.db.query().from(this.tableName).where('email', 'bruno.lima@universidade.edu.br').del()
-    await this.db.query().from(this.tableName).where('email', 'carla.menezes@universidade.edu.br').del()
+    await this.db
+      .query()
+      .from(this.tableName)
+      .where('email', 'bruno.lima@universidade.edu.br')
+      .del()
+    await this.db
+      .query()
+      .from(this.tableName)
+      .where('email', 'carla.menezes@universidade.edu.br')
+      .del()
   }
 }

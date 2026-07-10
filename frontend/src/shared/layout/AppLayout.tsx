@@ -36,25 +36,58 @@ export function AppLayout() {
     },
   ]
 
+  function parseJwtPayload<T = Record<string, unknown>>(token: string): T | null {
+    try {
+      const [, payload] = token.split('.')
+      if (!payload) {
+        return null
+      }
+
+      const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+      return JSON.parse(decoded) as T
+    } catch {
+      return null
+    }
+  }
+
+  function hasAnyRole(roles: string[]) {
+    if (!user) {
+      return false
+    }
+
+    if (Array.isArray(user.roles)) {
+      return roles.some((role) => user.roles?.includes(role))
+    }
+
+    if (user.token) {
+      const payload = parseJwtPayload<{ roles?: string[] }>(user.token)
+      return Boolean(payload?.roles?.some((role) => roles.includes(role)))
+    }
+
+    return false
+  }
+
   function createMenuItems(showLabels: boolean, onNavigate?: () => void): MenuItem[] {
-    return navItems.map((item) => ({
-      label: item.label,
-      icon: item.icon,
-      template: (menuItem) => (
-        <NavLink
-          className={({ isActive }) =>
-            isActive ? 'student-menu__link is-active' : 'student-menu__link'
-          }
-          end={item.to === '/'}
-          onClick={onNavigate}
-          to={item.to}
-          title={showLabels ? undefined : item.label}
-        >
-          <i className={String(menuItem.icon)} aria-hidden="true" />
-          {showLabels && <span>{menuItem.label}</span>}
-        </NavLink>
-      ),
-    }))
+    return navItems
+      .filter((item) => !item.requiredRoles || hasAnyRole(item.requiredRoles))
+      .map((item) => ({
+        label: item.label,
+        icon: item.icon,
+        template: (menuItem) => (
+          <NavLink
+            className={({ isActive }) =>
+              isActive ? 'student-menu__link is-active' : 'student-menu__link'
+            }
+            end={item.to === '/'}
+            onClick={onNavigate}
+            to={item.to}
+            title={showLabels ? undefined : item.label}
+          >
+            <i className={String(menuItem.icon)} aria-hidden="true" />
+            {showLabels && <span>{item.label}</span>}
+          </NavLink>
+        ),
+      }))
   }
 
   function handleMenuButtonClick() {
@@ -93,7 +126,7 @@ export function AppLayout() {
           <div className="sidebar-profile">
             <i className="pi pi-graduation-cap" aria-hidden="true" />
             <div>
-              <strong>Aluno</strong>
+              <strong>{user?.perfilNome ?? user?.role ?? 'Aluno'}</strong>
               <span>Faculdade Exemplo</span>
             </div>
           </div>
