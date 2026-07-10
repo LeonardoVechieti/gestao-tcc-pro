@@ -5,11 +5,39 @@ export type AuthUser = {
   uuidAluno?: string
   nome: string
   email: string
-  role: 'aluno'
+  role?: string
+  roles?: string[]
+  perfilNome?: string
   token: string
 }
 
 const STORAGE_KEY = 'gestaotcc:auth-user'
+
+function decodeJwtPayload<T = Record<string, unknown>>(token: string): T | null {
+  try {
+    const [, payload] = token.split('.')
+    if (!payload) return null
+
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(decoded) as T
+  } catch {
+    return null
+  }
+}
+
+function hydrateAuthUser(user: AuthUser): AuthUser {
+  const payload = decodeJwtPayload<{ role?: string; roles?: string[]; perfil?: { nomePerfil?: string } }>(user.token)
+  if (!payload) {
+    return user
+  }
+
+  return {
+    ...user,
+    role: payload.role ?? user.role,
+    roles: payload.roles ?? user.roles,
+    perfilNome: payload.perfil?.nomePerfil ?? user.perfilNome,
+  }
+}
 
 function getStoredUser(): AuthUser | null {
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -18,7 +46,8 @@ function getStoredUser(): AuthUser | null {
   }
 
   try {
-    return JSON.parse(raw) as AuthUser
+    const user = JSON.parse(raw) as AuthUser
+    return hydrateAuthUser(user)
   } catch {
     return null
   }
@@ -33,8 +62,9 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   user: getStoredUser(),
   login: (user) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-    set({ user })
+    const hydrated = hydrateAuthUser(user)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(hydrated))
+    set({ user: hydrated })
   },
   logout: () => {
     localStorage.removeItem(STORAGE_KEY)

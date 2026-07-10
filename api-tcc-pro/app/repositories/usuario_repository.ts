@@ -4,14 +4,21 @@ import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 export default class UsuarioRepository {
   async show(id: string): Promise<Usuario> {
     return await Usuario.query()
-      .preload('perfil')
+      .preload('perfil', (perfilQuery) => {
+        perfilQuery.preload('perfilRoles', (perfilRoleQuery) => perfilRoleQuery.preload('role'))
+      })
       .preload('aluno')
       .where('uuidUsuario', id)
       .firstOrFail()
   }
 
   async findByEmail(email: string): Promise<Usuario | null> {
-    return await Usuario.query().where('email', email).first()
+    return await Usuario.query()
+      .preload('perfil', (perfilQuery) => {
+        perfilQuery.preload('perfilRoles', (perfilRoleQuery) => perfilRoleQuery.preload('role'))
+      })
+      .where('email', email)
+      .first()
   }
 
   async create(payload: Partial<Usuario>): Promise<Usuario> {

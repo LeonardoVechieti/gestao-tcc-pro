@@ -26,11 +26,11 @@ export default class ProfessorRepository {
     }
 
     if (data.area) {
-      query.whereRaw("areas_interesse::text ILIKE ?", [`%${data.area}%`])
+      query.whereRaw('areas_interesse::text ILIKE ?', [`%${data.area}%`])
     }
 
     if (data.linhaPesquisa) {
-      query.whereRaw("linhas_pesquisa::text ILIKE ?", [`%${data.linhaPesquisa}%`])
+      query.whereRaw('linhas_pesquisa::text ILIKE ?', [`%${data.linhaPesquisa}%`])
     }
 
     if (data.sortColumn) {

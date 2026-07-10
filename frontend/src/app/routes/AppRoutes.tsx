@@ -25,6 +25,38 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return user ? <>{children}</> : <Navigate replace to="/login" />
 }
 
+function parseJwtPayload<T = Record<string, unknown>>(token: string): T | null {
+  try {
+    const [, payload] = token.split('.')
+    if (!payload) return null
+
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(decoded) as T
+  } catch {
+    return null
+  }
+}
+
+function hasRole(user: { token: string; roles?: string[] } | null, role: string) {
+  if (!user) {
+    return false
+  }
+
+  if (Array.isArray(user.roles) && user.roles.includes(role)) {
+    return true
+  }
+
+  const payload = parseJwtPayload<{ roles?: string[] }>(user.token)
+  return Boolean(payload?.roles?.includes(role))
+}
+
+function RequireRole({ children, role }: { children: ReactNode; role: string | string[] }) {
+  const user = useAuthStore((state) => state.user)
+  const roles = typeof role === 'string' ? [role] : role
+  const hasAccess = roles.some((currentRole) => hasRole(user, currentRole))
+  return hasAccess ? <>{children}</> : <Navigate replace to="/" />
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -38,20 +70,126 @@ export function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="tema" element={<StudentTopicPage />} />
-        <Route path="tccs" element={<TccListPage />} />
-        <Route path="admin" element={<AdminPage />} />
-        <Route path="admin/usuarios" element={<UsuariosPage />} />
-        <Route path="admin/roles" element={<RolesPage />} />
-        <Route path="admin/roles/novo" element={<RoleFormPage />} />
-        <Route path="admin/roles/:id" element={<RoleFormPage />} />
-        <Route path="admin/perfis" element={<PerfisPage />} />
-        <Route path="admin/perfis/novo" element={<PerfilFormPage />} />
-        <Route path="admin/perfis/:id" element={<PerfilFormPage />} />
-        <Route path="admin/alunos" element={<AlunosPage />} />
-        <Route path="admin/alunos/novo" element={<AlunoFormPage />} />
-        <Route path="admin/alunos/:id" element={<AlunoFormPage />} />
+        <Route
+          index
+          element={
+            <RequireRole role={['ROLE_DASH_ALUNO', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR']}>
+              <DashboardPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="tema"
+          element={
+            <RequireRole role="ROLE_TEMA_VIEW">
+              <StudentTopicPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="tccs"
+          element={
+            <RequireRole role="ROLE_TCC_VIEW">
+              <TccListPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin"
+          element={
+            <RequireRole role="ROLE_MENU_ADM">
+              <AdminPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/usuarios"
+          element={
+            <RequireRole role="ROLE_USUARIO_VIEW">
+              <UsuariosPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/usuarios/:id"
+          element={
+            <RequireRole role="ROLE_USUARIO_VIEW">
+              <UsuariosPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/roles"
+          element={
+            <RequireRole role="ROLE_ROLE_VIEW">
+              <RolesPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/roles/novo"
+          element={
+            <RequireRole role="ROLE_ROLE_EDIT">
+              <RoleFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/roles/:id"
+          element={
+            <RequireRole role="ROLE_ROLE_EDIT">
+              <RoleFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/perfis"
+          element={
+            <RequireRole role="ROLE_PERFIL_VIEW">
+              <PerfisPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/perfis/novo"
+          element={
+            <RequireRole role="ROLE_PERFIL_EDIT">
+              <PerfilFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/perfis/:id"
+          element={
+            <RequireRole role="ROLE_PERFIL_EDIT">
+              <PerfilFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/alunos"
+          element={
+            <RequireRole role="ROLE_ALUNO_VIEW">
+              <AlunosPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/alunos/novo"
+          element={
+            <RequireRole role="ROLE_ALUNO_EDIT">
+              <AlunoFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/alunos/:id"
+          element={
+            <RequireRole role="ROLE_ALUNO_EDIT">
+              <AlunoFormPage />
+            </RequireRole>
+          }
+        />
         {navItems
           .filter((item) => !implementedPaths.has(item.to))
           .map((item) => (

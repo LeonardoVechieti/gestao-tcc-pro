@@ -26,6 +26,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   API_AUTH_TOKEN: Env.schema.string(),
   JWT_SECRET: Env.schema.string(),
   GOOGLE_CLIENT_ID: Env.schema.string(),
+  GOOGLE_DEFAULT_PERFIL_UUID: Env.schema.string(),
   FERIADOS_API_URL: Env.schema.string({ format: 'url' }),
 
   /*

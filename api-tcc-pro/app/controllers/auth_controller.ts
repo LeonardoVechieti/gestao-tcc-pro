@@ -8,6 +8,7 @@ import {
   GoogleAuthValidator,
 } from '#validators/auth/auth_validator'
 import { hashPassword, verifyPassword } from '#helpers/password'
+import env from '#start/env'
 import * as authService from '#services/auth_service'
 
 @inject()
@@ -33,13 +34,18 @@ export default class AuthController {
       emailVerified: false,
     })
 
+    const persistedUser = await this.usuarioRepository.show(usuario.uuidUsuario)
+    const roles = authService.extractRoleCodes(persistedUser)
+
     return {
-      token: authService.generateToken(usuario),
+      token: authService.generateToken(persistedUser),
       user: {
-        uuidUsuario: usuario.uuidUsuario,
-        nome: usuario.nome,
-        email: usuario.email,
-        role: 'aluno',
+        uuidUsuario: persistedUser.uuidUsuario,
+        nome: persistedUser.nome,
+        email: persistedUser.email,
+        role: persistedUser.perfil?.nomePerfil,
+        perfilNome: persistedUser.perfil?.nomePerfil,
+        roles,
       },
     }
   }
@@ -55,13 +61,17 @@ export default class AuthController {
       })
     }
 
+    const roles = authService.extractRoleCodes(usuario)
+
     return {
       token: authService.generateToken(usuario),
       user: {
         uuidUsuario: usuario.uuidUsuario,
         nome: usuario.nome,
         email: usuario.email,
-        role: 'aluno',
+        role: usuario.perfil?.nomePerfil,
+        perfilNome: usuario.perfil?.nomePerfil,
+        roles,
       },
     }
   }
@@ -80,16 +90,22 @@ export default class AuthController {
         password: hashPassword(randomBytes(16).toString('hex')),
         ativo: true,
         emailVerified: true,
+        uuidPerfil: env.get('GOOGLE_DEFAULT_PERFIL_UUID'),
       })
     }
 
+    const persistedUser = await this.usuarioRepository.show(usuario.uuidUsuario)
+    const roles = authService.extractRoleCodes(persistedUser)
+
     return {
-      token: authService.generateToken(usuario),
+      token: authService.generateToken(persistedUser),
       user: {
-        uuidUsuario: usuario.uuidUsuario,
-        nome: usuario.nome,
-        email: usuario.email,
-        role: 'aluno',
+        uuidUsuario: persistedUser.uuidUsuario,
+        nome: persistedUser.nome,
+        email: persistedUser.email,
+        role: persistedUser.perfil?.nomePerfil,
+        perfilNome: persistedUser.perfil?.nomePerfil,
+        roles,
       },
     }
   }

@@ -1,5 +1,6 @@
 import router from '@adonisjs/core/services/router'
-const ProfessorRecommendationController = () => import('#controllers/professor_recommendation_controller')
+const ProfessorRecommendationController = () =>
+  import('#controllers/professor_recommendation_controller')
 
 router
   .group(() => {
