@@ -13,7 +13,8 @@ import { Message } from 'primereact/message'
 import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { createTemaTcc, getTemaTccList, type TemaTcc } from '../../shared/api/tema-tcc-api'
+import { createTemaTcc, getTemaTccList, getMyTemaTcc, type TemaTcc } from '../../shared/api/tema-tcc-api'
+import { getProfessorRecommendations, getProfessorById, type ProfessorRecommendation } from '../../shared/api/professor-api'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 import { InfoPanel } from '../../shared/ui/organisms/InfoPanel/InfoPanel'
 
@@ -38,7 +39,7 @@ const areaOptions = [
 
 const lineOptions = [
   { label: 'Transformacao digital', value: 'transformacao-digital' },
-  { label: 'Analise de dados educacionais', value: 'dados-educacionais' },
+  { label: 'Analise de dados educacionais', value: 'analise de dados educacionais' },
   { label: 'Experiencia do usuario', value: 'ux' },
   { label: 'Gestao e processos', value: 'gestao-processos' },
 ]
@@ -46,6 +47,33 @@ const lineOptions = [
 export function StudentTopicPage() {
   useEffect(() => {
     console.log('StudentTopicPage mounted')
+
+    async function loadMinhaSolicitacao() {
+      setIsLoadingMinhaSolicitacao(true)
+
+      try {
+        const tema = await getMyTemaTcc()
+        if (tema) {
+          setCreatedTema(tema)
+
+          if (tema.uuidProfessor) {
+            try {
+              const professor = await getProfessorById(tema.uuidProfessor)
+              setSelectedProfessor(professor)
+            } catch (error) {
+              console.error('Erro ao buscar professor associado:', error)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar minha solicitacao:', error)
+      } finally {
+        setIsLoadingMinhaSolicitacao(false)
+      }
+    }
+
+    void loadMinhaSolicitacao()
+
     if (import.meta.env.DEV && !__devAutoLoaded) {
       __devAutoLoaded = true
       console.log('DEV: guarded auto-loading temas for debug')
@@ -67,23 +95,234 @@ export function StudentTopicPage() {
     resolver: zodResolver(topicSchema),
   })
 
+  const toast = useRef<Toast | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingTemas, setIsLoadingTemas] = useState(false)
+  const [hasLoadedTemas, setHasLoadedTemas] = useState(false)
+  const [temas, setTemas] = useState<TemaTcc[]>([])
+  const [professores, setProfessores] = useState<ProfessorRecommendation[]>([])
+  const [selectedProfessor, setSelectedProfessor] = useState<ProfessorRecommendation | null>(null)
+  const [createdTema, setCreatedTema] = useState<TemaTcc | null>(null)
+  const [isLoadingProfessores, setIsLoadingProfessores] = useState(false)
+  const [isLoadingMinhaSolicitacao, setIsLoadingMinhaSolicitacao] = useState(false)
+
   const title = watch('title')
   const area = watch('area')
   const researchLine = watch('researchLine')
   const description = watch('description')
+
+  useEffect(() => {
+    if (area && researchLine) {
+      void loadProfessores(area, researchLine)
+    }
+  }, [area, researchLine])
 
   const requirements = [
     { label: 'Titulo provisorio', done: title.trim().length >= 8 },
     { label: 'Area de interesse', done: area.trim().length > 0 },
     { label: 'Linha de pesquisa', done: researchLine.trim().length > 0 },
     { label: 'Descricao / justificativa', done: description.trim().length >= 80 },
+    { label: 'Professor selecionado', done: Boolean(selectedProfessor) },
   ]
 
-  const toast = useRef<Toast | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoadingTemas, setIsLoadingTemas] = useState(false)
-  const [hasLoadedTemas, setHasLoadedTemas] = useState(false)
-  const [temas, setTemas] = useState<TemaTcc[]>([])
+  const isRequestSent = Boolean(createdTema)
+
+  const requestPanel = isRequestSent ? (
+    <div className="form-panel">
+      <Toast ref={toast} />
+      <div className="submitted-panel">
+        <h2>Solicitação recebida</h2>
+        <p>Seu pedido de tema foi enviado e está aguardando aprovação.</p>
+        <div className="submitted-details">
+          <div>
+            <strong>Título:</strong>
+            <p>{createdTema?.titulo}</p>
+          </div>
+          <div>
+            <strong>Área:</strong>
+            <p>{createdTema?.area}</p>
+          </div>
+          <div>
+            <strong>Linha de pesquisa:</strong>
+            <p>{createdTema?.linhaPesquisa}</p>
+          </div>
+          <div>
+            <strong>Professor indicado:</strong>
+            <p>{selectedProfessor?.nome ?? 'Não informado'}</p>
+            <p>{selectedProfessor?.email ?? ''}</p>
+          </div>
+          <div>
+            <strong>Status:</strong>
+            <p>{createdTema?.status ?? 'aguardando aprovacao'}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <form className="form-panel" onSubmit={handleSubmit(handleSendTopic)}>
+      <Toast ref={toast} />
+      <div className={`form-loading ${isSubmitting ? 'active' : ''}`}>
+        <ProgressSpinner strokeWidth="4" />
+      </div>
+
+      <FormField
+        label="Titulo provisorio *"
+        htmlFor="title"
+        error={errors.title?.message}
+        counter={{ current: title.length, max: 150 }}
+      >
+        <Controller
+          control={control}
+          name="title"
+          render={({ field }) => (
+            <InputText
+              id="title"
+              invalid={Boolean(errors.title)}
+              placeholder="Digite um titulo provisorio para o seu tema de TCC"
+              disabled={isSubmitting}
+              {...field}
+            />
+          )}
+        />
+      </FormField>
+
+      <FormField label="Area de interesse *" htmlFor="area" error={errors.area?.message}>
+        <Controller
+          control={control}
+          name="area"
+          render={({ field }) => (
+            <Dropdown
+              id="area"
+              invalid={Boolean(errors.area)}
+              options={areaOptions}
+              placeholder="Selecione a area de interesse"
+              disabled={isSubmitting}
+              value={field.value}
+              onChange={(event) => field.onChange(event.value)}
+            />
+          )}
+        />
+      </FormField>
+
+      <FormField
+        label="Linha de pesquisa *"
+        htmlFor="researchLine"
+        error={errors.researchLine?.message}
+      >
+        <Controller
+          control={control}
+          name="researchLine"
+          render={({ field }) => (
+            <Dropdown
+              id="researchLine"
+              invalid={Boolean(errors.researchLine)}
+              options={lineOptions}
+              placeholder="Selecione a linha de pesquisa"
+              disabled={isSubmitting}
+              value={field.value}
+              onChange={(event) => field.onChange(event.value)}
+            />
+          )}
+        />
+      </FormField>
+
+      <InfoPanel icon="pi pi-users" title="Professores Disponiveis">
+        {isLoadingProfessores ? (
+          <div className="loading-panel">
+            <ProgressSpinner strokeWidth="4" />
+          </div>
+        ) : area && researchLine ? (
+          professores.length > 0 ? (
+            <>
+              <p className="muted-text">Escolha o professor que será envolvido na solicitação.</p>
+              <ul className="tema-list">
+                {professores.map((professor) => (
+                  <li
+                    key={professor.uuidProfessor}
+                    className={`professor-item ${
+                      selectedProfessor?.uuidProfessor === professor.uuidProfessor
+                        ? 'is-selected'
+                        : ''
+                    }`}
+                    onClick={() => setSelectedProfessor(professor)}
+                  >
+                    <strong>{professor.nome}</strong>
+                    <span>{professor.email ?? 'Sem email registrado'}</span>
+                  </li>
+                ))}
+              </ul>
+              {selectedProfessor ? (
+                <div className="selected-professor-summary">
+                  <strong>Professor selecionado:</strong>
+                  <p>{selectedProfessor.nome}</p>
+                  <p>{selectedProfessor.email ?? 'Sem email registrado'}</p>
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p>Selecione um professor acima para incluir na solicitação.</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="empty-state">
+              <p>Nenhum professor encontrado para os filtros selecionados.</p>
+            </div>
+          )
+        ) : (
+          <p>Selecione área e linha de pesquisa para ver os professores disponíveis.</p>
+        )}
+      </InfoPanel>
+
+      <FormField
+        label="Descricao / justificativa *"
+        htmlFor="description"
+        hint="Explique a relevancia, o problema de pesquisa e os objetivos do seu tema."
+        error={errors.description?.message}
+        counter={{ current: description.length, max: 2000 }}
+      >
+        <Controller
+          control={control}
+          name="description"
+          render={({ field }) => (
+            <InputTextarea
+              id="description"
+              invalid={Boolean(errors.description)}
+              placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e a relevancia para a area escolhida..."
+              rows={6}
+              disabled={isSubmitting}
+              {...field}
+            />
+          )}
+        />
+      </FormField>
+
+      <div className="form-actions">
+        <Button
+          icon="pi pi-save"
+          label="Salvar como rascunho"
+          onClick={handleSubmit(handleSaveDraft)}
+          outlined
+          type="button"
+          disabled={isSubmitting || isLoadingTemas}
+        />
+        <Button
+          icon="pi pi-cloud-download"
+          label={isLoadingTemas ? 'Carregando...' : 'Buscar meus temas'}
+          onClick={loadTemas}
+          outlined
+          type="button"
+          disabled={isSubmitting || isLoadingTemas}
+        />
+        <Button
+          icon="pi pi-send"
+          label="Solicitar Tema"
+          loading={isSubmitting}
+          type="submit"
+          disabled={isSubmitting || isLoadingTemas}
+        />
+      </div>
+    </form>
+  )
 
   const studentId: string | undefined = undefined
 
@@ -101,17 +340,31 @@ export function StudentTopicPage() {
   async function handleSendTopic(data: TopicForm) {
     setIsSubmitting(true)
 
+    if (!selectedProfessor) {
+      toast.current?.show({
+        severity: 'warn',
+        summary: 'Professor nao selecionado',
+        detail: 'Escolha um professor disponivel antes de enviar o tema.',
+        life: 5000,
+      })
+      setIsSubmitting(false)
+      return
+    }
+
     try {
-      await createTemaTcc({
+      const tema = await createTemaTcc({
         titulo: data.title,
         descricao: data.description,
         area: data.area,
         linhaPesquisa: data.researchLine,
+        uuidProfessor: selectedProfessor.uuidProfessor,
       })
+
+      setCreatedTema(tema)
 
       toast.current?.show({
         severity: 'success',
-        summary: 'Tema cadastrado',
+        summary: 'Solicitação enviada',
         detail: 'Seu tema foi enviado com sucesso para o backend.',
         life: 5000,
       })
@@ -136,13 +389,6 @@ export function StudentTopicPage() {
       const params = studentId ? { uuidAluno: studentId } : undefined
       const data = await getTemaTccList(params)
       setTemas(data)
-
-      toast.current?.show({
-        severity: 'success',
-        summary: 'Temas carregados',
-        detail: `Encontrados ${data.length} temas${studentId ? ` para o aluno ${studentId}` : ''}.`,
-        life: 5000,
-      })
     } catch (error) {
       console.error(error)
       toast.current?.show({
@@ -157,6 +403,34 @@ export function StudentTopicPage() {
     }
   }
 
+  async function loadProfessores(area: string, linhaPesquisa: string) {
+    setIsLoadingProfessores(true)
+
+    try {
+      const data = await getProfessorRecommendations({ area, linhaPesquisa })
+
+      console.log('loadProfessores', { area, linhaPesquisa, data })
+      setProfessores(data)
+
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Professores carregados',
+        detail: `Encontrados ${data.length} professores para os filtros selecionados.`,
+        life: 5000,
+      })
+    } catch (error) {
+      console.error(error)
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao carregar professores',
+        detail: 'Falha ao buscar os professores. Tente novamente.',
+        life: 5000,
+      })
+    } finally {
+      setIsLoadingProfessores(false)
+    }
+  }
+
   return (
     <div className="page-stack">
       <section className="page-header">
@@ -164,126 +438,13 @@ export function StudentTopicPage() {
           <h1>Registrar Tema de TCC</h1>
           <p>
             Informe os dados do seu tema de Trabalho de Conclusao de Curso. Apos o
-            cadastro, ele sera analisado pelo coordenador.
+            cadastro, ele sera analisado pelo possível orientador.
           </p>
         </div>
       </section>
 
       <section className="student-topic-grid">
-        <form className="form-panel" onSubmit={handleSubmit(handleSendTopic)}>
-          <Toast ref={toast} />
-          <div className={`form-loading ${isSubmitting ? 'active' : ''}`}>
-            <ProgressSpinner strokeWidth="4" />
-          </div>
-
-          <FormField
-            label="Titulo provisorio *"
-            htmlFor="title"
-            error={errors.title?.message}
-            counter={{ current: title.length, max: 150 }}
-          >
-            <Controller
-              control={control}
-              name="title"
-              render={({ field }) => (
-                <InputText
-                  id="title"
-                  invalid={Boolean(errors.title)}
-                  placeholder="Digite um titulo provisorio para o seu tema de TCC"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              )}
-            />
-          </FormField>
-
-          <FormField label="Area de interesse *" htmlFor="area" error={errors.area?.message}>
-            <Controller
-              control={control}
-              name="area"
-              render={({ field }) => (
-                <Dropdown
-                  id="area"
-                  invalid={Boolean(errors.area)}
-                  options={areaOptions}
-                  placeholder="Selecione a area de interesse"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              )}
-            />
-          </FormField>
-
-          <FormField
-            label="Linha de pesquisa *"
-            htmlFor="researchLine"
-            error={errors.researchLine?.message}
-          >
-            <Controller
-              control={control}
-              name="researchLine"
-              render={({ field }) => (
-                <Dropdown
-                  id="researchLine"
-                  invalid={Boolean(errors.researchLine)}
-                  options={lineOptions}
-                  placeholder="Selecione a linha de pesquisa"
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              )}
-            />
-          </FormField>
-
-          <FormField
-            label="Descricao / justificativa *"
-            htmlFor="description"
-            hint="Explique a relevancia, o problema de pesquisa e os objetivos do seu tema."
-            error={errors.description?.message}
-            counter={{ current: description.length, max: 2000 }}
-          >
-            <Controller
-              control={control}
-              name="description"
-              render={({ field }) => (
-                <InputTextarea
-                  id="description"
-                  invalid={Boolean(errors.description)}
-                  placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e a relevancia para a area escolhida..."
-                  rows={6}
-                  disabled={isSubmitting}
-                  {...field}
-                />
-              )}
-            />
-          </FormField>
-
-          <div className="form-actions">
-            <Button
-              icon="pi pi-save"
-              label="Salvar como rascunho"
-              onClick={handleSubmit(handleSaveDraft)}
-              outlined
-              type="button"
-              disabled={isSubmitting || isLoadingTemas}
-            />
-            <Button
-              icon="pi pi-cloud-download"
-              label={isLoadingTemas ? 'Carregando...' : 'Buscar meus temas'}
-              onClick={loadTemas}
-              outlined
-              type="button"
-              disabled={isSubmitting || isLoadingTemas}
-            />
-            <Button
-              icon="pi pi-send"
-              label="Cadastrar Tema"
-              loading={isSubmitting}
-              type="submit"
-              disabled={isSubmitting || isLoadingTemas}
-            />
-          </div>
-        </form>
+        {requestPanel}
 
         <aside className="student-topic-aside">
           <InfoPanel icon="pi pi-clipboard" title="Requisitos">
@@ -340,6 +501,36 @@ export function StudentTopicPage() {
               </div>
             ) : (
               <p>Clique em Buscar meus temas para ver os temas do aluno.</p>
+            )}
+          </InfoPanel>
+
+          <InfoPanel icon="pi pi-users" title="Professores Disponiveis">
+            {isLoadingProfessores ? (
+              <div className="loading-panel">
+                <ProgressSpinner strokeWidth="4" />
+              </div>
+            ) : professores.length > 0 ? (
+              <>
+                <p className="muted-text">Selecione um professor disponível abaixo.</p>
+                <ul className="tema-list">
+                  {professores.map((professor) => (
+                    <li
+                      key={professor.uuidProfessor}
+                      className={`professor-item ${selectedProfessor?.uuidProfessor === professor.uuidProfessor ? 'is-selected' : ''}`}
+                      onClick={() => setSelectedProfessor(professor)}
+                    >
+                      <strong>{professor.nome}</strong>
+                      <span>{professor.email ?? 'Sem email registrado'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : area && researchLine ? (
+              <div className="empty-state">
+                <p>Nenhum professor encontrado para os filtros selecionados.</p>
+              </div>
+            ) : (
+              <p>Selecione área e linha de pesquisa para ver os professores disponíveis.</p>
             )}
           </InfoPanel>
         </aside>

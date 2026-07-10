@@ -46,6 +46,13 @@ export default class TemaTccRepository {
     return await model.save()
   }
 
+  async findByAluno(uuidAluno: string): Promise<TemaTcc | null> {
+    return await TemaTcc.query()
+      .where('uuid_aluno', uuidAluno)
+      .orderBy('created_at', 'desc')
+      .first()
+  }
+
   async delete(id: string): Promise<void> {
     const temaTcc = await TemaTcc.findOrFail(id)
     await temaTcc.delete()
