@@ -4,6 +4,8 @@ import { LoginPage } from '../../features/auth/LoginPage'
 import { RegisterPage } from '../../features/auth/RegisterPage'
 import { DashboardPage } from '../../features/dashboard/DashboardPage'
 import { StudentTopicPage } from '../../features/student-topic/StudentTopicPage'
+import { CronogramaPage } from '../../features/cronograma/CronogramaPage'
+import { PerfilPage } from '../../features/perfil/PerfilPage'
 import { TccListPage } from '../../features/tccs/TccListPage'
 import { AdminPage } from '../../features/admin/AdminPage'
 import { UsuariosPage } from '../../features/admin/UsuariosPage'
@@ -18,7 +20,7 @@ import { navItems } from '../../shared/layout/nav-items'
 import { useAuthStore } from '../../shared/stores/auth-store'
 import { ComingSoon } from '../../shared/ui/organisms/ComingSoon/ComingSoon'
 
-const implementedPaths = new Set(['/', '/tema', '/tccs', '/admin'])
+const implementedPaths = new Set(['/', '/tema', '/tccs', '/admin', '/cronograma', '/perfil'])
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const user = useAuthStore((state) => state.user)
@@ -94,6 +96,15 @@ export function AppRoutes() {
             </RequireRole>
           }
         />
+        <Route
+          path="cronograma"
+          element={
+            <RequireRole role="ROLE_MENU_MEU_TCC">
+              <CronogramaPage />
+            </RequireRole>
+          }
+        />
+        <Route path="perfil" element={<PerfilPage />} />
         <Route
           path="admin"
           element={

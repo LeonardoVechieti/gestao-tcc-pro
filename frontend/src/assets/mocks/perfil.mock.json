@@ -1,0 +1,17 @@
+{
+  "uuidUsuario": "mock-usuario-1",
+  "nome": "Joao Silva",
+  "email": "joao.silva@aluno.com",
+  "ativo": true,
+  "emailVerified": true,
+  "createdAt": "2025-02-10T10:00:00.000Z",
+  "perfil": { "nomePerfil": "Aluno" },
+  "aluno": {
+    "nome": "Joao Silva",
+    "matricula": "2025000123",
+    "curso": "Sistemas de Informacao",
+    "telefone": "(11) 98888-7777",
+    "semestre": "8",
+    "situacao": "ativo"
+  }
+}

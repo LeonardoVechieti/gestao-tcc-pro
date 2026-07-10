@@ -1,3 +1,5 @@
+import perfilMock from '../../assets/mocks/perfil.mock.json'
+import { isBackendActive } from '../config/env'
 import { apiClient } from './api-client'
 import type { AuthUser } from '../stores/auth-store'
 
@@ -19,6 +21,37 @@ export type GoogleLoginPayload = {
 type AuthResponse = {
   token: string
   user: AuthUser
+}
+
+export type MeResponse = {
+  uuidUsuario: string
+  nome?: string
+  email: string
+  ativo?: boolean
+  emailVerified?: boolean
+  createdAt?: string
+  perfil?: {
+    uuidPerfil?: string
+    nomePerfil?: string
+  }
+  aluno?: {
+    uuidAluno?: string
+    nome?: string
+    matricula?: string
+    curso?: string
+    telefone?: string
+    semestre?: string
+    situacao?: string
+  }
+}
+
+export async function getMe(): Promise<MeResponse> {
+  if (!isBackendActive()) {
+    return perfilMock as MeResponse
+  }
+
+  const { data } = await apiClient.get<MeResponse>('/tcc-pro/auth/me')
+  return data
 }
 
 export async function loginAluno({ email, senha }: LoginPayload): Promise<AuthUser> {
