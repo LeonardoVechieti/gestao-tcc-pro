@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
+import { ProgressSpinner } from 'primereact/progressspinner'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from '../../features/auth/LoginPage'
 import { RegisterPage } from '../../features/auth/RegisterPage'
 import { DashboardPage } from '../../features/dashboard/DashboardPage'
+import { OrientationManagementPage } from '../../features/orientations/OrientationManagementPage'
 import { StudentTopicPage } from '../../features/student-topic/StudentTopicPage'
 import { TccListPage } from '../../features/tccs/TccListPage'
 import { AdminPage } from '../../features/admin/AdminPage'
@@ -15,45 +18,72 @@ import { PerfisPage } from '../../features/admin/PerfisPage'
 import { PerfilFormPage } from '../../features/admin/PerfilFormPage'
 import { AppLayout } from '../../shared/layout/AppLayout'
 import { navItems } from '../../shared/layout/nav-items'
+import { getCurrentUser } from '../../shared/api/auth-api'
+import { hasAnyRole } from '../../shared/auth/roles'
 import { useAuthStore } from '../../shared/stores/auth-store'
 import { ComingSoon } from '../../shared/ui/organisms/ComingSoon/ComingSoon'
 
-const implementedPaths = new Set(['/', '/tema', '/tccs', '/admin'])
+const implementedPaths = new Set(['/', '/tema', '/tccs', '/orientacoes', '/admin'])
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const user = useAuthStore((state) => state.user)
-  return user ? <>{children}</> : <Navigate replace to="/login" />
-}
+  const login = useAuthStore((state) => state.login)
+  const logout = useAuthStore((state) => state.logout)
+  const [isRefreshingUser, setIsRefreshingUser] = useState(Boolean(user?.token))
 
-function parseJwtPayload<T = Record<string, unknown>>(token: string): T | null {
-  try {
-    const [, payload] = token.split('.')
-    if (!payload) return null
+  useEffect(() => {
+    if (!user?.token) {
+      setIsRefreshingUser(false)
+      return
+    }
 
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-    return JSON.parse(decoded) as T
-  } catch {
-    return null
-  }
-}
+    let cancelled = false
+    setIsRefreshingUser(true)
 
-function hasRole(user: { token: string; roles?: string[] } | null, role: string) {
+    getCurrentUser(user.token)
+      .then((currentUser) => {
+        if (!cancelled) {
+          login(currentUser)
+        }
+      })
+      .catch((error: { response?: { status?: number } }) => {
+        if (!cancelled) {
+          const status = error.response?.status
+          if (status === 401 || status === 403) {
+            logout()
+          }
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsRefreshingUser(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.token, login, logout])
+
   if (!user) {
-    return false
+    return <Navigate replace to="/login" />
   }
 
-  if (Array.isArray(user.roles) && user.roles.includes(role)) {
-    return true
+  if (isRefreshingUser) {
+    return (
+      <div className="page-loading">
+        <ProgressSpinner strokeWidth="4" />
+      </div>
+    )
   }
 
-  const payload = parseJwtPayload<{ roles?: string[] }>(user.token)
-  return Boolean(payload?.roles?.includes(role))
+  return <>{children}</>
 }
 
 function RequireRole({ children, role }: { children: ReactNode; role: string | string[] }) {
   const user = useAuthStore((state) => state.user)
   const roles = typeof role === 'string' ? [role] : role
-  const hasAccess = roles.some((currentRole) => hasRole(user, currentRole))
+  const hasAccess = hasAnyRole(user, roles)
   return hasAccess ? <>{children}</> : <Navigate replace to="/" />
 }
 
@@ -91,6 +121,14 @@ export function AppRoutes() {
           element={
             <RequireRole role="ROLE_TCC_VIEW">
               <TccListPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="orientacoes"
+          element={
+            <RequireRole role={['ROLE_DASH_PROFESSOR', 'ROLE_MENU_MEU_TCC']}>
+              <OrientationManagementPage />
             </RequireRole>
           }
         />
@@ -196,7 +234,15 @@ export function AppRoutes() {
             <Route
               key={item.to}
               path={item.to.replace(/^\//, '')}
-              element={<ComingSoon title={item.label} icon={item.icon} />}
+              element={
+                item.requiredRoles ? (
+                  <RequireRole role={item.requiredRoles}>
+                    <ComingSoon title={item.label} icon={item.icon} />
+                  </RequireRole>
+                ) : (
+                  <ComingSoon title={item.label} icon={item.icon} />
+                )
+              }
             />
           ))}
       </Route>

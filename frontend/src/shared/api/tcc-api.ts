@@ -1,5 +1,7 @@
 import tccsMock from '../../assets/mocks/tccs.mock.json'
+import { hasRole } from '../auth/roles'
 import { isBackendActive } from '../config/env'
+import { useAuthStore } from '../stores/auth-store'
 import { apiClient } from './api-client'
 import { getTemaTccList } from './tema-tcc-api'
 
@@ -22,7 +24,7 @@ type TccRaw = {
 }
 
 type AlunoRaw = { uuidAluno: string; nome: string }
-type ProfessorRaw = { uuidProfessor: string; nome: string }
+type ProfessorRaw = { uuidProfessor: string; nome: string; email?: string }
 
 function normalizeStatus(status: string): TccStatus {
   const key = status?.toLowerCase().trim().replace(/\s+/g, '_')
@@ -47,13 +49,24 @@ async function joinTccRows(tccs: TccRaw[]): Promise<TccRow[]> {
 
   return tccs.map((tcc) => ({
     id: tcc.uuidTcc,
-    aluno: nomeAlunoPorId.get(tcc.uuidAluno) ?? 'Aluno nao encontrado',
-    titulo: tituloPorTemaId.get(tcc.uuidTemaTcc) ?? 'Tema nao encontrado',
+    aluno: nomeAlunoPorId.get(tcc.uuidAluno) ?? 'Aluno não encontrado',
+    titulo: tituloPorTemaId.get(tcc.uuidTemaTcc) ?? 'Tema não encontrado',
     orientador: tcc.uuidOrientador
-      ? (nomeProfessorPorId.get(tcc.uuidOrientador) ?? 'Orientador nao encontrado')
+      ? (nomeProfessorPorId.get(tcc.uuidOrientador) ?? 'Orientador não encontrado')
       : 'Sem orientador',
     status: normalizeStatus(tcc.status),
   }))
+}
+
+async function findProfessorIdByEmail(email?: string): Promise<string | undefined> {
+  if (!email) {
+    return undefined
+  }
+
+  const { data } = await apiClient.get<ProfessorRaw[]>('/tcc-pro/professor', {
+    params: { filterEmail: email },
+  })
+  return data[0]?.uuidProfessor
 }
 
 export async function getTccList(): Promise<TccRow[]> {
@@ -64,15 +77,28 @@ export async function getTccList(): Promise<TccRow[]> {
   }
 
   try {
-    const { data: tccs } = await apiClient.get<TccRaw[]>('/tcc-pro/tcc')
+    const user = useAuthStore.getState().user
+    const shouldFilterByProfessor =
+      user?.perfilNome === 'Professor' || hasRole(user, 'ROLE_DASH_PROFESSOR')
+    const uuidOrientador = shouldFilterByProfessor
+      ? await findProfessorIdByEmail(user?.email)
+      : undefined
+
+    if (shouldFilterByProfessor && !uuidOrientador) {
+      return []
+    }
+
+    const { data: tccs } = await apiClient.get<TccRaw[]>('/tcc-pro/tcc', {
+      params: uuidOrientador ? { uuidOrientador } : undefined,
+    })
 
     if (!tccs || tccs.length === 0) {
-      return mock
+      return shouldFilterByProfessor ? [] : mock
     }
 
     return await joinTccRows(tccs)
   } catch (error) {
-    console.error('Falha ao buscar lista de TCCs, usando dados ficticios', error)
+    console.error('Falha ao buscar lista de TCCs, usando dados fictícios', error)
     return mock
   }
 }

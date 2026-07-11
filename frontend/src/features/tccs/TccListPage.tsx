@@ -17,13 +17,13 @@ const statusOptions: { label: string; value: TccStatus }[] = [
   { label: 'Todos', value: 'todos' },
   { label: 'Em andamento', value: 'em_andamento' },
   { label: 'Banca', value: 'banca' },
-  { label: 'Concluido', value: 'concluido' },
+  { label: 'Concluído', value: 'concluido' },
 ]
 
 const statusLabel: Record<TccRow['status'], string> = {
   em_andamento: 'Em andamento',
   banca: 'Banca',
-  concluido: 'Concluido',
+  concluido: 'Concluído',
 }
 
 const statusSeverity: Record<TccRow['status'], 'info' | 'warning' | 'success'> = {
@@ -77,9 +77,9 @@ export function TccListPage() {
     <div className="page-stack">
       <section className="page-header">
         <div>
-          <Tag value="Gestao" severity="info" />
+          <Tag value="Gestão" severity="info" />
           <h1>TCCs</h1>
-          <p>Trabalhos cadastrados, orientadores e situacao atual.</p>
+          <p>Trabalhos cadastrados, orientadores e situação atual.</p>
         </div>
         <Button icon="pi pi-plus" label="Cadastrar" />
       </section>
@@ -121,9 +121,9 @@ export function TccListPage() {
           rows={5}
           value={filteredTccs}
         >
-          <Column field="id" header="Codigo" style={{ width: '8rem' }} />
+          <Column field="id" header="Código" style={{ width: '8rem' }} />
           <Column field="aluno" header="Aluno" />
-          <Column field="titulo" header="Titulo" />
+          <Column field="titulo" header="Título" />
           <Column field="orientador" header="Orientador" />
           <Column
             body={(row: TccRow) => (

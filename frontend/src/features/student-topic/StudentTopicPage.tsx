@@ -1,7 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
-
-// Guard to avoid double auto-loading in React Strict Mode during development
-let __devAutoLoaded = false
+import { useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { Dropdown } from 'primereact/dropdown'
@@ -15,12 +12,13 @@ import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createTemaTcc, getTemaTccList, getMyTemaTcc, type TemaTcc } from '../../shared/api/tema-tcc-api'
 import { getProfessorRecommendations, getProfessorById, type ProfessorRecommendation } from '../../shared/api/professor-api'
+import { useAuthStore } from '../../shared/stores/auth-store'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 import { InfoPanel } from '../../shared/ui/organisms/InfoPanel/InfoPanel'
 
 const topicSchema = z.object({
-  title: z.string().min(8, 'Informe um titulo com pelo menos 8 caracteres.').max(150),
-  area: z.string().min(1, 'Selecione uma area.'),
+  title: z.string().min(8, 'Informe um título com pelo menos 8 caracteres.').max(150),
+  area: z.string().min(1, 'Selecione uma área.'),
   researchLine: z.string().min(1, 'Selecione uma linha de pesquisa.'),
   description: z
     .string()
@@ -32,22 +30,22 @@ type TopicForm = z.infer<typeof topicSchema>
 
 const areaOptions = [
   { label: 'Marketing', value: 'marketing' },
-  { label: 'Sistemas de Informacao', value: 'sistemas' },
-  { label: 'Ciencia de Dados', value: 'dados' },
+  { label: 'Sistemas de Informação', value: 'sistemas' },
+  { label: 'Ciência de Dados', value: 'dados' },
   { label: 'Engenharia de Software', value: 'software' },
 ]
 
 const lineOptions = [
-  { label: 'Transformacao digital', value: 'transformacao-digital' },
-  { label: 'Analise de dados educacionais', value: 'analise de dados educacionais' },
-  { label: 'Experiencia do usuario', value: 'ux' },
-  { label: 'Gestao e processos', value: 'gestao-processos' },
+  { label: 'Transformação digital', value: 'transformacao-digital' },
+  { label: 'Análise de dados educacionais', value: 'analise de dados educacionais' },
+  { label: 'Experiência do usuário', value: 'ux' },
+  { label: 'Gestão e processos', value: 'gestao-processos' },
 ]
 
 export function StudentTopicPage() {
-  useEffect(() => {
-    console.log('StudentTopicPage mounted')
+  const user = useAuthStore((state) => state.user)
 
+  useEffect(() => {
     async function loadMinhaSolicitacao() {
       setIsLoadingMinhaSolicitacao(true)
 
@@ -66,19 +64,13 @@ export function StudentTopicPage() {
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar minha solicitacao:', error)
+        console.error('Erro ao carregar minha solicitação:', error)
       } finally {
         setIsLoadingMinhaSolicitacao(false)
       }
     }
 
     void loadMinhaSolicitacao()
-
-    if (import.meta.env.DEV && !__devAutoLoaded) {
-      __devAutoLoaded = true
-      console.log('DEV: guarded auto-loading temas for debug')
-      void loadTemas()
-    }
   }, [])
   const {
     control,
@@ -104,7 +96,7 @@ export function StudentTopicPage() {
   const [selectedProfessor, setSelectedProfessor] = useState<ProfessorRecommendation | null>(null)
   const [createdTema, setCreatedTema] = useState<TemaTcc | null>(null)
   const [isLoadingProfessores, setIsLoadingProfessores] = useState(false)
-  const [isLoadingMinhaSolicitacao, setIsLoadingMinhaSolicitacao] = useState(false)
+  const [, setIsLoadingMinhaSolicitacao] = useState(false)
 
   const title = watch('title')
   const area = watch('area')
@@ -118,10 +110,10 @@ export function StudentTopicPage() {
   }, [area, researchLine])
 
   const requirements = [
-    { label: 'Titulo provisorio', done: title.trim().length >= 8 },
-    { label: 'Area de interesse', done: area.trim().length > 0 },
+    { label: 'Título provisório', done: title.trim().length >= 8 },
+    { label: 'Área de interesse', done: area.trim().length > 0 },
     { label: 'Linha de pesquisa', done: researchLine.trim().length > 0 },
-    { label: 'Descricao / justificativa', done: description.trim().length >= 80 },
+    { label: 'Descrição / justificativa', done: description.trim().length >= 80 },
     { label: 'Professor selecionado', done: Boolean(selectedProfessor) },
   ]
 
@@ -153,7 +145,7 @@ export function StudentTopicPage() {
           </div>
           <div>
             <strong>Status:</strong>
-            <p>{createdTema?.status ?? 'aguardando aprovacao'}</p>
+            <p>{createdTema?.status ?? 'aguardando aprovação'}</p>
           </div>
         </div>
       </div>
@@ -166,7 +158,7 @@ export function StudentTopicPage() {
       </div>
 
       <FormField
-        label="Titulo provisorio *"
+        label="Título provisório *"
         htmlFor="title"
         error={errors.title?.message}
         counter={{ current: title.length, max: 150 }}
@@ -178,7 +170,7 @@ export function StudentTopicPage() {
             <InputText
               id="title"
               invalid={Boolean(errors.title)}
-              placeholder="Digite um titulo provisorio para o seu tema de TCC"
+              placeholder="Digite um título provisório para o seu tema de TCC"
               disabled={isSubmitting}
               {...field}
             />
@@ -186,7 +178,7 @@ export function StudentTopicPage() {
         />
       </FormField>
 
-      <FormField label="Area de interesse *" htmlFor="area" error={errors.area?.message}>
+      <FormField label="Área de interesse *" htmlFor="area" error={errors.area?.message}>
         <Controller
           control={control}
           name="area"
@@ -195,7 +187,7 @@ export function StudentTopicPage() {
               id="area"
               invalid={Boolean(errors.area)}
               options={areaOptions}
-              placeholder="Selecione a area de interesse"
+              placeholder="Selecione a área de interesse"
               disabled={isSubmitting}
               value={field.value}
               onChange={(event) => field.onChange(event.value)}
@@ -226,7 +218,7 @@ export function StudentTopicPage() {
         />
       </FormField>
 
-      <InfoPanel icon="pi pi-users" title="Professores Disponiveis">
+      <InfoPanel icon="pi pi-users" title="Professores disponíveis">
         {isLoadingProfessores ? (
           <div className="loading-panel">
             <ProgressSpinner strokeWidth="4" />
@@ -274,9 +266,9 @@ export function StudentTopicPage() {
       </InfoPanel>
 
       <FormField
-        label="Descricao / justificativa *"
+        label="Descrição / justificativa *"
         htmlFor="description"
-        hint="Explique a relevancia, o problema de pesquisa e os objetivos do seu tema."
+        hint="Explique a relevância, o problema de pesquisa e os objetivos do seu tema."
         error={errors.description?.message}
         counter={{ current: description.length, max: 2000 }}
       >
@@ -287,7 +279,7 @@ export function StudentTopicPage() {
             <InputTextarea
               id="description"
               invalid={Boolean(errors.description)}
-              placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e a relevancia para a area escolhida..."
+              placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e a relevância para a área escolhida..."
               rows={6}
               disabled={isSubmitting}
               {...field}
@@ -324,15 +316,15 @@ export function StudentTopicPage() {
     </form>
   )
 
-  const studentId: string | undefined = undefined
+  const studentId = user?.uuidAluno
 
   function handleSaveDraft(data: TopicForm) {
-    console.log('draft', data)
+    localStorage.setItem('gestaotcc:tema-draft', JSON.stringify(data))
 
     toast.current?.show({
       severity: 'info',
       summary: 'Rascunho salvo',
-      detail: 'Rascunho salvo localmente. Ainda nao esta integrado ao backend.',
+      detail: 'Rascunho salvo localmente.',
       life: 5000,
     })
   }
@@ -343,8 +335,19 @@ export function StudentTopicPage() {
     if (!selectedProfessor) {
       toast.current?.show({
         severity: 'warn',
-        summary: 'Professor nao selecionado',
-        detail: 'Escolha um professor disponivel antes de enviar o tema.',
+        summary: 'Professor não selecionado',
+        detail: 'Escolha um professor disponível antes de enviar o tema.',
+        life: 5000,
+      })
+      setIsSubmitting(false)
+      return
+    }
+
+    if (!studentId) {
+      toast.current?.show({
+        severity: 'warn',
+        summary: 'Aluno não identificado',
+        detail: 'Não foi possível identificar o aluno logado para enviar o tema.',
         life: 5000,
       })
       setIsSubmitting(false)
@@ -353,6 +356,7 @@ export function StudentTopicPage() {
 
     try {
       const tema = await createTemaTcc({
+        uuidAluno: studentId,
         titulo: data.title,
         descricao: data.description,
         area: data.area,
@@ -373,7 +377,7 @@ export function StudentTopicPage() {
       toast.current?.show({
         severity: 'error',
         summary: 'Erro ao cadastrar',
-        detail: 'Nao foi possivel cadastrar o tema. Tente novamente.',
+        detail: 'Não foi possível cadastrar o tema. Tente novamente.',
         life: 5000,
       })
     } finally {
@@ -383,7 +387,6 @@ export function StudentTopicPage() {
 
   async function loadTemas() {
     setIsLoadingTemas(true)
-    console.log('loadTemas called', { studentId })
 
     try {
       const params = studentId ? { uuidAluno: studentId } : undefined
@@ -409,7 +412,6 @@ export function StudentTopicPage() {
     try {
       const data = await getProfessorRecommendations({ area, linhaPesquisa })
 
-      console.log('loadProfessores', { area, linhaPesquisa, data })
       setProfessores(data)
 
       toast.current?.show({
@@ -437,8 +439,8 @@ export function StudentTopicPage() {
         <div>
           <h1>Registrar Tema de TCC</h1>
           <p>
-            Informe os dados do seu tema de Trabalho de Conclusao de Curso. Apos o
-            cadastro, ele sera analisado pelo possível orientador.
+            Informe os dados do seu tema de Trabalho de Conclusão de Curso. Após o
+            cadastro, ele será analisado pelo possível orientador.
           </p>
         </div>
       </section>
@@ -470,12 +472,12 @@ export function StudentTopicPage() {
               </div>
               <div>
                 <strong>Rascunho</strong>
-                <span>Seu tema ainda nao foi enviado.</span>
+                <span>Seu tema ainda não foi enviado.</span>
               </div>
             </div>
             <p className="muted-text">
               Salve como rascunho para continuar editando. Quando estiver pronto,
-              clique em <strong>Cadastrar Tema</strong> para enviar para analise.
+              clique em <strong>Cadastrar Tema</strong> para enviar para análise.
             </p>
             <Tag severity="warning" value="Aguardando envio" />
           </InfoPanel>
@@ -504,7 +506,7 @@ export function StudentTopicPage() {
             )}
           </InfoPanel>
 
-          <InfoPanel icon="pi pi-users" title="Professores Disponiveis">
+          <InfoPanel icon="pi pi-users" title="Professores disponíveis">
             {isLoadingProfessores ? (
               <div className="loading-panel">
                 <ProgressSpinner strokeWidth="4" />

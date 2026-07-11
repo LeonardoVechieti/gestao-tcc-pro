@@ -6,6 +6,7 @@ import type { MenuItem } from 'primereact/menuitem'
 import { Sidebar } from 'primereact/sidebar'
 import { useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { hasAnyRole } from '../auth/roles'
 import { useAuthStore } from '../stores/auth-store'
 import { useLayoutStore } from '../stores/layout-store'
 import { ThemeToggle } from '../ui/atoms/ThemeToggle/ThemeToggle'
@@ -24,6 +25,26 @@ export function AppLayout() {
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
   const userMenu = useRef<Menu | null>(null)
+  const profileLabel = user?.perfilNome ?? user?.role ?? 'Usuário'
+  const normalizedProfileLabel = profileLabel.toLowerCase()
+  const isProfessor = normalizedProfileLabel.includes('professor')
+  const isCordenacao =
+    normalizedProfileLabel.includes('coordenador') || normalizedProfileLabel.includes('cordenador')
+  const portalLabel = isCordenacao
+    ? 'Portal da coordenação'
+    : isProfessor
+      ? 'Portal do professor'
+      : 'Portal acadêmico'
+  const topbarTitle = isCordenacao
+    ? 'Painel da coordenação'
+    : isProfessor
+      ? 'Meus orientandos'
+      : 'Meu TCC'
+  const topbarSubtitle = isCordenacao
+    ? 'Acompanhe alunos, bancas e pendências'
+    : isProfessor
+      ? 'Acompanhe orientandos, bancas e agenda'
+      : 'Acompanhe tema, entregas e apresentação'
 
   const userMenuItems: MenuItem[] = [
     {
@@ -36,58 +57,46 @@ export function AppLayout() {
     },
   ]
 
-  function parseJwtPayload<T = Record<string, unknown>>(token: string): T | null {
-    try {
-      const [, payload] = token.split('.')
-      if (!payload) {
-        return null
-      }
-
-      const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-      return JSON.parse(decoded) as T
-    } catch {
-      return null
-    }
-  }
-
-  function hasAnyRole(roles: string[]) {
-    if (!user) {
-      return false
+  function getNavLabel(item: (typeof navItems)[number]) {
+    if (item.to !== '/') {
+      return item.label
     }
 
-    if (Array.isArray(user.roles)) {
-      return roles.some((role) => user.roles?.includes(role))
+    if (isProfessor) {
+      return 'Meus orientandos'
     }
 
-    if (user.token) {
-      const payload = parseJwtPayload<{ roles?: string[] }>(user.token)
-      return Boolean(payload?.roles?.some((role) => roles.includes(role)))
+    if (isCordenacao) {
+      return 'Painel'
     }
 
-    return false
+    return item.label
   }
 
   function createMenuItems(showLabels: boolean, onNavigate?: () => void): MenuItem[] {
     return navItems
-      .filter((item) => !item.requiredRoles || hasAnyRole(item.requiredRoles))
-      .map((item) => ({
-        label: item.label,
-        icon: item.icon,
-        template: (menuItem) => (
-          <NavLink
-            className={({ isActive }) =>
-              isActive ? 'student-menu__link is-active' : 'student-menu__link'
-            }
-            end={item.to === '/'}
-            onClick={onNavigate}
-            to={item.to}
-            title={showLabels ? undefined : item.label}
-          >
-            <i className={String(menuItem.icon)} aria-hidden="true" />
-            {showLabels && <span>{item.label}</span>}
-          </NavLink>
-        ),
-      }))
+      .filter((item) => !item.requiredRoles || hasAnyRole(user, item.requiredRoles))
+      .map((item) => {
+        const label = getNavLabel(item)
+        return {
+          label,
+          icon: item.icon,
+          template: (menuItem) => (
+            <NavLink
+              className={({ isActive }) =>
+                isActive ? 'student-menu__link is-active' : 'student-menu__link'
+              }
+              end={item.to === '/'}
+              onClick={onNavigate}
+              to={item.to}
+              title={showLabels ? undefined : label}
+            >
+              <i className={String(menuItem.icon)} aria-hidden="true" />
+              {showLabels && <span>{label}</span>}
+            </NavLink>
+          ),
+        }
+      })
   }
 
   function handleMenuButtonClick() {
@@ -108,8 +117,8 @@ export function AppLayout() {
           </div>
           {showLabels && (
             <div>
-              <strong>GestaoTCC Pro</strong>
-              <span>Portal do aluno</span>
+              <strong>GestãoTCC Pro</strong>
+              <span>{portalLabel}</span>
             </div>
           )}
         </div>
@@ -126,7 +135,7 @@ export function AppLayout() {
           <div className="sidebar-profile">
             <i className="pi pi-graduation-cap" aria-hidden="true" />
             <div>
-              <strong>{user?.perfilNome ?? user?.role ?? 'Aluno'}</strong>
+              <strong>{profileLabel}</strong>
               <span>Faculdade Exemplo</span>
             </div>
           </div>
@@ -161,8 +170,8 @@ export function AppLayout() {
             text
           />
           <div className="topbar__title">
-            <strong>Meu TCC</strong>
-            <span>Acompanhe tema, entregas e apresentacao</span>
+            <strong>{topbarTitle}</strong>
+            <span>{topbarSubtitle}</span>
           </div>
           <ThemeToggle />
           <div className="topbar__divider" />
@@ -175,7 +184,7 @@ export function AppLayout() {
             <Avatar label={user ? getInitials(user.nome) : 'AL'} shape="circle" />
             <div>
               <strong>{user?.nome ?? 'Aluno'}</strong>
-              <span>Aluno</span>
+              <span>{profileLabel}</span>
             </div>
             <i className="pi pi-chevron-down" aria-hidden="true" />
           </button>

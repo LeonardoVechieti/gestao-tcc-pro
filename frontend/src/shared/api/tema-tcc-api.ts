@@ -27,7 +27,7 @@ export type TemaTcc = {
 
 export async function createTemaTcc(payload: CreateTemaTccPayload): Promise<TemaTcc> {
   if (!isBackendActive()) {
-    return { uuidTemaTcc: crypto.randomUUID(), ativo: true, status: 'aguardando aprovacao', ...payload }
+    return { uuidTemaTcc: crypto.randomUUID(), ativo: true, status: 'aguardando aprovação', ...payload }
   }
 
   const { data } = await apiClient.post<TemaTcc>('/tcc-pro/tema-tcc', payload)

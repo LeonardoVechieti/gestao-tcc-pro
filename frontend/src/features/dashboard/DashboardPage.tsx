@@ -1,81 +1,19 @@
-import { Button } from 'primereact/button'
-import { ProgressSpinner } from 'primereact/progressspinner'
-import { Tag } from 'primereact/tag'
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { getDashboardAluno, type DashboardAlunoData } from '../../shared/api/dashboard-api'
-import { DescriptionList } from '../../shared/ui/molecules/DescriptionList/DescriptionList'
-import { SummaryCards } from '../../shared/ui/organisms/SummaryCards/SummaryCards'
-import { TimelinePanel } from '../../shared/ui/organisms/TimelinePanel/TimelinePanel'
-import { AlertsPanel } from '../../shared/ui/organisms/AlertsPanel/AlertsPanel'
+import { hasRole } from '../../shared/auth/roles'
+import { useAuthStore } from '../../shared/stores/auth-store'
+import { ComingSoon } from '../../shared/ui/organisms/ComingSoon/ComingSoon'
+import { AlunoDashboardPage } from './AlunoDashboardPage'
+import { ProfessorDashboardPage } from './ProfessorDashboardPage'
 
 export function DashboardPage() {
-  const navigate = useNavigate()
-  const [data, setData] = useState<DashboardAlunoData | null>(null)
+  const user = useAuthStore((state) => state.user)
 
-  useEffect(() => {
-    let cancelled = false
-
-    getDashboardAluno().then((result) => {
-      if (!cancelled) {
-        setData(result)
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  if (!data) {
-    return (
-      <div className="page-loading">
-        <ProgressSpinner strokeWidth="4" />
-      </div>
-    )
+  if (hasRole(user, 'ROLE_DASH_PROFESSOR')) {
+    return <ProfessorDashboardPage />
   }
 
-  return (
-    <div className="page-stack">
-      <section className="page-header">
-        <div>
-          <h1>Ola, Joao Silva!</h1>
-          <p>Acompanhe o andamento do seu Trabalho de Conclusao de Curso.</p>
-        </div>
-        <Button icon="pi pi-file-edit" label="Registrar tema" onClick={() => navigate('/tema')} />
-      </section>
+  if (hasRole(user, 'ROLE_DASH_ALUNO')) {
+    return <AlunoDashboardPage />
+  }
 
-      <SummaryCards cards={data.summaryCards} />
-
-      <section className="student-dashboard-grid">
-        <div className="work-panel">
-          <div className="section-title">
-            <h2>Meu Tema</h2>
-            <Button label="Ver detalhes" link />
-          </div>
-          <DescriptionList
-            items={[
-              { label: 'Titulo do tema', value: data.meuTema.titulo, wide: true },
-              { label: 'Area de interesse', value: data.meuTema.areaInteresse },
-              { label: 'Orientador', value: data.meuTema.orientador },
-              { label: 'Ultima atualizacao', value: data.meuTema.ultimaAtualizacao },
-              {
-                label: 'Status atual',
-                value: (
-                  <Tag
-                    severity={data.meuTema.statusAtual.severity}
-                    value={data.meuTema.statusAtual.label}
-                  />
-                ),
-              },
-            ]}
-          />
-        </div>
-
-        <TimelinePanel title="Linha do Tempo" items={data.timelineItems} />
-      </section>
-
-      <AlertsPanel title="Avisos e pendencias" alerts={data.alerts} />
-    </div>
-  )
+  return <ComingSoon title="Painel da coordenação" icon="pi pi-chart-bar" />
 }

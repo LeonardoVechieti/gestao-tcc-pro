@@ -1,4 +1,5 @@
 import router from '@adonisjs/core/services/router'
+import { middleware } from '#start/kernel'
 
 const AuthController = () => import('#controllers/auth_controller')
 
@@ -7,6 +8,6 @@ router
     router.post('/auth/register', [AuthController, 'register'])
     router.post('/auth/login', [AuthController, 'login'])
     router.post('/auth/google', [AuthController, 'loginWithGoogle'])
-    router.get('/auth/me', [AuthController, 'me']).middleware(['auth' as any])
+    router.get('/auth/me', [AuthController, 'me']).middleware(middleware.auth())
   })
   .prefix('tcc-pro')

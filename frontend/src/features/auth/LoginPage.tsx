@@ -19,6 +19,8 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
+let googleInitializedClientId: string | null = null
+
 export function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
@@ -73,7 +75,7 @@ export function LoginPage() {
         return false
       }
 
-      if (!google.accounts.id._initialized) {
+      if (googleInitializedClientId !== googleClientId) {
         google.accounts.id.initialize({
           client_id: googleClientId,
           callback: async (response: { credential?: string }) => {
@@ -99,9 +101,11 @@ export function LoginPage() {
             }
           },
         })
+        googleInitializedClientId = googleClientId
       }
 
       if (googleButtonRef.current) {
+        googleButtonRef.current.innerHTML = ''
         google.accounts.id.renderButton(googleButtonRef.current, {
           theme: 'outline',
           size: 'large',
@@ -151,8 +155,8 @@ export function LoginPage() {
       console.error(error)
       toast.current?.show({
         severity: 'error',
-        summary: 'Nao foi possivel entrar',
-        detail: 'E-mail ou senha invalidos. Verifique e tente novamente.',
+        summary: 'Não foi possível entrar',
+        detail: 'E-mail ou senha inválidos. Verifique e tente novamente.',
         life: 5000,
       })
     } finally {
@@ -169,11 +173,11 @@ export function LoginPage() {
           <div className="auth-hero__brand-mark">
             <i className="pi pi-graduation-cap" aria-hidden="true" />
           </div>
-          <h1>GestaoTCC Pro</h1>
+          <h1>GestãoTCC Pro</h1>
         </div>
 
         <p className="auth-hero__tagline">
-          A plataforma completa para gestao de Trabalhos de Conclusao de Curso.
+          A plataforma completa para gestão de Trabalhos de Conclusão de Curso.
         </p>
 
         <ul className="auth-hero__features">
@@ -187,13 +191,13 @@ export function LoginPage() {
             <span className="auth-hero__feature-icon">
               <i className="pi pi-chart-bar" aria-hidden="true" />
             </span>
-            <span>Relatorios inteligentes e indicadores em tempo real</span>
+            <span>Relatórios inteligentes e indicadores em tempo real</span>
           </li>
           <li>
             <span className="auth-hero__feature-icon">
               <i className="pi pi-users" aria-hidden="true" />
             </span>
-            <span>Comunicacao integrada entre alunos, orientadores e banca</span>
+            <span>Comunicação integrada entre alunos, orientadores e banca</span>
           </li>
         </ul>
       </aside>
@@ -263,7 +267,7 @@ export function LoginPage() {
               toast.current?.show({
                 severity: 'info',
                 summary: 'Em breve',
-                detail: 'Recuperacao de senha ainda nao esta disponivel.',
+                detail: 'Recuperação de senha ainda não está disponível.',
                 life: 4000,
               })
             }
@@ -279,7 +283,7 @@ export function LoginPage() {
             onClick={() => navigate('/register')}
           />
 
-          <p className="auth-footnote">Acesso para Coordenacao, Aluno e Professor Avaliador.</p>
+          <p className="auth-footnote">Acesso para Coordenação, Aluno e Professor Avaliador.</p>
         </form>
       </div>
     </div>

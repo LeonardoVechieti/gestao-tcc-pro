@@ -33,9 +33,9 @@ function hydrateAuthUser(user: AuthUser): AuthUser {
 
   return {
     ...user,
-    role: payload.role ?? user.role,
-    roles: payload.roles ?? user.roles,
-    perfilNome: payload.perfil?.nomePerfil ?? user.perfilNome,
+    role: user.role ?? payload.role,
+    roles: user.roles ?? payload.roles,
+    perfilNome: user.perfilNome ?? payload.perfil?.nomePerfil,
   }
 }
 

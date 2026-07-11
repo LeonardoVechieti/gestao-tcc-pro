@@ -98,7 +98,7 @@ export function RegisterPage() {
           <div className="auth-hero__brand-mark">
             <i className="pi pi-graduation-cap" aria-hidden="true" />
           </div>
-          <h1>GestaoTCC Pro</h1>
+          <h1>GestãoTCC Pro</h1>
         </div>
 
         <p className="auth-hero__tagline">

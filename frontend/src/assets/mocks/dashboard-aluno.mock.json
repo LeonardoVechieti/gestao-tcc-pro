@@ -9,20 +9,20 @@
     },
     {
       "label": "Status",
-      "value": "Em revisao",
+      "value": "Em revisão",
       "icon": "pi pi-check-circle",
       "action": "Ver andamento",
       "tone": "green"
     },
     {
-      "label": "Proxima Entrega",
+      "label": "Próxima Entrega",
       "value": "05/06/2025",
       "icon": "pi pi-calendar",
       "action": "Ver cronograma",
       "tone": "purple"
     },
     {
-      "label": "Apresentacao",
+      "label": "Apresentação",
       "value": "22/06/2025",
       "icon": "pi pi-clipboard",
       "action": "Ver detalhes",
@@ -33,34 +33,34 @@
     "titulo": "Marketing Digital e Comportamento do Consumidor no Varejo Online",
     "areaInteresse": "Marketing",
     "orientador": "Profa. Ana Paula Costa",
-    "ultimaAtualizacao": "20/05/2025 as 10:30",
-    "statusAtual": { "label": "Em revisao", "severity": "success" }
+    "ultimaAtualizacao": "20/05/2025 às 10:30",
+    "statusAtual": { "label": "Em revisão", "severity": "success" }
   },
   "timelineItems": [
     {
       "title": "Tema enviado",
-      "date": "02/04/2025 as 15:45",
-      "status": "Concluido",
+      "date": "02/04/2025 às 15:45",
+      "status": "Concluído",
       "severity": "success",
       "icon": "pi pi-check"
     },
     {
-      "title": "Em revisao pelo orientador",
-      "date": "05/05/2025 as 09:20",
+      "title": "Em revisão pelo orientador",
+      "date": "05/05/2025 às 09:20",
       "status": "Em andamento",
       "severity": "info",
       "icon": "pi pi-clock"
     },
     {
       "title": "Orientador vinculado",
-      "date": "10/04/2025 as 11:10",
-      "status": "Concluido",
+      "date": "10/04/2025 às 11:10",
+      "status": "Concluído",
       "severity": "success",
       "icon": "pi pi-check"
     },
     {
-      "title": "Apresentacao agendada",
-      "date": "15/05/2025 as 16:30",
+      "title": "Apresentação agendada",
+      "date": "15/05/2025 às 16:30",
       "status": "Agendado",
       "severity": "warning",
       "icon": "pi pi-calendar"
@@ -71,7 +71,7 @@
       "icon": "pi pi-exclamation-circle",
       "tone": "danger",
       "title": "Ajustes solicitados",
-      "description": "Orientador solicitou ajustes na metodologia e nos objetivos especificos.",
+      "description": "Orientador solicitou ajustes na metodologia e nos objetivos específicos.",
       "status": "Pendente",
       "statusSeverity": "danger",
       "action": "Ver detalhes"
@@ -80,7 +80,7 @@
       "icon": "pi pi-file",
       "tone": "orange",
       "title": "Documentos pendentes",
-      "description": "Enviar o Termo de Autorizacao de Publicacao preenchido e assinado.",
+      "description": "Enviar o Termo de Autorização de Publicação preenchido e assinado.",
       "status": "Pendente",
       "statusSeverity": "danger",
       "action": "Enviar agora"
@@ -88,8 +88,8 @@
     {
       "icon": "pi pi-comments",
       "tone": "blue",
-      "title": "Comentario do orientador",
-      "description": "Bom trabalho ate aqui. Atente-se aos ajustes sugeridos na metodologia.",
+      "title": "Comentário do orientador",
+      "description": "Bom trabalho até aqui. Atente-se aos ajustes sugeridos na metodologia.",
       "status": "Novo",
       "statusSeverity": "info",
       "action": "Ler mensagem"
