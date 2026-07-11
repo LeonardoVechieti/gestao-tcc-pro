@@ -108,6 +108,16 @@ export default class AuthController {
 
     const payload = authService.verifyToken(token)
     const usuario = await this.usuarioRepository.show(payload.sub)
-    return this.serializeAuthUser(usuario)
+
+    return {
+      ...this.serializeAuthUser(usuario),
+      ativo: usuario.ativo,
+      emailVerified: usuario.emailVerified,
+      createdAt: usuario.createdAt,
+      perfil: usuario.perfil
+        ? { uuidPerfil: usuario.perfil.uuidPerfil, nomePerfil: usuario.perfil.nomePerfil }
+        : undefined,
+      aluno: usuario.aluno ?? undefined,
+    }
   }
 }

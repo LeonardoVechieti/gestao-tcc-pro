@@ -170,9 +170,7 @@ export function LoginPage() {
 
       <aside className="auth-hero">
         <div className="auth-hero__brand">
-          <div className="auth-hero__brand-mark">
-            <i className="pi pi-graduation-cap" aria-hidden="true" />
-          </div>
+          <img className="favicon" src="/favicon.png" alt="" />
           <h1>GestãoTCC Pro</h1>
         </div>
 

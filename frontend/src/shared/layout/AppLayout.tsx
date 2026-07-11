@@ -112,9 +112,7 @@ export function AppLayout() {
     return (
       <>
         <div className="brand">
-          <div className="brand-mark">
-            <i className="pi pi-graduation-cap" aria-hidden="true" />
-          </div>
+          <img className="favicon" src="/favicon.png" alt="" />
           {showLabels && (
             <div>
               <strong>GestãoTCC Pro</strong>
