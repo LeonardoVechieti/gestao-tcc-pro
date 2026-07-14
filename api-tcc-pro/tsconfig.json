@@ -13,6 +13,7 @@
       "#repositories/*": ["./app/repositories/*.ts"],
       "#interfaces/*": ["./app/interfaces/*.ts"],
       "#enum/*": ["./app/enum/*.ts"],
+      "#function/*": ["./app/function/*.ts"],
       "#listeners/*": ["./app/listeners/*.ts"],
       "#events/*": ["./app/events/*.ts"],
       "#middleware/*": ["./app/middleware/*.ts"],
