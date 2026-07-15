@@ -186,9 +186,11 @@ function OrientationCard({
 }
 
 function StageRow({
+  canComplete,
   onComplete,
   stage,
 }: {
+  canComplete: boolean
   onComplete: (stageId: string) => void
   stage: OrientationStage
 }) {
@@ -202,7 +204,7 @@ function StageRow({
         <span>Prazo: {formatDateBr(stage.prazo)}</span>
       </div>
       <Tag severity={stageSeverity[stage.status]} value={stageLabel[stage.status]} />
-      {stage.status === 'em_analise' && (
+      {canComplete && (
         <Button
           icon="pi pi-check-circle"
           onClick={() => onComplete(stage.id)}
@@ -264,6 +266,7 @@ export function OrientationManagementPage() {
   const selectedStages = useMemo(() => sortOrientationStages(selected?.etapas ?? []), [selected])
   const selectedCurrentStage =
     selectedStages.find((stage) => stage.status !== 'concluida')?.titulo ?? 'Todas as etapas concluídas'
+  const selectedNextStageId = selectedStages.find((stage) => stage.status !== 'concluida')?.id
 
   function replaceSelected(updated: OrientationItem) {
     if (!selected) {
@@ -578,7 +581,12 @@ export function OrientationManagementPage() {
               <ProgressBar showValue={false} value={selected.progresso} />
               <div className="orientation-stage-list">
                 {selectedStages.map((stage) => (
-                  <StageRow key={stage.id} onComplete={completeStage} stage={stage} />
+                  <StageRow
+                    canComplete={stage.id === selectedNextStageId && stage.status === 'em_analise'}
+                    key={stage.id}
+                    onComplete={completeStage}
+                    stage={stage}
+                  />
                 ))}
               </div>
               {canRequestWorkAdjustments(selected) && (

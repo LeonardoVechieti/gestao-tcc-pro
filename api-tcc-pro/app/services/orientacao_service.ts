@@ -343,11 +343,21 @@ export default class OrientacaoService {
   async completeStage(uuidTimeline: string, nota?: number) {
     const timeline = await TccTimeline.findOrFail(uuidTimeline)
     const isBanca = timeline.titulo === 'Banca'
+    const tcc = await Tcc.findOrFail(timeline.uuidTcc)
+    const tema = await TemaTcc.findOrFail(tcc.uuidTemaTcc)
+    // Ordena pela sequência canônica das etapas: created_at pode empatar
+    // porque as etapas são criadas em paralelo
+    const stages = (await TccTimeline.query().where('uuid_tcc', tcc.uuidTcc)).sort(
+      (current, next) => getStageOrder(current.titulo) - getStageOrder(next.titulo)
+    )
+    const nextStage = stages.find((stage) => stage.status !== 'concluida')
 
     // Validar que apenas a próxima etapa (em_analise) pode ser concluída
-    if (timeline.status !== 'em_analise') {
+    if (timeline.status !== 'em_analise' || nextStage?.uuidTimeline !== timeline.uuidTimeline) {
       throw new GenericResponseException(
-        `Esta etapa não pode ser concluída. Status atual: ${timeline.status}`,
+        nextStage
+          ? `A próxima etapa a concluir é "${nextStage.titulo}".`
+          : 'Todas as etapas já foram concluídas.',
         400,
       )
     }
@@ -370,14 +380,6 @@ export default class OrientacaoService {
 
     timeline.status = 'concluida'
     await timeline.save()
-
-    const tcc = await Tcc.findOrFail(timeline.uuidTcc)
-    const tema = await TemaTcc.findOrFail(tcc.uuidTemaTcc)
-    // Ordena pela sequência canônica das etapas: created_at pode empatar
-    // porque as etapas são criadas em paralelo
-    const stages = (await TccTimeline.query().where('uuid_tcc', tcc.uuidTcc)).sort(
-      (current, next) => getStageOrder(current.titulo) - getStageOrder(next.titulo)
-    )
 
     // Ativar próxima etapa (marcar como em_analise)
     const currentStageIndex = stages.findIndex((s) => s.uuidTimeline === uuidTimeline)
