@@ -16,13 +16,13 @@ export const navItems: NavItem[] = [
     to: '/tema',
     label: 'Registrar Tema',
     icon: 'pi pi-file-edit',
-    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+    requiredRoles: ['ROLE_TEMA_VIEW'],
   },
   {
     to: '/tccs',
     label: 'TCCs',
     icon: 'pi pi-briefcase',
-    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+    requiredRoles: ['ROLE_TCC_VIEW'],
   },
   {
     to: '/documentos',
@@ -32,21 +32,21 @@ export const navItems: NavItem[] = [
   },
   {
     to: '/orientacoes',
-    label: 'Orientacoes',
+    label: 'Orientações',
     icon: 'pi pi-users',
-    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+    requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR'],
   },
   {
     to: '/cronograma',
     label: 'Cronograma',
     icon: 'pi pi-calendar',
-    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+    requiredRoles: ['ROLE_AGENDA_VIEW'],
   },
   {
     to: '/apresentacao',
-    label: 'Apresentacao',
+    label: 'Apresentação',
     icon: 'pi pi-desktop',
-    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+    requiredRoles: ['ROLE_AGENDA_VIEW'],
   },
   {
     to: '/mensagens',

@@ -101,7 +101,7 @@ export function RegisterPage() {
 			<aside className="auth-hero">
 				<div className="auth-hero__brand">
 					<img className="favicon" src="/favicon.png" alt="" />
-					<h1>GestaoTCC Pro</h1>
+					<h1>GestãoTCC Pro</h1>
 				</div>
 
 				<p className="auth-hero__tagline">

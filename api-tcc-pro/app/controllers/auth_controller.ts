@@ -15,6 +15,19 @@ import * as authService from '#services/auth_service'
 export default class AuthController {
   constructor(private usuarioRepository: UsuarioRepository) {}
 
+  private serializeAuthUser(usuario: Awaited<ReturnType<UsuarioRepository['show']>>) {
+    const roles = authService.extractRoleCodes(usuario)
+
+    return {
+      uuidUsuario: usuario.uuidUsuario,
+      nome: usuario.nome,
+      email: usuario.email,
+      role: usuario.perfil?.nomePerfil,
+      perfilNome: usuario.perfil?.nomePerfil,
+      roles,
+    }
+  }
+
   async register({ request, response }: HttpContext) {
     const payload = await RegisterValidator.validate(request.all())
     const existingUser = await this.usuarioRepository.findByEmail(payload.email)
@@ -35,18 +48,10 @@ export default class AuthController {
     })
 
     const persistedUser = await this.usuarioRepository.show(usuario.uuidUsuario)
-    const roles = authService.extractRoleCodes(persistedUser)
 
     return {
       token: authService.generateToken(persistedUser),
-      user: {
-        uuidUsuario: persistedUser.uuidUsuario,
-        nome: persistedUser.nome,
-        email: persistedUser.email,
-        role: persistedUser.perfil?.nomePerfil,
-        perfilNome: persistedUser.perfil?.nomePerfil,
-        roles,
-      },
+      user: this.serializeAuthUser(persistedUser),
     }
   }
 
@@ -61,18 +66,9 @@ export default class AuthController {
       })
     }
 
-    const roles = authService.extractRoleCodes(usuario)
-
     return {
       token: authService.generateToken(usuario),
-      user: {
-        uuidUsuario: usuario.uuidUsuario,
-        nome: usuario.nome,
-        email: usuario.email,
-        role: usuario.perfil?.nomePerfil,
-        perfilNome: usuario.perfil?.nomePerfil,
-        roles,
-      },
+      user: this.serializeAuthUser(usuario),
     }
   }
 
@@ -95,18 +91,10 @@ export default class AuthController {
     }
 
     const persistedUser = await this.usuarioRepository.show(usuario.uuidUsuario)
-    const roles = authService.extractRoleCodes(persistedUser)
 
     return {
       token: authService.generateToken(persistedUser),
-      user: {
-        uuidUsuario: persistedUser.uuidUsuario,
-        nome: persistedUser.nome,
-        email: persistedUser.email,
-        role: persistedUser.perfil?.nomePerfil,
-        perfilNome: persistedUser.perfil?.nomePerfil,
-        roles,
-      },
+      user: this.serializeAuthUser(persistedUser),
     }
   }
 
@@ -119,6 +107,17 @@ export default class AuthController {
     }
 
     const payload = authService.verifyToken(token)
-    return this.usuarioRepository.show(payload.sub)
+    const usuario = await this.usuarioRepository.show(payload.sub)
+
+    return {
+      ...this.serializeAuthUser(usuario),
+      ativo: usuario.ativo,
+      emailVerified: usuario.emailVerified,
+      createdAt: usuario.createdAt,
+      perfil: usuario.perfil
+        ? { uuidPerfil: usuario.perfil.uuidPerfil, nomePerfil: usuario.perfil.nomePerfil }
+        : undefined,
+      aluno: usuario.aluno ?? undefined,
+    }
   }
 }

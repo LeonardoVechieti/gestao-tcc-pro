@@ -8,6 +8,6 @@ router
     router.post('/auth/register', [AuthController, 'register'])
     router.post('/auth/login', [AuthController, 'login'])
     router.post('/auth/google', [AuthController, 'loginWithGoogle'])
-    router.get('/auth/me', [AuthController, 'me']).middleware([middleware.auth()])
+    router.get('/auth/me', [AuthController, 'me']).middleware(middleware.auth())
   })
   .prefix('tcc-pro')

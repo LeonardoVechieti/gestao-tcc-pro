@@ -4,7 +4,14 @@ export default class extends BaseSchema {
   protected tableName = 'professor'
 
   async up() {
-    await this.db.table(this.tableName).insert([
+    await this.schema.raw(
+      `ALTER TABLE "${this.tableName}" ADD COLUMN IF NOT EXISTS "areas_interesse" json NULL`
+    )
+    await this.schema.raw(
+      `ALTER TABLE "${this.tableName}" ADD COLUMN IF NOT EXISTS "linhas_pesquisa" json NULL`
+    )
+
+    const professors = [
       {
         nome: 'Ana Souza',
         email: 'ana.souza@universidade.edu.br',
@@ -32,7 +39,19 @@ export default class extends BaseSchema {
         created_at: this.now(),
         updated_at: null,
       },
-    ])
+    ]
+
+    for (const professor of professors) {
+      const exists = await this.db
+        .query()
+        .from(this.tableName)
+        .where('email', professor.email)
+        .first()
+
+      if (!exists) {
+        await this.db.table(this.tableName).insert(professor)
+      }
+    }
   }
 
   async down() {

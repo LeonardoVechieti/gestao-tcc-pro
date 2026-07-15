@@ -23,6 +23,8 @@ type AuthResponse = {
   user: AuthUser
 }
 
+type AuthUserPayload = Omit<AuthUser, 'token'>
+
 export type MeResponse = {
   uuidUsuario: string
   nome?: string
@@ -61,6 +63,15 @@ export async function loginAluno({ email, senha }: LoginPayload): Promise<AuthUs
   })
 
   return { ...data.user, token: data.token }
+}
+
+export async function getCurrentUser(token: string): Promise<AuthUser> {
+  const { data } = await apiClient.get<AuthUserPayload>('/tcc-pro/auth/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  return { ...data, token }
 }
 
 export async function registerAluno({ nome, email, senha }: RegisterPayload): Promise<AuthUser> {

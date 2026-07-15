@@ -1,0 +1,131 @@
+{
+  "summaryCards": [
+    {
+      "label": "Pendentes",
+      "value": "12",
+      "icon": "pi pi-clipboard",
+      "action": "Avaliar agora",
+      "tone": "orange"
+    },
+    {
+      "label": "Concluídas",
+      "value": "24",
+      "icon": "pi pi-check-circle",
+      "action": "Ver histórico",
+      "tone": "green"
+    },
+    {
+      "label": "Rascunhos",
+      "value": "5",
+      "icon": "pi pi-file-edit",
+      "action": "Continuar",
+      "tone": "purple"
+    },
+    {
+      "label": "Próximas apresentações",
+      "value": "7",
+      "icon": "pi pi-calendar",
+      "action": "Ver calendário",
+      "tone": "blue"
+    }
+  ],
+  "evaluationRows": [
+    {
+      "id": "TCC-101",
+      "tcc": "Aplicação de IA na análise de dados educacionais",
+      "aluno": "Mariana Souza Lima",
+      "apresentacao": "22/05/2025 09:00",
+      "status": "pendente",
+      "nota": "-",
+      "action": "Avaliar"
+    },
+    {
+      "id": "TCC-102",
+      "tcc": "Gamificação no ensino superior: estudo de caso",
+      "aluno": "Lucas Pereira Alves",
+      "apresentacao": "22/05/2025 14:00",
+      "status": "pendente",
+      "nota": "-",
+      "action": "Avaliar"
+    },
+    {
+      "id": "TCC-103",
+      "tcc": "Sustentabilidade em pequenas empresas: práticas e impactos",
+      "aluno": "Beatriz Carvalho Mendes",
+      "apresentacao": "23/05/2025 09:30",
+      "status": "rascunho",
+      "nota": "7,5",
+      "action": "Continuar"
+    },
+    {
+      "id": "TCC-104",
+      "tcc": "Blockchain e sua aplicação na cadeia de suprimentos",
+      "aluno": "Rafael Martins Costa",
+      "apresentacao": "23/05/2025 16:00",
+      "status": "concluida",
+      "nota": "9,0",
+      "action": "Ver avaliação"
+    }
+  ],
+  "upcomingPanels": [
+    {
+      "id": "BANCA-101",
+      "day": "22",
+      "month": "MAI",
+      "time": "09:00",
+      "weekday": "Quinta-feira",
+      "aluno": "Mariana Souza Lima",
+      "titulo": "Aplicação de IA na análise de dados educacionais",
+      "local": "Sala 201"
+    },
+    {
+      "id": "BANCA-102",
+      "day": "22",
+      "month": "MAI",
+      "time": "14:00",
+      "weekday": "Quinta-feira",
+      "aluno": "Lucas Pereira Alves",
+      "titulo": "Gamificação no ensino superior: estudo de caso",
+      "local": "Online"
+    },
+    {
+      "id": "BANCA-103",
+      "day": "23",
+      "month": "MAI",
+      "time": "09:30",
+      "weekday": "Sexta-feira",
+      "aluno": "Beatriz Carvalho Mendes",
+      "titulo": "Sustentabilidade em pequenas empresas",
+      "local": "Sala 203"
+    }
+  ],
+  "alerts": [
+    {
+      "icon": "pi pi-calendar-clock",
+      "tone": "orange",
+      "title": "Prazo de avaliações",
+      "description": "Lembre-se: avaliações pendentes devem ser concluídas antes das bancas.",
+      "status": "Pendente",
+      "statusSeverity": "warning",
+      "action": "Ver"
+    },
+    {
+      "icon": "pi pi-check-circle",
+      "tone": "green",
+      "title": "Formulário atualizado",
+      "description": "O formulário de avaliação foi atualizado para novas bancas.",
+      "status": "Novo",
+      "statusSeverity": "info",
+      "action": "Abrir"
+    },
+    {
+      "icon": "pi pi-info-circle",
+      "tone": "purple",
+      "title": "Orientação da coordenação",
+      "description": "Reunião de alinhamento de banca prevista para esta semana.",
+      "status": "Agenda",
+      "statusSeverity": "info",
+      "action": "Detalhes"
+    }
+  ]
+}

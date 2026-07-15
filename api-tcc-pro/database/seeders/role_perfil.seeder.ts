@@ -87,14 +87,8 @@ const seedData: SeedData = {
     {
       nomePerfil: 'Professor',
       roles: [
-        'ROLE_ALUNO_VIEW',
-        'ROLE_TEMA_VIEW',
-        'ROLE_TEMA_EDIT',
         'ROLE_TCC_VIEW',
-        'ROLE_TCC_EDIT',
         'ROLE_AGENDA_VIEW',
-        'ROLE_AGENDA_EDIT',
-        'ROLE_PROFESSOR_VIEW',
         'ROLE_DASH_PROFESSOR',
         'ROLE_MENU_AGENDA',
       ],
@@ -148,13 +142,22 @@ export default class RolePerfilSeeder {
         return role.uuidRole
       })
 
-      const existingAssignments = await PerfilRole.query()
-        .where('uuidPerfil', perfil.uuidPerfil)
-        .whereIn('uuidRole', roleUuids)
+      const existingAssignments = await PerfilRole.query().where('uuidPerfil', perfil.uuidPerfil)
 
       const assignmentKeys = new Set(
         existingAssignments.map((assignment) => `${assignment.uuidPerfil}:${assignment.uuidRole}`)
       )
+
+      if (perfilDef.nomePerfil === 'Professor') {
+        const allowedRoleUuids = new Set(roleUuids)
+        const assignmentsToRemove = existingAssignments.filter(
+          (assignment) => !allowedRoleUuids.has(assignment.uuidRole)
+        )
+
+        for (const assignment of assignmentsToRemove) {
+          await assignment.delete()
+        }
+      }
 
       for (const uuidRole of roleUuids) {
         const key = `${perfil.uuidPerfil}:${uuidRole}`

@@ -13,9 +13,13 @@ export default class AgendaController {
     private agendaService: AgendaService
   ) {}
 
-  async store({ request }: HttpContext): Promise<Agenda> {
+  async store({ request, response }: HttpContext): Promise<Agenda | void> {
     const payload = (await AgendaValidator.validate(request.all())) as unknown as Agenda
-    return this.agendaService.createOrUpdate(payload)
+    try {
+      return await this.agendaService.createOrUpdate(payload)
+    } catch (error) {
+      return response.badRequest({ message: (error as Error).message })
+    }
   }
 
   async show({ params }: HttpContext): Promise<Agenda> {
@@ -27,9 +31,13 @@ export default class AgendaController {
     return this.agendaRepository.index(payload)
   }
 
-  async update({ request }: HttpContext): Promise<Agenda> {
+  async update({ request, response }: HttpContext): Promise<Agenda | void> {
     const payload = (await AgendaValidator.validate(request.all())) as unknown as Agenda
-    return this.agendaService.createOrUpdate(payload)
+    try {
+      return await this.agendaService.createOrUpdate(payload)
+    } catch (error) {
+      return response.badRequest({ message: (error as Error).message })
+    }
   }
 
   async delete({ params }: HttpContext): Promise<void> {

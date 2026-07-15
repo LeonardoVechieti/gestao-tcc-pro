@@ -2,21 +2,21 @@
   {
     "id": "TCC-001",
     "aluno": "Marina Souza",
-    "titulo": "Sistema de apoio a orientacoes academicas",
+    "titulo": "Sistema de apoio a orientações acadêmicas",
     "orientador": "Prof. Ana Martins",
     "status": "em_andamento"
   },
   {
     "id": "TCC-002",
     "aluno": "Rafael Lima",
-    "titulo": "Analise de evasao em cursos superiores",
+    "titulo": "Análise de evasão em cursos superiores",
     "orientador": "Prof. Carlos Weber",
     "status": "banca"
   },
   {
     "id": "TCC-003",
     "aluno": "Bianca Rocha",
-    "titulo": "Aplicacao web para gestao de entregas",
+    "titulo": "Aplicação web para gestão de entregas",
     "orientador": "Prof. Julia Freitas",
     "status": "concluido"
   }

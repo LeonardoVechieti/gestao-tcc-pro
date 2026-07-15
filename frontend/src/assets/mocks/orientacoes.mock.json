@@ -1,0 +1,98 @@
+[
+  {
+    "id": "ori-001",
+    "sourceType": "tema",
+    "uuidTemaTcc": "ori-001",
+    "uuidTcc": null,
+    "aluno": "Ana Carolina Mendes",
+    "titulo": "Sistema de apoio ao acompanhamento de TCCs",
+    "area": "Engenharia de Software",
+    "linhaPesquisa": "Sistemas Web",
+    "status": "solicitacao_pendente",
+    "prioridade": "alta",
+    "atualizadoEm": "2026-07-08",
+    "resumo": "Solicitação de orientação enviada com proposta inicial e justificativa do tema.",
+    "etapaAtual": "Definição do tema",
+    "progresso": 0,
+    "etapas": [
+      { "id": "tema", "titulo": "Tema aprovado", "status": "pendente", "prazo": "2026-07-15" },
+      { "id": "projeto", "titulo": "Projeto de TCC", "status": "pendente", "prazo": "2026-08-12" },
+      { "id": "parcial", "titulo": "Entrega parcial", "status": "pendente", "prazo": "2026-09-16" },
+      { "id": "final", "titulo": "Versão final", "status": "pendente", "prazo": "2026-11-04" },
+      { "id": "banca", "titulo": "Banca", "status": "pendente", "prazo": "2026-11-20" }
+    ],
+    "comentarios": [
+      {
+        "id": "com-001",
+        "autor": "Ana Carolina Mendes",
+        "tipo": "Aluno",
+        "mensagem": "Professor, enviei a proposta inicial para sua avaliação.",
+        "data": "2026-07-08"
+      }
+    ]
+  },
+  {
+    "id": "ori-002",
+    "sourceType": "tema",
+    "uuidTemaTcc": "ori-002",
+    "uuidTcc": null,
+    "aluno": "Bruno Pereira Lima",
+    "titulo": "Aplicação mobile para registro de entregas acadêmicas",
+    "area": "Desenvolvimento Mobile",
+    "linhaPesquisa": "Aplicações Institucionais",
+    "status": "tema_pendente",
+    "prioridade": "media",
+    "atualizadoEm": "2026-07-06",
+    "resumo": "Tema indicado pelo aluno aguarda aprovação formal do professor orientador.",
+    "etapaAtual": "Proposta de tema",
+    "progresso": 0,
+    "etapas": [
+      { "id": "tema", "titulo": "Tema aprovado", "status": "em_analise", "prazo": "2026-07-12" },
+      { "id": "projeto", "titulo": "Projeto de TCC", "status": "pendente", "prazo": "2026-08-09" },
+      { "id": "parcial", "titulo": "Entrega parcial", "status": "pendente", "prazo": "2026-09-14" },
+      { "id": "final", "titulo": "Versão final", "status": "pendente", "prazo": "2026-11-02" },
+      { "id": "banca", "titulo": "Banca", "status": "pendente", "prazo": "2026-11-18" }
+    ],
+    "comentarios": [
+      {
+        "id": "com-002",
+        "autor": "Bruno Pereira Lima",
+        "tipo": "Aluno",
+        "mensagem": "Atualizei o recorte do problema e a linha de pesquisa.",
+        "data": "2026-07-06"
+      }
+    ]
+  },
+  {
+    "id": "ori-003",
+    "sourceType": "tcc",
+    "uuidTemaTcc": "tema-003",
+    "uuidTcc": "ori-003",
+    "aluno": "Camila Nunes Rocha",
+    "titulo": "Painel analítico para gestão de evasão universitária",
+    "area": "Dados",
+    "linhaPesquisa": "Business Intelligence",
+    "status": "em_acompanhamento",
+    "prioridade": "normal",
+    "atualizadoEm": "2026-07-03",
+    "resumo": "Orientação ativa com projeto aprovado e entrega parcial em preparação.",
+    "etapaAtual": "Entrega parcial",
+    "progresso": 40,
+    "etapas": [
+      { "id": "tema", "titulo": "Tema aprovado", "status": "concluida", "prazo": "2026-06-20" },
+      { "id": "projeto", "titulo": "Projeto de TCC", "status": "concluida", "prazo": "2026-07-01" },
+      { "id": "parcial", "titulo": "Entrega parcial", "status": "em_analise", "prazo": "2026-08-18" },
+      { "id": "final", "titulo": "Versão final", "status": "pendente", "prazo": "2026-10-29" },
+      { "id": "banca", "titulo": "Banca", "status": "pendente", "prazo": "2026-11-16" }
+    ],
+    "comentarios": [
+      {
+        "id": "com-003",
+        "autor": "Prof. Orientador",
+        "tipo": "Professor",
+        "mensagem": "Reforce a relação entre os indicadores e os objetivos específicos.",
+        "data": "2026-07-03"
+      }
+    ]
+  }
+]
