@@ -2,6 +2,7 @@ import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 import * as relations from '@adonisjs/lucid/types/relations'
 import Tcc from './tcc.js'
+import TemaTcc from './tema_tcc.js'
 import Usuario from './usuario.js'
 
 export default class TccNotificacao extends BaseModel {
@@ -13,7 +14,10 @@ export default class TccNotificacao extends BaseModel {
   declare uuidTccNotificacao: string
 
   @column()
-  declare uuidTcc: string
+  declare uuidTcc?: string | null
+
+  @column()
+  declare uuidTemaTcc?: string | null
 
   @column()
   declare uuidUsuario?: string | null
@@ -41,6 +45,12 @@ export default class TccNotificacao extends BaseModel {
     foreignKey: 'uuidTcc',
   })
   declare tcc: relations.BelongsTo<typeof Tcc>
+
+  @belongsTo(() => TemaTcc, {
+    localKey: 'uuidTemaTcc',
+    foreignKey: 'uuidTemaTcc',
+  })
+  declare temaTcc: relations.BelongsTo<typeof TemaTcc>
 
   @belongsTo(() => Usuario, {
     localKey: 'uuidUsuario',

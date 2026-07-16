@@ -52,7 +52,7 @@ export const navItems: NavItem[] = [
     to: '/mensagens',
     label: 'Mensagens',
     icon: 'pi pi-comments',
-    requiredRoles: ['ROLE_MENU_MEU_TCC'],
+    requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR'],
   },
   {
     to: '/admin',

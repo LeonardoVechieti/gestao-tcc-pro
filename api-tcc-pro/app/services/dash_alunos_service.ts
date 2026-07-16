@@ -1,9 +1,11 @@
 import Tcc from '#models/DAO/tcc'
 import TemaTcc from '#models/DAO/tema_tcc'
 import Professor from '#models/DAO/professor'
-import { DashAlunoAviso, DashAlunoResponse, DashAlunoTimelineItem } from '#interfaces/dash_aluno'
+import { DashAlunoResponse, DashAlunoTimelineItem } from '#interfaces/dash_aluno'
 import { getDashboardIcon, toDateString } from '#helpers/dashboard_helpers'
 import TccTimeline from '#models/DAO/tcc_timeline'
+import TccNotificacao from '#models/DAO/tcc_notificacao'
+import Usuario from '#models/DAO/usuario'
 
 const requiredStages = [
   'Tema aprovado',
@@ -68,25 +70,12 @@ function buildNotificationTitle(tipo: string): string {
     cancelar_orientacao: 'Orientação cancelada',
     comentario: 'Comentário registrado',
     etapa_concluida: 'Etapa concluída',
+    orientacao_aprovada: 'Orientação aceita',
     recusa: 'Solicitação recusada',
     resposta_aluno: 'Resposta enviada',
   }
 
   return titles[tipo] ?? 'Atualização da orientação'
-}
-
-function buildStatusAlert(status?: string): DashAlunoAviso | null {
-  if (!status?.includes('ajuste')) {
-    return null
-  }
-
-  return {
-    tipo: 'ajustes_solicitados',
-    titulo: 'Ajustes solicitados',
-    descricao: 'Há ajustes pendentes de resposta na sua orientação.',
-    status: 'pendente',
-    linkAcao: '/tema',
-  }
 }
 
 export default class DashAlunosService {
@@ -98,9 +87,6 @@ export default class DashAlunosService {
       })
       .preload('timelines', (query) => {
         query.orderBy('created_at', 'asc')
-      })
-      .preload('notificacoes', (query) => {
-        query.orderBy('created_at', 'desc')
       })
       .preload('agendas', (query) => {
         query.whereNotNull('data').orderBy('data', 'desc').limit(1)
@@ -122,15 +108,15 @@ export default class DashAlunosService {
     const orientador = professor?.nome ?? tema?.professor?.nome
     const statusAtual = tcc?.status ?? tema?.status
     const ultimaAtualizacao = toDateString(tcc?.updatedAt ?? tema?.updatedAt ?? tema?.createdAt)
-    const notificationAlerts =
-      tcc?.notificacoes?.map((notificacao) => ({
-        tipo: notificacao.tipo,
-        titulo: buildNotificationTitle(notificacao.tipo),
-        descricao: notificacao.descricao,
-        status: notificacao.status,
-        linkAcao: notificacao.linkAcao,
-      })) ?? []
-    const statusAlert = buildStatusAlert(statusAtual)
+    const usuario = await Usuario.query().where('uuid_aluno', uuidAluno).first()
+    const notificacoes = await this.getNotifications(tcc, tema, usuario?.uuidUsuario)
+    const notificationAlerts = notificacoes.map((notificacao) => ({
+      tipo: notificacao.tipo,
+      titulo: buildNotificationTitle(notificacao.tipo),
+      descricao: notificacao.descricao,
+      status: notificacao.status,
+      linkAcao: notificacao.linkAcao,
+    }))
 
     return {
       temaAtual: {
@@ -157,7 +143,37 @@ export default class DashAlunosService {
         data: toDateString(agenda?.data),
       },
       timelineItems: buildTimelineItems(tcc?.timelines),
-      avisos: statusAlert ? [statusAlert, ...notificationAlerts] : notificationAlerts,
+      avisos: notificationAlerts,
     }
+  }
+
+  private async getNotifications(tcc?: Tcc | null, tema?: TemaTcc | null, uuidUsuario?: string) {
+    if (!tcc && !tema) {
+      return []
+    }
+
+    const query = TccNotificacao.query().orderBy('created_at', 'desc').limit(10)
+
+    query.where((builder) => {
+      if (tcc?.uuidTcc) {
+        builder.where('uuid_tcc', tcc.uuidTcc)
+      }
+
+      if (tema?.uuidTemaTcc) {
+        if (tcc?.uuidTcc) {
+          builder.orWhere('uuid_tema_tcc', tema.uuidTemaTcc)
+        } else {
+          builder.where('uuid_tema_tcc', tema.uuidTemaTcc)
+        }
+      }
+    })
+
+    if (uuidUsuario) {
+      query.where((builder) => {
+        builder.where('uuid_usuario', uuidUsuario).orWhereNull('uuid_usuario')
+      })
+    }
+
+    return query
   }
 }

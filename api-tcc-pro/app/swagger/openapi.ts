@@ -307,6 +307,28 @@ const swaggerDocument = {
         responses: { '200': { description: 'Lista de notificações retornada' } },
       },
     },
+    '/notificacoes/{uuidNotificacao}/status': {
+      put: {
+        summary: 'Atualizar status de uma notificação',
+        parameters: [
+          { name: 'uuidNotificacao', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  status: { type: 'string', enum: ['pendente', 'lida', 'concluida'] },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'Notificação atualizada' } },
+      },
+    },
   },
 }
 

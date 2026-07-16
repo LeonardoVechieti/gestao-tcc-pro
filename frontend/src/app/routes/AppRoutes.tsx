@@ -8,6 +8,7 @@ import { DashboardPage } from '../../features/dashboard/DashboardPage'
 import { OrientationManagementPage } from '../../features/orientations/OrientationManagementPage'
 import { StudentTopicPage } from '../../features/student-topic/StudentTopicPage'
 import { CronogramaPage } from '../../features/cronograma/CronogramaPage'
+import { MensagensPage } from '../../features/mensagens/MensagensPage'
 import { PerfilPage } from '../../features/perfil/PerfilPage'
 import { TccListPage } from '../../features/tccs/TccListPage'
 import { AdminPage } from '../../features/admin/AdminPage'
@@ -34,6 +35,7 @@ const implementedPaths = new Set([
   '/orientacoes',
   '/admin',
   '/cronograma',
+  '/mensagens',
   '/perfil',
 ])
 
@@ -149,6 +151,14 @@ export function AppRoutes() {
           element={
             <RequireRole role="ROLE_AGENDA_VIEW">
               <CronogramaPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="mensagens"
+          element={
+            <RequireRole role={['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR']}>
+              <MensagensPage />
             </RequireRole>
           }
         />

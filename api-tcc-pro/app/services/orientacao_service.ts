@@ -5,6 +5,7 @@ import TccNotificacao from '#models/DAO/tcc_notificacao'
 import TccOrientacaoComentario from '#models/DAO/tcc_orientacao_comentario'
 import TccTimeline from '#models/DAO/tcc_timeline'
 import TemaTcc from '#models/DAO/tema_tcc'
+import Usuario from '#models/DAO/usuario'
 import GenericResponseException from '#exceptions/generic_response_exception'
 import { Uuid } from '../function/uuidv4.js'
 
@@ -62,6 +63,8 @@ type OrientationProfessorPayload = {
   nome: string
   email: string
 } | null
+
+type NotificationRecipient = 'aluno' | 'professor'
 
 const requiredStages = [
   'Tema aprovado',
@@ -314,13 +317,22 @@ export default class OrientacaoService {
     if (tcc) {
       tcc.status = 'em_andamento'
       await tcc.save()
-      await this.createSystemComment({ tcc, tema, mensagem: 'Solicitação de orientação aprovada.' })
+      await this.createSystemComment({
+        tcc,
+        tema,
+        mensagem: 'Solicitação de orientação aprovada.',
+        tipo: 'orientacao_aprovada',
+      })
       return this.buildTccOrientation(tcc, tema)
     }
 
     tema.status = 'orientacao_aprovada'
     await tema.save()
-    await this.createSystemComment({ tema, mensagem: 'Solicitação de orientação aprovada.' })
+    await this.createSystemComment({
+      tema,
+      mensagem: 'Solicitação de orientação aprovada.',
+      tipo: 'orientacao_aprovada',
+    })
     return this.buildTemaOrientation(tema)
   }
 
@@ -941,6 +953,8 @@ export default class OrientacaoService {
     tipo = 'comentario',
     autorNome = 'Sistema',
     autorTipo,
+    notificar,
+    linkAcao,
   }: {
     tcc?: Tcc | null
     tema?: TemaTcc | null
@@ -948,28 +962,107 @@ export default class OrientacaoService {
     tipo?: string
     autorNome?: string
     autorTipo?: 'Aluno' | 'Professor' | 'Sistema'
+    notificar?: NotificationRecipient | false
+    linkAcao?: string
   }) {
+    const normalizedAuthorType = autorTipo ?? (autorNome === 'Sistema' ? 'Sistema' : 'Professor')
     const comentario = await TccOrientacaoComentario.create({
       uuidOrientacaoComentario: Uuid.generate(),
       uuidTcc: tcc?.uuidTcc,
       uuidTemaTcc: tema?.uuidTemaTcc,
       autorNome,
-      autorTipo: autorTipo ?? (autorNome === 'Sistema' ? 'Sistema' : 'Professor'),
+      autorTipo: normalizedAuthorType,
       tipo,
       mensagem,
     })
 
-    if (tcc) {
-      await TccNotificacao.create({
-        uuidTccNotificacao: Uuid.generate(),
-        uuidTcc: tcc.uuidTcc,
+    const recipient =
+      notificar === undefined ? this.inferNotificationRecipient(normalizedAuthorType) : notificar
+
+    if (recipient) {
+      await this.createNotification({
+        tcc,
+        tema,
         tipo,
-        descricao: mensagem,
-        status: 'pendente',
-        linkAcao: '/orientacoes',
+        mensagem,
+        recipient,
+        linkAcao,
       })
     }
 
     return comentario
+  }
+
+  private inferNotificationRecipient(
+    autorTipo: 'Aluno' | 'Professor' | 'Sistema'
+  ): NotificationRecipient {
+    return autorTipo === 'Aluno' ? 'professor' : 'aluno'
+  }
+
+  private async createNotification({
+    tcc,
+    tema,
+    tipo,
+    mensagem,
+    recipient,
+    linkAcao,
+  }: {
+    tcc?: Tcc | null
+    tema?: TemaTcc | null
+    tipo: string
+    mensagem: string
+    recipient: NotificationRecipient
+    linkAcao?: string
+  }) {
+    if (!tcc && !tema) {
+      return
+    }
+
+    const usuario =
+      recipient === 'professor'
+        ? await this.findProfessorUsuario(tcc, tema)
+        : await this.findAlunoUsuario(tcc, tema)
+
+    await TccNotificacao.create({
+      uuidTccNotificacao: Uuid.generate(),
+      uuidTcc: tcc?.uuidTcc,
+      uuidTemaTcc: tema?.uuidTemaTcc,
+      uuidUsuario: usuario?.uuidUsuario,
+      tipo,
+      descricao: mensagem,
+      status: 'pendente',
+      linkAcao: linkAcao ?? this.getNotificationLink(recipient),
+    })
+  }
+
+  private async findAlunoUsuario(tcc?: Tcc | null, tema?: TemaTcc | null) {
+    const uuidAluno = tcc?.uuidAluno ?? tema?.uuidAluno
+
+    if (!uuidAluno) {
+      return null
+    }
+
+    const usuarioPorAluno = await Usuario.query().where('uuid_aluno', uuidAluno).first()
+    if (usuarioPorAluno) {
+      return usuarioPorAluno
+    }
+
+    const aluno = await Aluno.find(uuidAluno)
+    return aluno?.email ? Usuario.query().where('email', aluno.email).first() : null
+  }
+
+  private async findProfessorUsuario(tcc?: Tcc | null, tema?: TemaTcc | null) {
+    const uuidProfessor = tcc?.uuidOrientador ?? tema?.uuidProfessor
+
+    if (!uuidProfessor) {
+      return null
+    }
+
+    const professor = await Professor.find(uuidProfessor)
+    return professor?.email ? Usuario.query().where('email', professor.email).first() : null
+  }
+
+  private getNotificationLink(recipient: NotificationRecipient) {
+    return recipient === 'professor' ? '/orientacoes' : '/tema'
   }
 }

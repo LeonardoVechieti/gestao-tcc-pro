@@ -9,4 +9,8 @@ export default class NotificacaoController {
   async index({ params }: HttpContext) {
     return this.notificacaoService.listByUsuario(params.uuidUsuario)
   }
+
+  async updateStatus({ params, request }: HttpContext) {
+    return this.notificacaoService.updateStatus(params.uuidNotificacao, request.input('status'))
+  }
 }

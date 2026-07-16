@@ -60,6 +60,11 @@ const ROUTE_MAP = [
     path: '/tcc-pro/notificacoes/:uuidUsuario',
     description: 'Últimas notificações por usuário',
   },
+  {
+    method: 'PUT',
+    path: '/tcc-pro/notificacoes/:uuidNotificacao/status',
+    description: 'Atualizar status de uma notificação',
+  },
 ]
 
 export function logRouteMap() {

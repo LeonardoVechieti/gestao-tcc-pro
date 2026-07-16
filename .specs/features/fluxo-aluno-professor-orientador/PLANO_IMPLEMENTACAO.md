@@ -577,12 +577,12 @@ Limites atuais:
 | `/admin/professores` | Admin/Coordenacao | Implementada | Gerenciar professores e areas/linhas |
 | `/tema` | Aluno | Parcial | Registrar proposta de tema e escolher professor |
 | `/orientacoes` | Professor | Parcial/realista | Gerenciar solicitacoes, tema aprovado, etapas e comentarios |
-| `/` dashboard aluno | Aluno | Parcial | Mostra resumo, mas ainda mistura mock |
+| `/` dashboard aluno | Aluno | Real | Mostra tema, status, timeline e avisos reais quando backend ativo |
 | `/` dashboard professor | Professor | Parcial | Mostra resumo baseado em endpoints de dashboard e fallback |
-| `/tccs` | Varios | Parcial | Lista TCCs existentes |
-| `/cronograma` | Varios | Parcial | Calendario/feriados, nao timeline real de TCC |
+| `/tccs` | Varios | Real | Lista TCCs existentes respeitando perfil do usuario |
+| `/cronograma` | Varios | Real | Mostra timeline real do TCC e calendario de apoio |
 | `/documentos` | Aluno | ComingSoon | Ainda nao existe entidade/documento real |
-| `/mensagens` | Aluno | ComingSoon | Ainda nao existe tela real de mensagens |
+| `/mensagens` | Aluno/Professor | Real | Lista notificacoes reais do fluxo |
 | `/apresentacao` | Aluno/Professor | ComingSoon | Ainda nao existe fluxo real de apresentacao |
 
 ## Endpoints Atuais do Fluxo
@@ -671,10 +671,11 @@ tratadas como prontas sem nova implementacao:
 
 ### Frontend
 
-- Dashboard do aluno ainda mistura dados reais e mock.
+- Dashboard do aluno usa dados reais quando backend ativo.
 - `/tema` ainda precisa virar uma tela de acompanhamento real depois que o aluno ja enviou proposta.
 - `/orientacoes` e uma tela de professor; nao deve ser reutilizada para aluno sem adaptar.
-- Rotas `/documentos`, `/mensagens`, `/apresentacao` estao no menu, mas caem em `ComingSoon`.
+- Rotas `/documentos` e `/apresentacao` estao no menu, mas caem em `ComingSoon`.
+- `/mensagens` foi implementada para notificacoes reais de aluno e professor.
 - Ha warnings antigos de lint em telas admin por `catch (error)` nao usado.
 
 ### Banco
@@ -956,6 +957,40 @@ Criterios de aceite:
 - Aluno recebe notificacoes reais do professor.
 - Professor recebe notificacoes reais de resposta do aluno.
 - Nenhum alerta ficticio no dashboard quando backend ativo.
+
+Status: implementado em 2026-07-16.
+
+Implementacao:
+
+- `tcc_notificacao` foi evoluida para permitir notificacoes antes de existir TCC:
+  `uuid_tcc` agora pode ser nulo e `uuid_tema_tcc` foi adicionado.
+- A migration `1782692000000_allow_tema_notifications` foi aplicada no banco.
+- O fluxo de orientacao cria notificacoes reais quando:
+  - professor aceita orientacao;
+  - professor recusa solicitacao;
+  - professor solicita ajustes;
+  - professor aprova tema;
+  - professor conclui etapa;
+  - aluno responde ajuste/comentario.
+- As notificacoes recebem `uuid_usuario` quando o usuario destinatario pode ser
+  identificado.
+- `GET /tcc-pro/notificacoes/:uuidUsuario` lista notificacoes reais do usuario.
+- `PUT /tcc-pro/notificacoes/:uuidNotificacao/status` permite marcar notificacao como
+  `concluida`.
+- `/mensagens` foi implementada no frontend com lista real, estado vazio e acao de
+  marcar como lida.
+- O menu de mensagens agora tambem aparece para professor.
+- O dashboard do aluno usa notificacoes reais da tabela, sem alerta ficticio derivado.
+
+Validacao:
+
+- `npm run typecheck` na API passou.
+- `npm run lint` na API passou.
+- `npm run build` no frontend passou.
+- `npm run lint` no frontend passou com avisos antigos em telas de admin.
+- Leitura local confirmou que `/tcc-pro/notificacoes/:uuidUsuario` responde para aluno
+  e professor de teste; ambos ainda possuem 0 notificacoes porque nenhuma acao nova do
+  fluxo foi executada depois desta implementacao.
 
 ### ORIENT-008 - Modelar entregas/documentos
 

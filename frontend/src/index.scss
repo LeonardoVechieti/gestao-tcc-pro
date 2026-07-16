@@ -1981,6 +1981,66 @@ input {
 	width: 4rem;
 }
 
+.notification-list {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.notification-card {
+	align-items: flex-start;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	box-shadow: var(--color-shadow);
+	display: grid;
+	gap: var(--space-4);
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	padding: var(--space-5);
+}
+
+.notification-card.is-unread {
+	border-color: var(--color-brand);
+}
+
+.notification-card__icon {
+	align-items: center;
+	background: var(--tint-brand-bg);
+	border-radius: var(--radius-sm);
+	color: var(--color-brand-dark);
+	display: flex;
+	height: 2.75rem;
+	justify-content: center;
+	width: 2.75rem;
+}
+
+.notification-card__header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	justify-content: space-between;
+}
+
+.notification-card strong {
+	color: var(--color-text-strong);
+}
+
+.notification-card p {
+	color: var(--color-text);
+	margin: var(--space-2) 0;
+}
+
+.notification-card small {
+	color: var(--color-text-muted);
+}
+
+.notification-card__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	justify-content: flex-end;
+}
+
 .cronograma-summary-grid {
 	display: grid;
 	gap: var(--space-4);
@@ -2265,6 +2325,15 @@ input {
 }
 
 @media (max-width: 720px) {
+	.notification-card {
+		grid-template-columns: auto minmax(0, 1fr);
+	}
+
+	.notification-card__actions {
+		grid-column: 1 / -1;
+		justify-content: flex-start;
+	}
+
 	.cronograma-summary-grid {
 		grid-template-columns: 1fr;
 	}
