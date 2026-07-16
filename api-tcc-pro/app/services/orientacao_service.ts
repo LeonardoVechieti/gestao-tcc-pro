@@ -353,6 +353,7 @@ export default class OrientacaoService {
     currentTcc.status = 'em_andamento'
     await currentTcc.save()
     await this.ensureRequiredStages(currentTcc.uuidTcc)
+    await this.syncNextDelivery(currentTcc)
     await this.createSystemComment({
       tcc: currentTcc,
       tema,
@@ -394,6 +395,7 @@ export default class OrientacaoService {
         await stage.save()
       }
     }
+    await this.syncNextDelivery(currentTcc, stages)
 
     await this.createSystemComment({
       tcc: currentTcc,
@@ -534,6 +536,10 @@ export default class OrientacaoService {
 
     // Ativar próxima etapa (marcar como em_analise)
     const currentStageIndex = stages.findIndex((s) => s.uuidTimeline === uuidTimeline)
+    if (currentStageIndex !== -1) {
+      stages[currentStageIndex].status = 'concluida'
+    }
+
     if (currentStageIndex !== -1 && currentStageIndex < stages.length - 1) {
       const followingStage = stages[currentStageIndex + 1]
       followingStage.status = 'em_analise'
@@ -545,6 +551,7 @@ export default class OrientacaoService {
       tcc.status = 'aprovado'
       await tcc.save()
     }
+    await this.syncNextDelivery(tcc, stages)
 
     // Se for Banca e tiver nota, criar ou atualizar avaliação
     if (isBanca && nota !== undefined) {
@@ -613,6 +620,7 @@ export default class OrientacaoService {
 
     const tcc = await Tcc.findOrFail(uuidTcc)
     const tema = await TemaTcc.findOrFail(tcc.uuidTemaTcc)
+    await this.syncNextDelivery(tcc, stages)
 
     return this.buildTccOrientation(tcc, tema)
   }
@@ -716,6 +724,32 @@ export default class OrientacaoService {
     }
 
     return Professor.find(professorId)
+  }
+
+  private getTimelineDeliveryDate(stage?: TccTimeline | null): string | null {
+    if (!stage?.dataEntrega) {
+      return null
+    }
+
+    if (typeof stage.dataEntrega.toISODate === 'function') {
+      return stage.dataEntrega.toISODate()
+    }
+
+    return String(stage.dataEntrega)
+  }
+
+  private async syncNextDelivery(tcc: Tcc, stages?: TccTimeline[]) {
+    const timeline =
+      stages ??
+      (await TccTimeline.query().where('uuid_tcc', tcc.uuidTcc).orderBy('created_at', 'asc'))
+    const sortedTimeline = timeline.sort(
+      (current, next) => getStageOrder(current.titulo) - getStageOrder(next.titulo)
+    )
+    const nextStage = sortedTimeline.find(
+      (stage) => this.normalizeStageStatus(stage.status) !== 'concluida'
+    )
+    tcc.proximaEntrega = this.getTimelineDeliveryDate(nextStage)
+    await tcc.save()
   }
 
   private async ensureRequiredStages(uuidTcc: string) {
