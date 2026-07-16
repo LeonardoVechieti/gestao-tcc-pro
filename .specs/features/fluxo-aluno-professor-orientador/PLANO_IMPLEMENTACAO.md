@@ -903,6 +903,29 @@ Criterios de aceite:
 - Professor ve cronograma real dos orientandos.
 - Feriados podem continuar como contexto visual, mas nao devem substituir etapas reais.
 
+Status: implementado em 2026-07-16.
+
+Implementacao:
+
+- `/cronograma` foi adaptada para usar as timelines reais retornadas pelos endpoints
+  de acompanhamento existentes.
+- Aluno consulta suas orientacoes e exibe apenas itens que ja viraram `tcc`.
+- Professor consulta seus orientandos e exibe os cronogramas dos TCCs orientados.
+- A tela mostra resumo, progresso, etapa atual, prazo, status, dias restantes e
+  atrasos.
+- O calendario de feriados continua como contexto visual e tambem marca datas com
+  prazo do TCC.
+- Coordenacao/administracao ficam com estado vazio real enquanto nao existir endpoint
+  agregado de timeline para esses perfis.
+
+Validacao:
+
+- `npm run build` no frontend passou.
+- `npm run lint` no frontend passou com avisos antigos em telas de admin.
+- Leitura local confirmou que os usuarios de teste ainda possuem orientacao de tema,
+  mas nenhum TCC/timeline real; por isso `/cronograma` deve exibir estado vazio real
+  ate o tema ser aprovado e gerar `tcc_timeline`.
+
 ### ORIENT-007 - Implementar notificacoes reais do fluxo
 
 Prioridade: media

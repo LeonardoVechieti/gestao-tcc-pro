@@ -1,6 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from 'primereact/button'
+import { Dropdown } from 'primereact/dropdown'
+import { Message } from 'primereact/message'
+import { ProgressBar } from 'primereact/progressbar'
 import { ProgressSpinner } from 'primereact/progressspinner'
+import { Tag } from 'primereact/tag'
+import {
+  formatStageStatus,
+  getCronogramaTccs,
+  getStageSeverity,
+  type CronogramaResponse,
+  type CronogramaStage,
+  type CronogramaTcc,
+} from '../../shared/api/cronograma-api'
 import { getFeriadosByYear, type Feriado } from '../../shared/api/feriado-api'
 
 const WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -18,11 +30,18 @@ const MONTH_LABELS = [
   'Novembro',
   'Dezembro',
 ]
+const EMPTY_CRONOGRAMAS: CronogramaTcc[] = []
 
 type CalendarDay = {
   date: Date
   isCurrentMonth: boolean
   isWeekend: boolean
+}
+
+type SummaryItem = {
+  label: string
+  value: string
+  detail: string
 }
 
 function toDateKey(date: Date): string {
@@ -56,17 +75,146 @@ function buildMonthGrid(reference: Date): CalendarDay[] {
   return days
 }
 
+function parseDateOnly(value?: string): Date | null {
+  if (!value || value === 'A definir') {
+    return null
+  }
+
+  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return new Date(year, month - 1, day)
+}
+
+function getStageIcon(stage: CronogramaStage): string {
+  if (stage.status === 'concluida') {
+    return 'pi pi-check'
+  }
+
+  if (stage.isAtual) {
+    return 'pi pi-clock'
+  }
+
+  return 'pi pi-circle'
+}
+
+function getScopeDescription(scope?: CronogramaResponse['scope']): string {
+  if (scope === 'professor') {
+    return 'Prazos reais dos TCCs orientados por você.'
+  }
+
+  if (scope === 'aluno') {
+    return 'Prazos reais do seu TCC.'
+  }
+
+  return 'Prazos reais dos TCCs registrados no sistema.'
+}
+
+function getOpenStages(cronogramas: CronogramaTcc[]): CronogramaStage[] {
+  return cronogramas
+    .flatMap((cronograma) => cronograma.etapas)
+    .filter((stage) => stage.status !== 'concluida')
+}
+
+function getNearestStage(cronogramas: CronogramaTcc[]): CronogramaStage | undefined {
+  return getOpenStages(cronogramas)
+    .filter((stage) => stage.diasRestantes !== null)
+    .sort((current, next) => {
+      const currentDays = current.diasRestantes ?? Number.MAX_SAFE_INTEGER
+      const nextDays = next.diasRestantes ?? Number.MAX_SAFE_INTEGER
+      return currentDays - nextDays
+    })[0]
+}
+
+function buildSummary(cronogramas: CronogramaTcc[]): SummaryItem[] {
+  const stages = cronogramas.flatMap((cronograma) => cronograma.etapas)
+  const openStages = getOpenStages(cronogramas)
+  const overdueStages = openStages.filter((stage) => stage.deadlineState === 'atrasada')
+  const nearestStage = getNearestStage(cronogramas)
+
+  return [
+    {
+      label: 'TCCs',
+      value: String(cronogramas.length),
+      detail: cronogramas.length === 1 ? 'cronograma ativo' : 'cronogramas ativos',
+    },
+    {
+      label: 'Etapas',
+      value: `${stages.filter((stage) => stage.status === 'concluida').length}/${stages.length}`,
+      detail: 'concluídas',
+    },
+    {
+      label: 'Próximo prazo',
+      value: nearestStage?.prazoLabel ?? 'A definir',
+      detail: nearestStage?.titulo ?? 'sem etapa aberta com data',
+    },
+    {
+      label: 'Atrasos',
+      value: String(overdueStages.length),
+      detail: overdueStages.length === 1 ? 'etapa atrasada' : 'etapas atrasadas',
+    },
+  ]
+}
+
 export function CronogramaPage() {
   const [referenceDate, setReferenceDate] = useState(() => {
     const today = new Date()
     return new Date(today.getFullYear(), today.getMonth(), 1)
   })
+  const [cronograma, setCronograma] = useState<CronogramaResponse | null>(null)
+  const [selectedCronogramaId, setSelectedCronogramaId] = useState('todos')
   const [feriados, setFeriados] = useState<Feriado[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isScheduleLoading, setIsScheduleLoading] = useState(true)
+  const [isCalendarLoading, setIsCalendarLoading] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const didSetInitialMonth = useRef(false)
 
   useEffect(() => {
     let cancelled = false
-    setIsLoading(true)
+    setIsScheduleLoading(true)
+
+    getCronogramaTccs()
+      .then((data) => {
+        if (cancelled) {
+          return
+        }
+
+        setCronograma(data)
+        setHasError(false)
+
+        const firstDeadline = data.cronogramas
+          .flatMap((item) => item.etapas)
+          .map((stage) => parseDateOnly(stage.prazo))
+          .find((date): date is Date => Boolean(date))
+
+        if (firstDeadline && !didSetInitialMonth.current) {
+          setReferenceDate(new Date(firstDeadline.getFullYear(), firstDeadline.getMonth(), 1))
+          didSetInitialMonth.current = true
+        }
+      })
+      .catch((error) => {
+        console.error(error)
+        if (!cancelled) {
+          setCronograma({ scope: 'coordenacao', cronogramas: [] })
+          setHasError(true)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsScheduleLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    setIsCalendarLoading(true)
 
     getFeriadosByYear(referenceDate.getFullYear())
       .then((data) => {
@@ -81,7 +229,7 @@ export function CronogramaPage() {
       })
       .finally(() => {
         if (!cancelled) {
-          setIsLoading(false)
+          setIsCalendarLoading(false)
         }
       })
 
@@ -94,6 +242,44 @@ export function CronogramaPage() {
     return new Map(feriados.map((feriado) => [feriado.date, feriado.name]))
   }, [feriados])
 
+  const cronogramas = cronograma?.cronogramas ?? EMPTY_CRONOGRAMAS
+  const visibleCronogramas = useMemo(() => {
+    if (selectedCronogramaId === 'todos') {
+      return cronogramas
+    }
+
+    return cronogramas.filter((item) => item.id === selectedCronogramaId)
+  }, [cronogramas, selectedCronogramaId])
+  const summary = useMemo(() => buildSummary(visibleCronogramas), [visibleCronogramas])
+  const cronogramaOptions = useMemo(
+    () => [
+      { label: 'Todos os TCCs', value: 'todos' },
+      ...cronogramas.map((item) => ({
+        label: `${item.aluno} - ${item.titulo}`,
+        value: item.id,
+      })),
+    ],
+    [cronogramas],
+  )
+  const deadlinesByDate = useMemo(() => {
+    const map = new Map<string, CronogramaStage[]>()
+
+    cronogramas.forEach((item) => {
+      item.etapas.forEach((stage) => {
+        const date = parseDateOnly(stage.prazo)
+        if (!date) {
+          return
+        }
+
+        const dateKey = toDateKey(date)
+        const stages = map.get(dateKey) ?? []
+        stages.push(stage)
+        map.set(dateKey, stages)
+      })
+    })
+
+    return map
+  }, [cronogramas])
   const days = useMemo(() => buildMonthGrid(referenceDate), [referenceDate])
   const todayKey = toDateKey(new Date())
 
@@ -110,14 +296,104 @@ export function CronogramaPage() {
     setReferenceDate(new Date(today.getFullYear(), today.getMonth(), 1))
   }
 
+  if (isScheduleLoading || !cronograma) {
+    return (
+      <div className="page-loading">
+        <ProgressSpinner strokeWidth="4" />
+      </div>
+    )
+  }
+
   return (
     <div className="page-stack">
       <section className="page-header">
         <div>
           <h1>Cronograma</h1>
-          <p>Acompanhe feriados, finais de semana e datas importantes do TCC.</p>
+          <p>{getScopeDescription(cronograma.scope)}</p>
         </div>
       </section>
+
+      {hasError && (
+        <Message
+          severity="error"
+          text="Não foi possível carregar o cronograma real do backend."
+        />
+      )}
+
+      {cronogramas.length > 0 ? (
+        <>
+          <section className="cronograma-summary-grid">
+            {summary.map((item) => (
+              <article key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+                <small>{item.detail}</small>
+              </article>
+            ))}
+          </section>
+
+          {cronogramas.length > 1 && (
+            <section className="cronograma-toolbar">
+              <Dropdown
+                className="cronograma-selector"
+                onChange={(event) => setSelectedCronogramaId(event.value)}
+                options={cronogramaOptions}
+                value={selectedCronogramaId}
+              />
+            </section>
+          )}
+
+          <section className="cronograma-list">
+            {visibleCronogramas.map((item) => (
+              <article className="cronograma-card" key={item.id}>
+                <header className="cronograma-card__header">
+                  <div>
+                    <Tag severity="info" value={item.aluno} />
+                    <h2>{item.titulo}</h2>
+                    <p>
+                      Orientador: {item.orientador} • Etapa atual: {item.etapaAtual}
+                    </p>
+                  </div>
+                  <Tag value={`${item.progresso}%`} severity="info" />
+                </header>
+
+                <ProgressBar showValue={false} value={item.progresso} />
+
+                <div className="cronograma-stage-list">
+                  {item.etapas.map((stage) => (
+                    <div
+                      className={[
+                        'cronograma-stage-row',
+                        stage.isAtual && 'is-current',
+                        stage.deadlineState === 'atrasada' && 'is-overdue',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      key={stage.id}
+                    >
+                      <span className="cronograma-stage-row__icon">
+                        <i className={getStageIcon(stage)} aria-hidden="true" />
+                      </span>
+                      <div>
+                        <strong>{stage.titulo}</strong>
+                        <span>Prazo: {stage.prazoLabel}</span>
+                      </div>
+                      <Tag severity={getStageSeverity(stage)} value={formatStageStatus(stage.status)} />
+                      <span className="cronograma-stage-row__days">{stage.diasTexto}</span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </section>
+        </>
+      ) : (
+        <section className="orientation-empty">
+          <i className="pi pi-calendar" aria-hidden="true" />
+          <strong>Nenhum cronograma real encontrado.</strong>
+          <span>As etapas aparecem quando o tema aprovado gera um TCC com timeline.</span>
+        </section>
+      )}
 
       <section className="calendar-panel">
         <header className="calendar-panel__toolbar">
@@ -153,9 +429,13 @@ export function CronogramaPage() {
             <i className="calendar-legend-swatch calendar-legend-swatch--holiday" />
             Feriado
           </span>
+          <span className="calendar-legend-item">
+            <i className="calendar-legend-swatch calendar-legend-swatch--deadline" />
+            Prazo do TCC
+          </span>
         </div>
 
-        {isLoading ? (
+        {isCalendarLoading ? (
           <div className="page-loading">
             <ProgressSpinner strokeWidth="4" style={{ width: '2.5rem', height: '2.5rem' }} />
           </div>
@@ -171,6 +451,8 @@ export function CronogramaPage() {
               const dateKey = toDateKey(day.date)
               const feriadoNome = feriadoPorData.get(dateKey)
               const isHoliday = Boolean(feriadoNome)
+              const deadlines = deadlinesByDate.get(dateKey) ?? []
+              const hasDeadline = deadlines.length > 0
 
               return (
                 <div
@@ -179,15 +461,23 @@ export function CronogramaPage() {
                     !day.isCurrentMonth && 'calendar-day--muted',
                     day.isWeekend && 'calendar-day--weekend',
                     isHoliday && 'calendar-day--holiday',
+                    hasDeadline && 'calendar-day--deadline',
                     dateKey === todayKey && 'calendar-day--today',
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  key={dateKey}
-                  title={feriadoNome}
+                  key={`${dateKey}-${day.isCurrentMonth ? 'current' : 'adjacent'}`}
+                  title={[feriadoNome, ...deadlines.map((stage) => stage.titulo)]
+                    .filter(Boolean)
+                    .join(' • ')}
                 >
                   <span className="calendar-day__number">{day.date.getDate()}</span>
                   {isHoliday && <span className="calendar-day__label">{feriadoNome}</span>}
+                  {hasDeadline && (
+                    <span className="calendar-day__label calendar-day__label--deadline">
+                      {deadlines.length === 1 ? deadlines[0].titulo : `${deadlines.length} prazos`}
+                    </span>
+                  )}
                 </div>
               )
             })}
