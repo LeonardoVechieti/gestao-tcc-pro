@@ -1,4 +1,4 @@
-export type TccStatus = 'todos' | 'em_andamento' | 'banca' | 'concluido'
+export type TccStatus = string
 
 export type TccFiltersState = {
   search: string

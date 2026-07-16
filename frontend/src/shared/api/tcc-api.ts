@@ -1,18 +1,16 @@
 import tccsMock from '../../assets/mocks/tccs.mock.json'
 import { hasRole } from '../auth/roles'
 import { isBackendActive } from '../config/env'
-import { useAuthStore } from '../stores/auth-store'
+import { useAuthStore, type AuthUser } from '../stores/auth-store'
 import { apiClient } from './api-client'
 import { getTemaTccList } from './tema-tcc-api'
-
-export type TccStatus = 'em_andamento' | 'banca' | 'concluido'
 
 export type TccRow = {
   id: string
   aluno: string
   titulo: string
   orientador: string
-  status: TccStatus
+  status: string
 }
 
 type TccRaw = {
@@ -23,20 +21,40 @@ type TccRaw = {
   status: string
 }
 
-type AlunoRaw = { uuidAluno: string; nome: string }
+type AlunoRaw = { uuidAluno: string; nome: string; email?: string }
 type ProfessorRaw = { uuidProfessor: string; nome: string; email?: string }
 
-function normalizeStatus(status: string): TccStatus {
-  const key = status?.toLowerCase().trim().replace(/\s+/g, '_')
-  if (key === 'banca' || key === 'concluido') {
-    return key
-  }
-  return 'em_andamento'
+type TccListQuery = {
+  uuidAluno?: string
+  uuidOrientador?: string
+}
+
+type TccListScope = {
+  canList: boolean
+  params?: TccListQuery
+}
+
+function normalizeProfileName(profileName?: string): string {
+  return (
+    profileName
+      ?.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim() ?? ''
+  )
+}
+
+function normalizeStatus(status?: string): string {
+  return status?.trim() || 'sem_status'
 }
 
 // O backend so devolve uuids (uuidAluno, uuidOrientador, uuidTemaTcc); a
 // tabela precisa de nomes, entao buscamos as 3 listas e cruzamos aqui.
 async function joinTccRows(tccs: TccRaw[]): Promise<TccRow[]> {
+  if (tccs.length === 0) {
+    return []
+  }
+
   const [{ data: alunos }, { data: professores }, temas] = await Promise.all([
     apiClient.get<AlunoRaw[]>('/tcc-pro/aluno'),
     apiClient.get<ProfessorRaw[]>('/tcc-pro/professor'),
@@ -58,6 +76,17 @@ async function joinTccRows(tccs: TccRaw[]): Promise<TccRow[]> {
   }))
 }
 
+async function findAlunoIdByEmail(email?: string): Promise<string | undefined> {
+  if (!email) {
+    return undefined
+  }
+
+  const { data } = await apiClient.get<AlunoRaw[]>('/tcc-pro/aluno', {
+    params: { filterEmail: email },
+  })
+  return data.find((aluno) => aluno.email === email)?.uuidAluno ?? data[0]?.uuidAluno
+}
+
 async function findProfessorIdByEmail(email?: string): Promise<string | undefined> {
   if (!email) {
     return undefined
@@ -69,6 +98,42 @@ async function findProfessorIdByEmail(email?: string): Promise<string | undefine
   return data[0]?.uuidProfessor
 }
 
+async function getTccListScope(user: AuthUser | null): Promise<TccListScope> {
+  const profileName = normalizeProfileName(user?.perfilNome ?? user?.role)
+
+  if (profileName === 'administrador' || profileName === 'coordenador') {
+    return { canList: true }
+  }
+
+  if (profileName === 'aluno') {
+    const uuidAluno =
+      user?.uuidAluno ?? user?.aluno?.uuidAluno ?? (await findAlunoIdByEmail(user?.email))
+    return uuidAluno ? { canList: true, params: { uuidAluno } } : { canList: false }
+  }
+
+  if (profileName === 'professor') {
+    const uuidOrientador = await findProfessorIdByEmail(user?.email)
+    return uuidOrientador ? { canList: true, params: { uuidOrientador } } : { canList: false }
+  }
+
+  if (hasRole(user, 'ROLE_MENU_ADM') || hasRole(user, 'ROLE_DASH_COORDENADOR')) {
+    return { canList: true }
+  }
+
+  if (hasRole(user, 'ROLE_DASH_PROFESSOR')) {
+    const uuidOrientador = await findProfessorIdByEmail(user?.email)
+    return uuidOrientador ? { canList: true, params: { uuidOrientador } } : { canList: false }
+  }
+
+  if (hasRole(user, 'ROLE_DASH_ALUNO')) {
+    const uuidAluno =
+      user?.uuidAluno ?? user?.aluno?.uuidAluno ?? (await findAlunoIdByEmail(user?.email))
+    return uuidAluno ? { canList: true, params: { uuidAluno } } : { canList: false }
+  }
+
+  return { canList: true }
+}
+
 export async function getTccList(): Promise<TccRow[]> {
   const mock = tccsMock as TccRow[]
 
@@ -78,27 +143,19 @@ export async function getTccList(): Promise<TccRow[]> {
 
   try {
     const user = useAuthStore.getState().user
-    const shouldFilterByProfessor =
-      user?.perfilNome === 'Professor' || hasRole(user, 'ROLE_DASH_PROFESSOR')
-    const uuidOrientador = shouldFilterByProfessor
-      ? await findProfessorIdByEmail(user?.email)
-      : undefined
+    const scope = await getTccListScope(user)
 
-    if (shouldFilterByProfessor && !uuidOrientador) {
+    if (!scope.canList) {
       return []
     }
 
     const { data: tccs } = await apiClient.get<TccRaw[]>('/tcc-pro/tcc', {
-      params: uuidOrientador ? { uuidOrientador } : undefined,
+      params: scope.params,
     })
 
-    if (!tccs || tccs.length === 0) {
-      return shouldFilterByProfessor ? [] : mock
-    }
-
-    return await joinTccRows(tccs)
+    return await joinTccRows(tccs ?? [])
   } catch (error) {
-    console.error('Falha ao buscar lista de TCCs, usando dados fictícios', error)
-    return mock
+    console.error('Falha ao buscar lista de TCCs no backend', error)
+    throw error
   }
 }

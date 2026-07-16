@@ -853,6 +853,27 @@ Criterios de aceite:
 - Nao mostra acoes inexistentes.
 - Status e filtros usam valores reais do backend.
 
+Status: implementado em 2026-07-16.
+
+Implementacao:
+
+- `/tccs` foi confirmado como tela compartilhada entre aluno, professor e
+  coordenacao/administracao.
+- Com backend ativo, a API do frontend nao usa mais `tccs.mock.json`.
+- Aluno consulta `GET /tcc-pro/tcc?uuidAluno=...`.
+- Professor consulta `GET /tcc-pro/tcc?uuidOrientador=...`.
+- Coordenador e administrador consultam `GET /tcc-pro/tcc` sem filtro.
+- O botao "Cadastrar" foi removido da listagem, pois TCC nasce pela aprovacao do
+  tema no fluxo real de orientacao.
+- O filtro de status agora e montado a partir dos status retornados pelo backend.
+
+Validacao:
+
+- `npm run build` no frontend passou.
+- `npm run lint` no frontend passou com avisos antigos em telas de admin.
+- Leitura local confirmou que aluno/professor/coordenador nao recebem dados
+  ficticios quando a tabela `tcc` esta vazia.
+
 ### ORIENT-006 - Criar tela real de timeline/cronograma do TCC
 
 Prioridade: media
@@ -1179,4 +1200,3 @@ Motivo:
 - O aluno ainda nao tem uma experiencia real para acompanhar o que acontece depois do envio.
 - Sem essa etapa, o fluxo aluno-professor fica unilateral: o aluno envia e o professor
   gerencia, mas o aluno nao acompanha corretamente.
-
