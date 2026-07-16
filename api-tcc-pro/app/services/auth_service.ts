@@ -7,6 +7,7 @@ export type JwtPayload = {
   sub: string
   email: string
   nome?: string
+  uuidAluno?: string
   role?: string
   roles?: string[]
   perfil?: {
@@ -29,6 +30,7 @@ export function generateToken(usuario: Usuario) {
       sub: usuario.uuidUsuario,
       email: usuario.email,
       nome: usuario.nome,
+      uuidAluno: usuario.uuidAluno ?? usuario.aluno?.uuidAluno,
       role: usuario.perfil?.nomePerfil,
       roles: extractRoleCodes(usuario),
       perfil: {

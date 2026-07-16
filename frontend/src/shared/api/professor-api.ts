@@ -41,6 +41,16 @@ export async function getProfessorRecommendations(params: {
   return data
 }
 
+export type ProfessorResearchOptions = {
+  areas: string[]
+  lines: string[]
+}
+
+export async function getProfessorResearchOptions(): Promise<ProfessorResearchOptions> {
+  const { data } = await apiClient.get<ProfessorResearchOptions>('/tcc-pro/professor/research-options')
+  return data
+}
+
 export async function getProfessorById(uuidProfessor: string): Promise<ProfessorRecommendation> {
   const { data } = await apiClient.get<ProfessorRecommendation>(`/tcc-pro/professor/${uuidProfessor}`)
   return data

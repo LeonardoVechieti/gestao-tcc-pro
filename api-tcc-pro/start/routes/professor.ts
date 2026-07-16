@@ -5,6 +5,7 @@ router
   .group(() => {
     router.post('/professor', [ProfessorController, 'store'])
     router.get('/professor', [ProfessorController, 'index'])
+    router.get('/professor/research-options', [ProfessorController, 'researchOptions'])
     router.get('/professor/:id', [ProfessorController, 'show'])
     router.put('/professor', [ProfessorController, 'update'])
     router.delete('/professor/:id', [ProfessorController, 'delete'])

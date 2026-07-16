@@ -35,7 +35,7 @@ export function DocumentosPage() {
   const [submissions, setSubmissions] = useState<UploadedDocument[]>([])
   const [isSending, setIsSending] = useState(false)
   const [submissionStatus, setSubmissionStatus] = useState<'nenhum' | 'enviado'>('nenhum')
-  const [existingSubmission, setExistingSubmission] = useState<DocumentSubmission | null>(null)
+  const [, setExistingSubmission] = useState<DocumentSubmission | null>(null)
   const [studentTcc, setStudentTcc] = useState<TccRow | null>(null)
   const [isLoadingTcc, setIsLoadingTcc] = useState(true)
 
