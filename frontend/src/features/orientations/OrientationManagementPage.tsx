@@ -120,6 +120,11 @@ function formatDateBr(date: string): string {
     return date
   }
 
+  const parsed = new Date(date)
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('pt-BR')
+  }
+
   const [year, month, day] = date.split('-')
   return year && month && day ? `${day}/${month}/${year}` : date
 }
@@ -130,7 +135,15 @@ function getSummary(orientations: OrientationItem[]) {
     temas: orientations.filter((item) => item.status === 'tema_pendente').length,
     ajustes: orientations.filter((item) => item.status === 'ajustes_solicitados').length,
     acompanhamento: orientations.filter((item) => item.status === 'em_acompanhamento').length,
+    total: orientations.length,
   }
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  const first = parts[0]?.[0] ?? 'O'
+  const second = parts.length > 1 ? parts[parts.length - 1]?.[0] : ''
+  return `${first}${second}`.toUpperCase()
 }
 
 function canApproveTheme(orientation: OrientationItem): boolean {
@@ -177,17 +190,38 @@ function OrientationCard({
   orientation: OrientationItem
   onSelect: () => void
 }) {
+  const currentStage =
+    orientation.etapaAtual ||
+    orientation.etapas.find((stage) => stage.status !== 'concluida')?.titulo ||
+    'Aguardando análise'
+
   return (
     <button
       className={isSelected ? 'orientation-card is-selected' : 'orientation-card'}
       onClick={onSelect}
       type="button"
     >
-      <span>
-        <strong>{orientation.aluno}</strong>
+      <span className="orientation-card__avatar">{getInitials(orientation.aluno)}</span>
+      <span className="orientation-card__content">
+        <span className="orientation-card__header">
+          <strong>{orientation.aluno}</strong>
+          <Tag severity={statusSeverity[orientation.status]} value={statusLabel[orientation.status]} />
+        </span>
         <small>{orientation.titulo}</small>
+        <span className="orientation-card__meta">
+          <span>
+            <i className="pi pi-flag" aria-hidden="true" />
+            {currentStage}
+          </span>
+          <span>
+            <i className="pi pi-clock" aria-hidden="true" />
+            {formatDateBr(orientation.atualizadoEm)}
+          </span>
+        </span>
+        <span className="orientation-card__progress" aria-hidden="true">
+          <span style={{ width: `${orientation.progresso}%` }} />
+        </span>
       </span>
-      <Tag severity={statusSeverity[orientation.status]} value={statusLabel[orientation.status]} />
     </button>
   )
 }
@@ -272,6 +306,13 @@ export function OrientationManagementPage() {
   }, [])
 
   const summary = useMemo(() => getSummary(orientations ?? []), [orientations])
+  const summaryCards = [
+    { label: 'Total', value: summary.total, icon: 'pi pi-list', tone: 'blue' },
+    { label: 'Solicitações', value: summary.solicitacoes, icon: 'pi pi-inbox', tone: 'orange' },
+    { label: 'Temas pendentes', value: summary.temas, icon: 'pi pi-file-edit', tone: 'purple' },
+    { label: 'Ajustes', value: summary.ajustes, icon: 'pi pi-refresh', tone: 'danger' },
+    { label: 'Em acompanhamento', value: summary.acompanhamento, icon: 'pi pi-check-circle', tone: 'green' },
+  ]
   const filteredOrientations = useMemo(() => {
     return (orientations ?? []).filter((orientation) => filter === 'todos' || orientation.status === filter)
   }, [filter, orientations])
@@ -412,7 +453,7 @@ export function OrientationManagementPage() {
         <div>
           <Tag icon="pi pi-users" severity="info" value="Orientação" />
           <h1>Gestão da orientação</h1>
-          <p>Acompanhe solicitações, propostas, ajustes, comentários e etapas registradas no sistema.</p>
+          <p>Acompanhe solicitações, propostas, ajustes, comentários e etapas reais registradas no sistema.</p>
         </div>
       </section>
 
@@ -424,28 +465,24 @@ export function OrientationManagementPage() {
       )}
 
       <section className="orientation-summary-grid">
-        <article>
-          <span>Solicitações</span>
-          <strong>{summary.solicitacoes}</strong>
-        </article>
-        <article>
-          <span>Temas pendentes</span>
-          <strong>{summary.temas}</strong>
-        </article>
-        <article>
-          <span>Ajustes</span>
-          <strong>{summary.ajustes}</strong>
-        </article>
-        <article>
-          <span>Em acompanhamento</span>
-          <strong>{summary.acompanhamento}</strong>
-        </article>
+        {summaryCards.map((card) => (
+          <article className={`orientation-summary-card orientation-summary-card--${card.tone}`} key={card.label}>
+            <span className="orientation-summary-card__icon">
+              <i className={card.icon} aria-hidden="true" />
+            </span>
+            <span>{card.label}</span>
+            <strong>{card.value}</strong>
+          </article>
+        ))}
       </section>
 
       <section className="orientation-workspace">
         <aside className="orientation-list">
           <div className="section-title">
-            <h2>Orientandos</h2>
+            <div>
+              <h2>Orientandos</h2>
+              <span>{filteredOrientations.length} registro(s) no filtro atual</span>
+            </div>
             <Dropdown
               onChange={(event) => setFilter(event.value as OrientationFilter)}
               options={statusOptions}
@@ -476,66 +513,92 @@ export function OrientationManagementPage() {
           <main className="orientation-detail">
             <section className="orientation-hero">
               <div>
-                <Tag severity={statusSeverity[selected.status]} value={statusLabel[selected.status]} />
+                <div className="orientation-hero__badges">
+                  <Tag severity={statusSeverity[selected.status]} value={statusLabel[selected.status]} />
+                  <Tag
+                    severity={selected.sourceType === 'tcc' ? 'info' : 'secondary'}
+                    value={selected.sourceType === 'tcc' ? 'TCC em andamento' : 'Proposta de tema'}
+                  />
+                </div>
                 <h2>{selected.titulo}</h2>
                 <p>{selected.resumo}</p>
               </div>
-              <div className="orientation-meta">
-                <span>{selected.aluno}</span>
-                <strong>{selected.area}</strong>
-                <small>{selected.linhaPesquisa}</small>
+              <div className="orientation-meta-grid">
+                <div>
+                  <span>Aluno</span>
+                  <strong>{selected.aluno}</strong>
+                </div>
+                <div>
+                  <span>Área</span>
+                  <strong>{selected.area}</strong>
+                </div>
+                <div>
+                  <span>Linha de pesquisa</span>
+                  <strong>{selected.linhaPesquisa}</strong>
+                </div>
+                <div>
+                  <span>Atualizado em</span>
+                  <strong>{formatDateBr(selected.atualizadoEm)}</strong>
+                </div>
               </div>
             </section>
 
-            <section className="orientation-actions">
-              {selected.status === 'solicitacao_pendente' && (
+            <section className="orientation-actions-panel">
+              <div className="section-title">
+                <div>
+                  <h2>Ações do professor</h2>
+                  <span>Ações disponíveis conforme status da orientação selecionada.</span>
+                </div>
+              </div>
+              <div className="orientation-actions">
+                {selected.status === 'solicitacao_pendente' && (
+                  <Button
+                    disabled={isSaving}
+                    icon="pi pi-check"
+                    label="Aprovar orientação"
+                    loading={isSaving}
+                    onClick={() => runAction(approveOrientation)}
+                    severity="success"
+                  />
+                )}
+                {canApproveTheme(selected) && (
+                  <Button
+                    disabled={isSaving}
+                    icon="pi pi-verified"
+                    label="Aprovar tema"
+                    loading={isSaving}
+                    onClick={() => selected && openDeadlinesModal(selected.id)}
+                    severity="success"
+                  />
+                )}
+                {canRequestThemeAdjustments(selected) && (
+                  <Button
+                    disabled={isSaving}
+                    icon="pi pi-file-edit"
+                    label="Solicitar ajustes"
+                    onClick={() => setModalAction('ajustes_tema')}
+                    outlined
+                    severity="warning"
+                  />
+                )}
                 <Button
                   disabled={isSaving}
-                  icon="pi pi-check"
-                  label="Aprovar orientação"
-                  loading={isSaving}
-                  onClick={() => runAction(approveOrientation)}
-                  severity="success"
-                />
-              )}
-              {canRejectOrientation(selected) && (
-                <Button
-                  disabled={isSaving}
-                  icon="pi pi-times"
-                  label="Recusar"
-                  onClick={() => setModalAction('recusa')}
+                  icon="pi pi-comment"
+                  label="Registrar comentário"
+                  onClick={() => setModalAction('comentario')}
                   outlined
-                  severity="danger"
                 />
-              )}
-              {canApproveTheme(selected) && (
-                <Button
-                  disabled={isSaving}
-                  icon="pi pi-verified"
-                  label="Aprovar tema"
-                  loading={isSaving}
-                  onClick={() => selected && openDeadlinesModal(selected.id)}
-                  outlined
-                  severity="success"
-                />
-              )}
-              {canRequestThemeAdjustments(selected) && (
-                <Button
-                  disabled={isSaving}
-                  icon="pi pi-file-edit"
-                  label="Solicitar ajustes"
-                  onClick={() => setModalAction('ajustes_tema')}
-                  outlined
-                  severity="warning"
-                />
-              )}
-              <Button
-                disabled={isSaving}
-                icon="pi pi-comment"
-                label="Registrar comentário"
-                onClick={() => setModalAction('comentario')}
-                outlined
-              />
+                {canRejectOrientation(selected) && (
+                  <Button
+                    disabled={isSaving}
+                    icon="pi pi-times"
+                    label="Recusar"
+                    onClick={() => setModalAction('recusa')}
+                    outlined
+                    severity="danger"
+                  />
+                )}
+              </div>
             </section>
 
             {canManageActiveOrientation(selected) && (
@@ -557,7 +620,10 @@ export function OrientationManagementPage() {
                   <h2>Etapas obrigatórias</h2>
                   <span>Etapa atual: {selectedCurrentStage}</span>
                 </div>
-                <Tag severity="info" value={`${selected.progresso}%`} />
+                <div className="orientation-progress-value">
+                  <strong>{selected.progresso}%</strong>
+                  <span>concluído</span>
+                </div>
               </div>
               {selectedStages.length > 0 ? (
                 <>
@@ -593,20 +659,30 @@ export function OrientationManagementPage() {
 
             <section className="orientation-comments-panel">
               <div className="section-title">
-                <h2>Acompanhamento</h2>
+                <div>
+                  <h2>Acompanhamento</h2>
+                  <span>{selected.comentarios.length} registro(s) no histórico</span>
+                </div>
                 <Button icon="pi pi-plus" label="Novo comentário" onClick={() => setModalAction('comentario')} text />
               </div>
               <div className="orientation-comments-list">
-                {selected.comentarios.map((comment) => (
-                  <article key={comment.id}>
-                    <div>
-                      <strong>{comment.autor}</strong>
-                      <Tag severity={comment.tipo === 'Professor' ? 'info' : 'secondary'} value={comment.tipo} />
-                    </div>
-                    <p>{comment.mensagem}</p>
-                    <small>{formatDateBr(comment.data)}</small>
-                  </article>
-                ))}
+                {selected.comentarios.length > 0 ? (
+                  selected.comentarios.map((comment) => (
+                    <article key={comment.id}>
+                      <div>
+                        <strong>{comment.autor}</strong>
+                        <Tag severity={comment.tipo === 'Professor' ? 'info' : 'secondary'} value={comment.tipo} />
+                        <small>{formatDateBr(comment.data)}</small>
+                      </div>
+                      <p>{comment.mensagem}</p>
+                    </article>
+                  ))
+                ) : (
+                  <div className="orientation-list-empty">
+                    <i className="pi pi-comments" aria-hidden="true" />
+                    <span>Nenhum comentário registrado para esta orientação.</span>
+                  </div>
+                )}
               </div>
             </section>
           </main>
@@ -641,7 +717,7 @@ export function OrientationManagementPage() {
             rows={6}
             value={modalText}
           />
-          <div>
+          <div className="orientation-dialog-actions">
             <Button disabled={isSaving} label="Cancelar" onClick={() => setModalAction(null)} outlined />
             <Button
               disabled={!modalText.trim() || isSaving}
@@ -660,7 +736,7 @@ export function OrientationManagementPage() {
         style={{ width: 'min(24rem, calc(100vw - 2rem))' }}
         visible={completingStage.stageId !== null}
         footer={
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <div className="orientation-dialog-actions">
             <Button
               label="Cancelar"
               onClick={() => setCompletingStage({ stageId: null, nota: undefined })}
@@ -699,7 +775,7 @@ export function OrientationManagementPage() {
         style={{ width: 'min(32rem, calc(100vw - 2rem))' }}
         visible={approvingWithDeadlines !== null}
         footer={
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <div className="orientation-dialog-actions">
             <Button
               label="Cancelar"
               onClick={() => setApprovingWithDeadlines(null)}
@@ -718,7 +794,7 @@ export function OrientationManagementPage() {
         {!deadlines['Tema aprovado'] && (
           <Message severity="warn" text="O prazo da próxima etapa (Tema aprovado) é obrigatório" />
         )}
-        <div style={{ display: 'grid', gap: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
+        <div className="orientation-deadline-grid">
           {['Tema aprovado', 'Projeto de TCC', 'Entrega parcial', 'Versão final', 'Banca'].map(
             (etapa) => (
               <div key={etapa} className="form-group">

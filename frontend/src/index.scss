@@ -1553,23 +1553,79 @@ select.p-inputtext:focus,
 .orientation-summary-grid {
   display: grid;
   gap: var(--space-4);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.orientation-summary-grid article {
+.orientation-summary-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   box-shadow: var(--color-shadow);
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
   min-height: 7rem;
+  overflow: hidden;
   padding: var(--space-5);
+  position: relative;
+}
+
+.orientation-summary-card::before {
+  background: var(--color-brand);
+  content: '';
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 4px;
+}
+
+.orientation-summary-card--green::before {
+  background: var(--color-green);
+}
+
+.orientation-summary-card--orange::before {
+  background: var(--color-orange);
+}
+
+.orientation-summary-card--purple::before {
+  background: var(--color-purple);
+}
+
+.orientation-summary-card--danger::before {
+  background: var(--color-danger);
+}
+
+.orientation-summary-card__icon {
+  align-items: center;
+  background: var(--tint-blue-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-brand);
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.orientation-summary-card--green .orientation-summary-card__icon {
+  background: var(--tint-green-bg);
+  color: var(--color-green);
+}
+
+.orientation-summary-card--orange .orientation-summary-card__icon {
+  background: var(--tint-orange-bg);
+  color: var(--color-orange);
+}
+
+.orientation-summary-card--purple .orientation-summary-card__icon {
+  background: var(--tint-purple-bg);
+  color: var(--color-purple);
+}
+
+.orientation-summary-card--danger .orientation-summary-card__icon {
+  background: var(--tint-danger-bg);
+  color: var(--color-danger);
 }
 
 .orientation-summary-grid span,
-.orientation-meta span,
-.orientation-meta small,
+.orientation-meta-grid span,
 .orientation-progress-panel .section-title span,
 .orientation-stage-row span,
 .orientation-comments-list small {
@@ -1577,9 +1633,9 @@ select.p-inputtext:focus,
   font-size: var(--font-size-sm);
 }
 
-.orientation-summary-grid strong {
+.orientation-summary-card strong {
   color: var(--color-text-strong);
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-3xl);
   line-height: 1;
 }
 
@@ -1587,12 +1643,17 @@ select.p-inputtext:focus,
   align-items: start;
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+  grid-template-columns: minmax(20rem, 25rem) minmax(0, 1fr);
 }
 
 .orientation-list {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--color-shadow);
   display: grid;
   gap: var(--space-4);
+  padding: var(--space-4);
   position: sticky;
   top: 7rem;
 }
@@ -1611,23 +1672,106 @@ select.p-inputtext:focus,
 }
 
 .orientation-card {
-  align-items: flex-start;
-  background: var(--color-surface);
+  align-items: start;
+  background: var(--color-surface-soft);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: inherit;
   cursor: pointer;
   display: grid;
   gap: var(--space-3);
+  grid-template-columns: auto minmax(0, 1fr);
   padding: var(--space-4);
   text-align: left;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   width: 100%;
 }
 
 .orientation-card:hover,
+.orientation-card:focus-visible,
 .orientation-card.is-selected {
+  background: var(--color-surface);
   border-color: var(--color-brand);
   box-shadow: 0 12px 32px rgba(0, 107, 255, 0.12);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.orientation-card__avatar {
+  align-items: center;
+  background: var(--tint-blue-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-brand);
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.orientation-card.is-selected .orientation-card__avatar {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+
+.orientation-card__content,
+.orientation-card__header,
+.orientation-card__meta {
+  min-width: 0;
+}
+
+.orientation-card__content {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.orientation-card__header {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
+}
+
+.orientation-card__header .p-tag {
+  flex-shrink: 0;
+}
+
+.orientation-card__meta {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.orientation-card__meta span {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.orientation-card__meta i {
+  color: var(--color-brand);
+}
+
+.orientation-card__progress {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 4px;
+  overflow: hidden;
+}
+
+.orientation-card__progress span {
+  background: var(--color-brand);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
 }
 
 .orientation-list-empty {
@@ -1645,7 +1789,6 @@ select.p-inputtext:focus,
   color: var(--color-brand);
 }
 
-.orientation-card span,
 .orientation-stage-row div:nth-child(2),
 .orientation-comments-list article div:first-child {
   display: grid;
@@ -1655,6 +1798,7 @@ select.p-inputtext:focus,
 
 .orientation-card strong,
 .orientation-hero h2,
+.orientation-meta-grid strong,
 .orientation-stage-row strong,
 .orientation-comments-list strong,
 .orientation-empty strong {
@@ -1679,9 +1823,15 @@ select.p-inputtext:focus,
 
 .orientation-hero {
   align-items: flex-start;
-  display: flex;
+  display: grid;
   gap: var(--space-4);
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+}
+
+.orientation-hero__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .orientation-hero h2 {
@@ -1690,18 +1840,24 @@ select.p-inputtext:focus,
   margin: var(--space-3) 0 var(--space-2);
 }
 
-.orientation-meta {
+.orientation-meta-grid {
   background: var(--color-surface-soft);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   display: grid;
-  flex: 0 0 16rem;
-  gap: var(--space-1);
+  gap: var(--space-3);
+  grid-template-columns: 1fr;
   padding: var(--space-4);
 }
 
-.orientation-meta strong {
-  color: var(--color-text-strong);
+.orientation-meta-grid > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.orientation-actions-panel {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .orientation-actions {
@@ -1724,6 +1880,23 @@ select.p-inputtext:focus,
 .orientation-progress-panel {
   display: grid;
   gap: var(--space-4);
+}
+
+.orientation-progress-value {
+  align-items: end;
+  display: grid;
+  justify-items: end;
+}
+
+.orientation-progress-value strong {
+  color: var(--color-text-strong);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+}
+
+.orientation-progress-value span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
 }
 
 .orientation-stage-row {
@@ -1749,10 +1922,13 @@ select.p-inputtext:focus,
 }
 
 .orientation-comments-list article {
+  background: var(--color-surface-soft);
+  border: 1px solid var(--color-border);
   border-left: 3px solid var(--color-brand);
+  border-radius: var(--radius-sm);
   display: grid;
   gap: var(--space-2);
-  padding: var(--space-2) 0 var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
 }
 
 .orientation-comments-list article div:first-child {
@@ -1779,10 +1955,16 @@ select.p-inputtext:focus,
   width: 100%;
 }
 
-.orientation-dialog > div {
+.orientation-dialog-actions {
   display: flex;
   gap: var(--space-3);
   justify-content: flex-end;
+}
+
+.orientation-deadline-grid {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 
 @include bp.mq-down(md) {
@@ -1829,13 +2011,13 @@ select.p-inputtext:focus,
 	.profile-metrics,
 	.profile-content-grid,
 	.profile-form-grid,
-		.profile-research-summary,
-		.professor-dashboard-grid,
-		.student-topic-grid,
-		.orientation-workspace,
-		.admin-home-panel,
-		.admin-form-grid,
-		.admin-detail-grid {
+	.profile-research-summary,
+	.professor-dashboard-grid,
+	.student-topic-grid,
+	.orientation-workspace,
+	.admin-home-panel,
+	.admin-form-grid,
+	.admin-detail-grid {
 		grid-template-columns: 1fr;
 	}
 
@@ -1869,12 +2051,11 @@ select.p-inputtext:focus,
 	}
 
 	.orientation-hero {
-		flex-direction: column;
+		grid-template-columns: 1fr;
 	}
 
-	.orientation-meta {
-		flex-basis: auto;
-		width: 100%;
+	.orientation-meta-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
 	.orientation-stage-row {
@@ -2766,8 +2947,25 @@ select.p-inputtext:focus,
 
 	.admin-home-panel,
 	.admin-form-grid,
-	.admin-detail-grid {
+	.admin-detail-grid,
+	.orientation-summary-grid,
+	.orientation-meta-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.orientation-card__header,
+	.orientation-actions,
+	.orientation-secondary-actions,
+	.orientation-dialog-actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.orientation-actions .p-button,
+	.orientation-secondary-actions .p-button,
+	.orientation-dialog-actions .p-button {
+		justify-content: center;
+		width: 100%;
 	}
 
 	.cronograma-card__header,
