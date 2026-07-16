@@ -6,6 +6,10 @@ import OrientacaoService from '#services/orientacao_service'
 export default class OrientacaoController {
   constructor(private orientacaoService: OrientacaoService) {}
 
+  async index() {
+    return this.orientacaoService.listAll()
+  }
+
   async byProfessor({ params }: HttpContext) {
     return this.orientacaoService.listByProfessor(params.uuidProfessor)
   }

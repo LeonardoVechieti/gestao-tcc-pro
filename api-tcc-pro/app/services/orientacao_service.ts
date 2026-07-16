@@ -202,6 +202,48 @@ function getStageOrder(title: string): number {
 }
 
 export default class OrientacaoService {
+  async listAll() {
+    const [alunos, professores, temas, tccs] = await Promise.all([
+      Aluno.all(),
+      Professor.all(),
+      TemaTcc.all(),
+      Tcc.all(),
+    ])
+
+    const alunoPorId = new Map(alunos.map((aluno) => [aluno.uuidAluno, aluno.nome]))
+    const professorPorId = new Map(
+      professores.map((professor) => [professor.uuidProfessor, professor])
+    )
+    const temaPorId = new Map(temas.map((tema) => [tema.uuidTemaTcc, tema]))
+    const tccTemaIds = new Set(tccs.map((tcc) => tcc.uuidTemaTcc))
+
+    const propostas = temas
+      .filter((tema) => !tccTemaIds.has(tema.uuidTemaTcc))
+      .map(async (tema) =>
+        this.buildTemaOrientation(
+          tema,
+          alunoPorId.get(tema.uuidAluno),
+          tema.uuidProfessor ? professorPorId.get(tema.uuidProfessor) : undefined
+        )
+      )
+
+    const orientacoes = tccs.map(async (tcc) => {
+      const tema = temaPorId.get(tcc.uuidTemaTcc)
+      const professorId = tcc.uuidOrientador ?? tema?.uuidProfessor
+
+      return this.buildTccOrientation(
+        tcc,
+        tema,
+        alunoPorId.get(tcc.uuidAluno),
+        professorId ? professorPorId.get(professorId) : undefined
+      )
+    })
+
+    return {
+      orientacoes: await Promise.all([...propostas, ...orientacoes]),
+    }
+  }
+
   async listByProfessor(uuidProfessor: string) {
     const [professor, alunos, temas, tccs] = await Promise.all([
       Professor.findOrFail(uuidProfessor),

@@ -3,6 +3,7 @@ import { hasRole } from '../auth/roles'
 import { useAuthStore, type AuthUser } from '../stores/auth-store'
 import { apiClient } from './api-client'
 import {
+  getAllOrientations,
   getAlunoOrientations,
   getProfessorOrientations,
   type OrientationItem,
@@ -59,11 +60,23 @@ function normalizeProfileName(profileName?: string): string {
 function getScope(user: AuthUser | null): CronogramaScope {
   const profileName = normalizeProfileName(user?.perfilNome ?? user?.role)
 
-  if (profileName === 'professor' || hasRole(user, 'ROLE_DASH_PROFESSOR')) {
+  if (profileName === 'administrador' || profileName === 'coordenador') {
+    return 'coordenacao'
+  }
+
+  if (profileName === 'professor') {
     return 'professor'
   }
 
-  if (profileName === 'aluno' || hasRole(user, 'ROLE_DASH_ALUNO')) {
+  if (profileName === 'aluno') {
+    return 'aluno'
+  }
+
+  if (hasRole(user, 'ROLE_DASH_PROFESSOR')) {
+    return 'professor'
+  }
+
+  if (hasRole(user, 'ROLE_DASH_ALUNO')) {
     return 'aluno'
   }
 
@@ -253,6 +266,10 @@ export async function getCronogramaTccs(): Promise<CronogramaResponse> {
 
   if (scope === 'professor') {
     orientations = await getProfessorOrientations()
+  }
+
+  if (scope === 'coordenacao') {
+    orientations = await getAllOrientations()
   }
 
   return {

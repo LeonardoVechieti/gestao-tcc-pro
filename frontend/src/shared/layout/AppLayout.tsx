@@ -27,21 +27,30 @@ export function AppLayout() {
   const userMenu = useRef<Menu | null>(null)
   const profileLabel = user?.perfilNome ?? user?.role ?? 'Usuário'
   const normalizedProfileLabel = profileLabel.toLowerCase()
+  const isAdmin = normalizedProfileLabel.includes('administrador')
   const isProfessor = normalizedProfileLabel.includes('professor')
   const isCordenacao =
-    normalizedProfileLabel.includes('coordenador') || normalizedProfileLabel.includes('cordenador')
-  const portalLabel = isCordenacao
+    isAdmin ||
+    normalizedProfileLabel.includes('coordenador') ||
+    normalizedProfileLabel.includes('cordenador')
+  const portalLabel = isAdmin
+    ? 'Portal administrativo'
+    : isCordenacao
     ? 'Portal da coordenação'
     : isProfessor
       ? 'Portal do professor'
       : 'Portal acadêmico'
-  const topbarTitle = isCordenacao
-    ? 'Painel da coordenação'
+  const topbarTitle = isAdmin
+    ? 'Administração'
+    : isCordenacao
+      ? 'Painel da coordenação'
     : isProfessor
       ? 'Meus orientandos'
       : 'Meu TCC'
-  const topbarSubtitle = isCordenacao
-    ? 'Acompanhe alunos, bancas e pendências'
+  const topbarSubtitle = isAdmin
+    ? 'Acesse todas as áreas do sistema'
+    : isCordenacao
+      ? 'Acompanhe alunos, bancas e pendências'
     : isProfessor
       ? 'Acompanhe orientandos, bancas e agenda'
       : 'Acompanhe tema, entregas e apresentação'

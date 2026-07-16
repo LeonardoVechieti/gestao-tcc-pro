@@ -141,7 +141,7 @@ export function AppRoutes() {
         <Route
           path="orientacoes"
           element={
-            <RequireRole role={['ROLE_DASH_PROFESSOR', 'ROLE_MENU_MEU_TCC']}>
+            <RequireRole role={['ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM']}>
               <OrientationManagementPage />
             </RequireRole>
           }
@@ -157,7 +157,7 @@ export function AppRoutes() {
         <Route
           path="mensagens"
           element={
-            <RequireRole role={['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR']}>
+            <RequireRole role={['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM']}>
               <MensagensPage />
             </RequireRole>
           }

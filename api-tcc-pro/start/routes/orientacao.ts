@@ -5,6 +5,7 @@ const OrientacaoController = () => import('#controllers/orientacao_controller')
 
 router
   .group(() => {
+    router.get('/orientacoes', [OrientacaoController, 'index']).middleware(middleware.auth())
     router
       .get('/orientacoes/professor/:uuidProfessor', [OrientacaoController, 'byProfessor'])
       .middleware(middleware.auth())

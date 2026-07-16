@@ -100,6 +100,7 @@ const seedData: SeedData = {
         'ROLE_AGENDA_EDIT',
         'ROLE_PROFESSOR_VIEW',
         'ROLE_DASH_COORDENADOR',
+        'ROLE_MENU_ADM',
         'ROLE_MENU_AGENDA',
       ],
     },

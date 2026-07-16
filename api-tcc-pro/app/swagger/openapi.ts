@@ -242,6 +242,28 @@ const swaggerDocument = {
         responses: { '204': { description: 'TCC removido' } },
       },
     },
+    '/orientacoes': {
+      get: {
+        summary: 'Listar orientações sem filtro de professor',
+        responses: { '200': { description: 'Lista global de orientações' } },
+      },
+    },
+    '/orientacoes/professor/{uuidProfessor}': {
+      get: {
+        summary: 'Listar orientações de um professor',
+        parameters: [
+          { name: 'uuidProfessor', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: { '200': { description: 'Lista de orientações do professor' } },
+      },
+    },
+    '/orientacoes/aluno/{uuidAluno}': {
+      get: {
+        summary: 'Listar orientações de um aluno',
+        parameters: [{ name: 'uuidAluno', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Lista de orientações do aluno' } },
+      },
+    },
     '/agenda': {
       post: {
         summary: 'Criar agenda',

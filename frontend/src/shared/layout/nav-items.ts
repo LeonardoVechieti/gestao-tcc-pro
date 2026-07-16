@@ -34,7 +34,7 @@ export const navItems: NavItem[] = [
     to: '/orientacoes',
     label: 'Orientações',
     icon: 'pi pi-users',
-    requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR'],
+    requiredRoles: ['ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM'],
   },
   {
     to: '/cronograma',
@@ -52,7 +52,7 @@ export const navItems: NavItem[] = [
     to: '/mensagens',
     label: 'Mensagens',
     icon: 'pi pi-comments',
-    requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR'],
+    requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM'],
   },
   {
     to: '/admin',

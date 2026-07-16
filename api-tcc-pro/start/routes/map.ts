@@ -39,6 +39,21 @@ const ROUTE_MAP = [
   { method: 'GET', path: '/tcc-pro/tcc/:id', description: 'Buscar TCC por id' },
   { method: 'PUT', path: '/tcc-pro/tcc', description: 'Atualizar TCC' },
   { method: 'DELETE', path: '/tcc-pro/tcc/:id', description: 'Remover TCC' },
+  {
+    method: 'GET',
+    path: '/tcc-pro/orientacoes',
+    description: 'Listar orientações sem filtro de professor',
+  },
+  {
+    method: 'GET',
+    path: '/tcc-pro/orientacoes/professor/:uuidProfessor',
+    description: 'Listar orientações de um professor',
+  },
+  {
+    method: 'GET',
+    path: '/tcc-pro/orientacoes/aluno/:uuidAluno',
+    description: 'Listar orientações de um aluno',
+  },
   { method: 'POST', path: '/tcc-pro/agenda', description: 'Criar agenda' },
   { method: 'GET', path: '/tcc-pro/agenda', description: 'Listar agendas' },
   { method: 'GET', path: '/tcc-pro/agenda/:id', description: 'Buscar agenda por id' },

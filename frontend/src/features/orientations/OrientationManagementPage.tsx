@@ -16,7 +16,7 @@ import {
   approveThemeWithDeadlines,
   cancelOrientation,
   completeOrientationStage,
-  getProfessorOrientations,
+  getManagedOrientations,
   rejectOrientation,
   requestOrientationAdjustments,
   type OrientationItem,
@@ -250,7 +250,7 @@ export function OrientationManagementPage() {
   useEffect(() => {
     let cancelled = false
 
-    getProfessorOrientations()
+    getManagedOrientations()
       .then((result) => {
         if (!cancelled) {
           setLoadError(false)

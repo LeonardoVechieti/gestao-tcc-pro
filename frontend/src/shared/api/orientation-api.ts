@@ -1,6 +1,7 @@
 import orientacoesMock from '../../assets/mocks/orientacoes.mock.json'
+import { hasRole } from '../auth/roles'
 import { isBackendActive } from '../config/env'
-import { useAuthStore } from '../stores/auth-store'
+import { useAuthStore, type AuthUser } from '../stores/auth-store'
 import { apiClient } from './api-client'
 
 export type OrientationStatus =
@@ -147,6 +148,26 @@ function normalizeMock(mock: OrientationItem[]): OrientationItem[] {
   )
 }
 
+function normalizeProfileName(profileName?: string): string {
+  return (
+    profileName
+      ?.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim() ?? ''
+  )
+}
+
+function isGlobalManagementProfile(user: AuthUser | null): boolean {
+  const profileName = normalizeProfileName(user?.perfilNome ?? user?.role)
+  return profileName === 'administrador' || profileName === 'coordenador'
+}
+
+function isProfessorProfile(user: AuthUser | null): boolean {
+  const profileName = normalizeProfileName(user?.perfilNome ?? user?.role)
+  return profileName === 'professor' || (!profileName && hasRole(user, 'ROLE_DASH_PROFESSOR'))
+}
+
 function getCurrentStage(stages: OrientationStage[]): string {
   return stages.find((stage) => stage.status !== 'concluida')?.titulo ?? 'Todas as etapas concluídas'
 }
@@ -233,6 +254,36 @@ export async function getProfessorOrientations(): Promise<OrientationItem[]> {
     console.error('Falha ao buscar orientações do professor', error)
     throw error
   }
+}
+
+export async function getAllOrientations(): Promise<OrientationItem[]> {
+  const mock = normalizeMock(orientacoesMock as OrientationItem[])
+
+  if (!isBackendActive()) {
+    return mock
+  }
+
+  try {
+    const { data } = await apiClient.get<OrientationsResponse>('/tcc-pro/orientacoes')
+    return data.orientacoes.map(normalizeOrientation)
+  } catch (error) {
+    console.error('Falha ao buscar orientações globais', error)
+    throw error
+  }
+}
+
+export async function getManagedOrientations(): Promise<OrientationItem[]> {
+  const user = useAuthStore.getState().user
+
+  if (isGlobalManagementProfile(user)) {
+    return getAllOrientations()
+  }
+
+  if (isProfessorProfile(user)) {
+    return getProfessorOrientations()
+  }
+
+  return []
 }
 
 export async function getAlunoOrientations(uuidAluno?: string): Promise<OrientationItem[]> {
