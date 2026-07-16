@@ -10,6 +10,10 @@ export default class OrientacaoController {
     return this.orientacaoService.listByProfessor(params.uuidProfessor)
   }
 
+  async byAluno({ params }: HttpContext) {
+    return this.orientacaoService.listByAluno(params.uuidAluno)
+  }
+
   async approveOrientation({ params, request }: HttpContext) {
     return this.orientacaoService.approveOrientation(
       params.id,

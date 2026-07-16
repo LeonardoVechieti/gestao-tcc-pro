@@ -9,6 +9,9 @@ router
       .get('/orientacoes/professor/:uuidProfessor', [OrientacaoController, 'byProfessor'])
       .middleware(middleware.auth())
     router
+      .get('/orientacoes/aluno/:uuidAluno', [OrientacaoController, 'byAluno'])
+      .middleware(middleware.auth())
+    router
       .post('/orientacoes/:id/aprovar-orientacao', [OrientacaoController, 'approveOrientation'])
       .middleware(middleware.auth())
     router

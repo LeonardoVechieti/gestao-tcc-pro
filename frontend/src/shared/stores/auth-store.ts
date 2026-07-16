@@ -8,6 +8,15 @@ export type AuthUser = {
   role?: string
   roles?: string[]
   perfilNome?: string
+  aluno?: {
+    uuidAluno?: string
+    nome?: string
+    matricula?: string
+    curso?: string
+    telefone?: string
+    semestre?: string
+    situacao?: string
+  }
   token: string
 }
 
@@ -33,6 +42,7 @@ function hydrateAuthUser(user: AuthUser): AuthUser {
 
   return {
     ...user,
+    uuidAluno: user.uuidAluno ?? user.aluno?.uuidAluno,
     role: user.role ?? payload.role,
     roles: user.roles ?? payload.roles,
     perfilNome: user.perfilNome ?? payload.perfil?.nomePerfil,

@@ -46,6 +46,12 @@ type OrientationStagePayload = {
   prazo: string
 }
 
+type OrientationProfessorPayload = {
+  uuidProfessor: string
+  nome: string
+  email: string
+} | null
+
 const requiredStages = [
   'Tema aprovado',
   'Projeto de TCC',
@@ -203,16 +209,89 @@ export default class OrientacaoService {
 
     const propostas = temas
       .filter((tema) => !tccTemaIds.has(tema.uuidTemaTcc))
-      .map(async (tema) => this.buildTemaOrientation(tema, alunoPorId.get(tema.uuidAluno)))
+      .map(async (tema) =>
+        this.buildTemaOrientation(tema, alunoPorId.get(tema.uuidAluno), professor)
+      )
 
     const orientacoes = tccs.map(async (tcc) =>
-      this.buildTccOrientation(tcc, temaPorId.get(tcc.uuidTemaTcc), alunoPorId.get(tcc.uuidAluno))
+      this.buildTccOrientation(
+        tcc,
+        temaPorId.get(tcc.uuidTemaTcc),
+        alunoPorId.get(tcc.uuidAluno),
+        professor
+      )
     )
 
     return {
       professor: {
         uuidProfessor: professor.uuidProfessor,
         nome: professor.nome,
+      },
+      orientacoes: await Promise.all([...propostas, ...orientacoes]),
+    }
+  }
+
+  async listByAluno(uuidAluno: string) {
+    const [aluno, temas, tccs] = await Promise.all([
+      Aluno.findOrFail(uuidAluno),
+      TemaTcc.query().where('uuid_aluno', uuidAluno),
+      Tcc.query().where('uuid_aluno', uuidAluno),
+    ])
+
+    const temaIds = new Set(temas.map((tema) => tema.uuidTemaTcc))
+    const professorIds = new Set<string>()
+
+    for (const tema of temas) {
+      if (tema.uuidProfessor) {
+        professorIds.add(tema.uuidProfessor)
+      }
+    }
+
+    for (const tcc of tccs) {
+      temaIds.add(tcc.uuidTemaTcc)
+
+      if (tcc.uuidOrientador) {
+        professorIds.add(tcc.uuidOrientador)
+      }
+    }
+
+    const [temasDoAluno, professores] = await Promise.all([
+      temaIds.size > 0 ? TemaTcc.query().whereIn('uuid_tema_tcc', [...temaIds]) : [],
+      professorIds.size > 0 ? Professor.query().whereIn('uuid_professor', [...professorIds]) : [],
+    ])
+
+    const temaPorId = new Map(temasDoAluno.map((tema) => [tema.uuidTemaTcc, tema]))
+    const professorPorId = new Map(
+      professores.map((professor) => [professor.uuidProfessor, professor])
+    )
+    const tccTemaIds = new Set(tccs.map((tcc) => tcc.uuidTemaTcc))
+
+    const propostas = temas
+      .filter((tema) => !tccTemaIds.has(tema.uuidTemaTcc))
+      .map(async (tema) =>
+        this.buildTemaOrientation(
+          tema,
+          aluno.nome,
+          tema.uuidProfessor ? professorPorId.get(tema.uuidProfessor) : undefined
+        )
+      )
+
+    const orientacoes = tccs.map(async (tcc) => {
+      const tema = temaPorId.get(tcc.uuidTemaTcc)
+      const professorId = tcc.uuidOrientador ?? tema?.uuidProfessor
+
+      return this.buildTccOrientation(
+        tcc,
+        tema,
+        aluno.nome,
+        professorId ? professorPorId.get(professorId) : undefined
+      )
+    })
+
+    return {
+      aluno: {
+        uuidAluno: aluno.uuidAluno,
+        nome: aluno.nome,
       },
       orientacoes: await Promise.all([...propostas, ...orientacoes]),
     }
@@ -551,7 +630,11 @@ export default class OrientacaoService {
     )
   }
 
-  private async buildTemaOrientation(tema: TemaTcc, alunoNome?: string) {
+  private async buildTemaOrientation(
+    tema: TemaTcc,
+    alunoNome?: string,
+    professor?: Professor | null
+  ) {
     const comments = await this.findComments(undefined, tema.uuidTemaTcc)
     const status = normalizeTemaStatus(tema.status)
     const etapas: OrientationStagePayload[] = []
@@ -573,10 +656,16 @@ export default class OrientacaoService {
       progresso: 0,
       etapas,
       comentarios: comments,
+      professor: this.formatProfessor(professor),
     }
   }
 
-  private async buildTccOrientation(tcc: Tcc, tema?: TemaTcc | null, alunoNome?: string) {
+  private async buildTccOrientation(
+    tcc: Tcc,
+    tema?: TemaTcc | null,
+    alunoNome?: string,
+    professor?: Professor | null
+  ) {
     await this.ensureRequiredStages(tcc.uuidTcc)
 
     const [stages, comments] = await Promise.all([
@@ -614,6 +703,19 @@ export default class OrientacaoService {
       progresso: calculateProgress(mappedStages),
       etapas: mappedStages,
       comentarios: comments,
+      professor: this.formatProfessor(professor),
+    }
+  }
+
+  private formatProfessor(professor?: Professor | null): OrientationProfessorPayload {
+    if (!professor) {
+      return null
+    }
+
+    return {
+      uuidProfessor: professor.uuidProfessor,
+      nome: professor.nome,
+      email: professor.email,
     }
   }
 

@@ -32,6 +32,12 @@ export type OrientationComment = {
   data: string
 }
 
+export type OrientationProfessor = {
+  uuidProfessor: string
+  nome?: string
+  email?: string
+}
+
 export type OrientationItem = {
   id: string
   sourceType: OrientationSourceType
@@ -49,11 +55,19 @@ export type OrientationItem = {
   progresso: number
   etapas: OrientationStage[]
   comentarios: OrientationComment[]
+  professor?: OrientationProfessor | null
 }
 
 type ProfessorLookup = { uuidProfessor: string; nome?: string }
 type OrientationsResponse = {
   orientacoes: OrientationItem[]
+}
+
+type StudentOrientationsResponse = OrientationsResponse & {
+  aluno: {
+    uuidAluno: string
+    nome?: string
+  }
 }
 
 type ActionPayload = {
@@ -202,6 +216,29 @@ export async function getProfessorOrientations(): Promise<OrientationItem[]> {
     return data.orientacoes.map(normalizeOrientation)
   } catch (error) {
     console.error('Falha ao buscar orientações do professor', error)
+    throw error
+  }
+}
+
+export async function getAlunoOrientations(uuidAluno?: string): Promise<OrientationItem[]> {
+  const mock = normalizeMock(orientacoesMock as OrientationItem[])
+
+  if (!isBackendActive()) {
+    return mock
+  }
+
+  if (!uuidAluno) {
+    return []
+  }
+
+  try {
+    const { data } = await apiClient.get<StudentOrientationsResponse>(
+      `/tcc-pro/orientacoes/aluno/${uuidAluno}`,
+    )
+
+    return data.orientacoes.map(normalizeOrientation)
+  } catch (error) {
+    console.error('Falha ao buscar orientações do aluno', error)
     throw error
   }
 }

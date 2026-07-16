@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { Dropdown } from 'primereact/dropdown'
@@ -6,12 +6,19 @@ import { InputText } from 'primereact/inputtext'
 import { InputTextarea } from 'primereact/inputtextarea'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
+import type { TagProps } from 'primereact/tag'
 import { Message } from 'primereact/message'
 import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { createTemaTcc, getTemaTccList, getMyTemaTcc, type TemaTcc } from '../../shared/api/tema-tcc-api'
-import { getProfessorRecommendations, getProfessorById, type ProfessorRecommendation } from '../../shared/api/professor-api'
+import {
+  getAlunoOrientations,
+  type OrientationItem,
+  type OrientationStage,
+  type OrientationStatus,
+} from '../../shared/api/orientation-api'
+import { createTemaTcc, getTemaTccList, type TemaTcc } from '../../shared/api/tema-tcc-api'
+import { getProfessorRecommendations, type ProfessorRecommendation } from '../../shared/api/professor-api'
 import {
   professorAreaOptions as areaOptions,
   professorLineOptions as lineOptions,
@@ -32,36 +39,65 @@ const topicSchema = z.object({
 
 type TopicForm = z.infer<typeof topicSchema>
 
+const statusLabel: Record<OrientationStatus, string> = {
+  solicitacao_pendente: 'Solicitação pendente',
+  tema_pendente: 'Tema pendente',
+  ajustes_solicitados: 'Ajustes solicitados',
+  em_acompanhamento: 'Em acompanhamento',
+  aprovado: 'Aprovado',
+  recusado: 'Recusado',
+  banca: 'Banca',
+  cancelado: 'Cancelado',
+}
+
+const statusSeverity: Record<OrientationStatus, TagProps['severity']> = {
+  solicitacao_pendente: 'warning',
+  tema_pendente: 'warning',
+  ajustes_solicitados: 'danger',
+  em_acompanhamento: 'info',
+  aprovado: 'success',
+  recusado: 'danger',
+  banca: 'warning',
+  cancelado: 'danger',
+}
+
+const stageLabel: Record<OrientationStage['status'], string> = {
+  pendente: 'Pendente',
+  em_analise: 'Em análise',
+  concluida: 'Concluída',
+}
+
+const stageSeverity: Record<OrientationStage['status'], TagProps['severity']> = {
+  pendente: 'secondary',
+  em_analise: 'warning',
+  concluida: 'success',
+}
+
+function formatDateBr(date?: string): string {
+  if (!date || date === 'A definir') {
+    return date ?? 'A definir'
+  }
+
+  const parsed = new Date(date)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return date
+  }
+
+  return parsed.toLocaleDateString('pt-BR')
+}
+
+function sortStudentOrientations(orientations: OrientationItem[]): OrientationItem[] {
+  return [...orientations].sort((current, next) => {
+    const currentTime = Date.parse(current.atualizadoEm)
+    const nextTime = Date.parse(next.atualizadoEm)
+
+    return (Number.isNaN(nextTime) ? 0 : nextTime) - (Number.isNaN(currentTime) ? 0 : currentTime)
+  })
+}
+
 export function StudentTopicPage() {
   const user = useAuthStore((state) => state.user)
-
-  useEffect(() => {
-    async function loadMinhaSolicitacao() {
-      setIsLoadingMinhaSolicitacao(true)
-
-      try {
-        const tema = await getMyTemaTcc()
-        if (tema) {
-          setCreatedTema(tema)
-
-          if (tema.uuidProfessor) {
-            try {
-              const professor = await getProfessorById(tema.uuidProfessor)
-              setSelectedProfessor(professor)
-            } catch (error) {
-              console.error('Erro ao buscar professor associado:', error)
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao carregar minha solicitação:', error)
-      } finally {
-        setIsLoadingMinhaSolicitacao(false)
-      }
-    }
-
-    void loadMinhaSolicitacao()
-  }, [])
   const {
     control,
     handleSubmit,
@@ -85,19 +121,60 @@ export function StudentTopicPage() {
   const [professores, setProfessores] = useState<ProfessorRecommendation[]>([])
   const [selectedProfessor, setSelectedProfessor] = useState<ProfessorRecommendation | null>(null)
   const [createdTema, setCreatedTema] = useState<TemaTcc | null>(null)
+  const [studentOrientations, setStudentOrientations] = useState<OrientationItem[]>([])
   const [isLoadingProfessores, setIsLoadingProfessores] = useState(false)
-  const [, setIsLoadingMinhaSolicitacao] = useState(false)
+  const [isLoadingMinhaSolicitacao, setIsLoadingMinhaSolicitacao] = useState(false)
+  const [hasLoadedMinhaSolicitacao, setHasLoadedMinhaSolicitacao] = useState(false)
+  const [acompanhamentoError, setAcompanhamentoError] = useState(false)
 
   const title = watch('title')
   const area = watch('area')
   const researchLine = watch('researchLine')
   const description = watch('description')
+  const studentId = user?.uuidAluno ?? user?.aluno?.uuidAluno
+  const currentOrientation = studentOrientations[0] ?? null
+
+  const loadAcompanhamentoAluno = useCallback(async () => {
+    setIsLoadingMinhaSolicitacao(true)
+    setAcompanhamentoError(false)
+
+    try {
+      const data = await getAlunoOrientations(studentId)
+      const sorted = sortStudentOrientations(data)
+      const primary = sorted[0]
+
+      setStudentOrientations(sorted)
+
+      if (primary) {
+        setCreatedTema(null)
+      }
+
+      if (primary?.professor?.uuidProfessor) {
+        setSelectedProfessor({
+          uuidProfessor: primary.professor.uuidProfessor,
+          nome: primary.professor.nome ?? 'Professor não informado',
+          email: primary.professor.email,
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar acompanhamento do aluno:', error)
+      setStudentOrientations([])
+      setAcompanhamentoError(true)
+    } finally {
+      setIsLoadingMinhaSolicitacao(false)
+      setHasLoadedMinhaSolicitacao(true)
+    }
+  }, [studentId])
 
   useEffect(() => {
     if (area && researchLine) {
       void loadProfessores(area, researchLine)
     }
   }, [area, researchLine])
+
+  useEffect(() => {
+    void loadAcompanhamentoAluno()
+  }, [loadAcompanhamentoAluno])
 
   const requirements = [
     { label: 'Título provisório', done: title.trim().length >= 8 },
@@ -107,36 +184,148 @@ export function StudentTopicPage() {
     { label: 'Professor selecionado', done: Boolean(selectedProfessor) },
   ]
 
-  const isRequestSent = Boolean(createdTema)
+  const isRequestSent = Boolean(currentOrientation || createdTema)
+  const submittedProfessor = currentOrientation?.professor ?? selectedProfessor
+  const submittedTitle = currentOrientation?.titulo ?? createdTema?.titulo
+  const submittedArea = currentOrientation?.area ?? createdTema?.area
+  const submittedLine = currentOrientation?.linhaPesquisa ?? createdTema?.linhaPesquisa
+  const submittedDescription = currentOrientation?.resumo ?? createdTema?.descricao
+  const submittedStatus = currentOrientation
+    ? statusLabel[currentOrientation.status]
+    : createdTema?.status ?? 'Solicitação pendente'
 
-  const requestPanel = isRequestSent ? (
+  const requestPanel = isLoadingMinhaSolicitacao ? (
+    <div className="form-panel">
+      <Toast ref={toast} />
+      <div className="loading-panel">
+        <ProgressSpinner strokeWidth="4" />
+      </div>
+    </div>
+  ) : isRequestSent ? (
     <div className="form-panel">
       <Toast ref={toast} />
       <div className="submitted-panel">
-        <h2>Solicitação recebida</h2>
-        <p>Seu pedido de tema foi enviado e está aguardando aprovação.</p>
+        <div className="submitted-panel__header">
+          <div>
+            <h2>
+              {currentOrientation?.sourceType === 'tcc'
+                ? 'TCC em acompanhamento'
+                : 'Solicitação recebida'}
+            </h2>
+            <p>
+              {currentOrientation
+                ? currentOrientation.etapaAtual
+                : 'Seu pedido de tema foi enviado e está aguardando aprovação.'}
+            </p>
+          </div>
+          <Tag
+            severity={currentOrientation ? statusSeverity[currentOrientation.status] : 'warning'}
+            value={submittedStatus}
+          />
+        </div>
+
         <div className="submitted-details">
           <div>
             <strong>Título:</strong>
-            <p>{createdTema?.titulo}</p>
+            <p>{submittedTitle}</p>
           </div>
           <div>
             <strong>Área:</strong>
-            <p>{createdTema?.area}</p>
+            <p>{submittedArea}</p>
           </div>
           <div>
             <strong>Linha de pesquisa:</strong>
-            <p>{createdTema?.linhaPesquisa}</p>
+            <p>{submittedLine}</p>
           </div>
           <div>
-            <strong>Professor indicado:</strong>
-            <p>{selectedProfessor?.nome ?? 'Não informado'}</p>
-            <p>{selectedProfessor?.email ?? ''}</p>
+            <strong>Professor indicado/orientador:</strong>
+            <p>{submittedProfessor?.nome ?? 'Não informado'}</p>
+            <p>{submittedProfessor?.email ?? ''}</p>
           </div>
           <div>
-            <strong>Status:</strong>
-            <p>{createdTema?.status ?? 'aguardando aprovação'}</p>
+            <strong>Última atualização:</strong>
+            <p>{formatDateBr(currentOrientation?.atualizadoEm)}</p>
           </div>
+          <div>
+            <strong>Progresso:</strong>
+            <p>{currentOrientation ? `${currentOrientation.progresso}%` : '0%'}</p>
+          </div>
+        </div>
+
+        {submittedDescription ? <p className="muted-text">{submittedDescription}</p> : null}
+
+        {currentOrientation ? (
+          <>
+            <section className="submitted-section">
+              <div className="section-title">
+                <div>
+                  <h2>Etapas</h2>
+                  <span>Somente etapas reais vinculadas ao TCC são exibidas aqui.</span>
+                </div>
+              </div>
+
+              {currentOrientation.etapas.length > 0 ? (
+                <div className="orientation-stage-list">
+                  {currentOrientation.etapas.map((stage) => (
+                    <div className="orientation-stage-row" key={stage.id}>
+                      <span className="orientation-stage-icon">
+                        <i className="pi pi-flag" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <strong>{stage.titulo}</strong>
+                        <span>Prazo: {formatDateBr(stage.prazo)}</span>
+                      </div>
+                      <Tag severity={stageSeverity[stage.status]} value={stageLabel[stage.status]} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Message
+                  severity="info"
+                  text="As etapas serão exibidas quando o tema for aprovado e virar um TCC."
+                />
+              )}
+            </section>
+
+            <section className="submitted-section">
+              <div className="section-title">
+                <div>
+                  <h2>Comentários</h2>
+                  <span>Mensagens registradas pelo professor ou pelo sistema.</span>
+                </div>
+              </div>
+
+              {currentOrientation.comentarios.length > 0 ? (
+                <div className="orientation-comments-list">
+                  {currentOrientation.comentarios.map((comment) => (
+                    <article key={comment.id}>
+                      <div>
+                        <strong>{comment.autor}</strong>
+                        <Tag severity={comment.tipo === 'Professor' ? 'info' : 'secondary'} value={comment.tipo} />
+                        <small>{formatDateBr(comment.data)}</small>
+                      </div>
+                      <p>{comment.mensagem}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <Message severity="info" text="Nenhum comentário registrado para esta solicitação." />
+              )}
+            </section>
+          </>
+        ) : (
+          <Message severity="info" text="Acompanhamento será atualizado após a confirmação do backend." />
+        )}
+
+        <div className="submitted-actions">
+          <Button
+            icon="pi pi-refresh"
+            label="Atualizar acompanhamento"
+            onClick={() => void loadAcompanhamentoAluno()}
+            outlined
+            type="button"
+            disabled={!studentId || isLoadingMinhaSolicitacao}
+          />
         </div>
       </div>
     </div>
@@ -146,6 +335,17 @@ export function StudentTopicPage() {
       <div className={`form-loading ${isSubmitting ? 'active' : ''}`}>
         <ProgressSpinner strokeWidth="4" />
       </div>
+
+      {acompanhamentoError ? (
+        <Message
+          severity="error"
+          text="Não foi possível carregar seu acompanhamento agora. Tente atualizar a página."
+        />
+      ) : null}
+
+      {hasLoadedMinhaSolicitacao ? (
+        <Message severity="info" text="Nenhuma proposta enviada." />
+      ) : null}
 
       <FormField
         label="Título provisório *"
@@ -306,8 +506,6 @@ export function StudentTopicPage() {
     </form>
   )
 
-  const studentId = user?.uuidAluno
-
   function handleSaveDraft(data: TopicForm) {
     localStorage.setItem('gestaotcc:tema-draft', JSON.stringify(data))
 
@@ -355,6 +553,7 @@ export function StudentTopicPage() {
       })
 
       setCreatedTema(tema)
+      void loadAcompanhamentoAluno()
 
       toast.current?.show({
         severity: 'success',
@@ -456,20 +655,60 @@ export function StudentTopicPage() {
           </InfoPanel>
 
           <InfoPanel icon="pi pi-list-check" title="Status do envio">
-            <div className="draft-status">
-              <div className="draft-status__icon">
-                <i className="pi pi-pencil" aria-hidden="true" />
+            {isLoadingMinhaSolicitacao ? (
+              <div className="loading-panel">
+                <ProgressSpinner strokeWidth="4" />
               </div>
-              <div>
-                <strong>Rascunho</strong>
-                <span>Seu tema ainda não foi enviado.</span>
-              </div>
-            </div>
-            <p className="muted-text">
-              Salve como rascunho para continuar editando. Quando estiver pronto,
-              clique em <strong>Cadastrar Tema</strong> para enviar para análise.
-            </p>
-            <Tag severity="warning" value="Aguardando envio" />
+            ) : currentOrientation ? (
+              <>
+                <div className="draft-status">
+                  <div className="draft-status__icon">
+                    <i className="pi pi-check-circle" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <strong>{statusLabel[currentOrientation.status]}</strong>
+                    <span>{currentOrientation.etapaAtual}</span>
+                  </div>
+                </div>
+                <p className="muted-text">
+                  Professor: {currentOrientation.professor?.nome ?? 'Não informado'}.
+                </p>
+                <Tag
+                  severity={statusSeverity[currentOrientation.status]}
+                  value={currentOrientation.sourceType === 'tcc' ? 'TCC' : 'Proposta'}
+                />
+              </>
+            ) : createdTema ? (
+              <>
+                <div className="draft-status">
+                  <div className="draft-status__icon">
+                    <i className="pi pi-send" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <strong>Solicitação enviada</strong>
+                    <span>Aguardando confirmação do acompanhamento.</span>
+                  </div>
+                </div>
+                <Tag severity="warning" value={createdTema.status ?? 'Solicitação pendente'} />
+              </>
+            ) : (
+              <>
+                <div className="draft-status">
+                  <div className="draft-status__icon">
+                    <i className="pi pi-pencil" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <strong>Nenhuma proposta enviada</strong>
+                    <span>Seu tema ainda não foi enviado.</span>
+                  </div>
+                </div>
+                <p className="muted-text">
+                  Salve como rascunho para continuar editando. Quando estiver pronto,
+                  clique em <strong>Solicitar Tema</strong> para enviar para análise.
+                </p>
+                <Tag severity="warning" value="Aguardando envio" />
+              </>
+            )}
           </InfoPanel>
 
           <InfoPanel icon="pi pi-book" title="Temas do aluno">
