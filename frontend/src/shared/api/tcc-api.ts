@@ -7,6 +7,7 @@ import { getTemaTccList } from './tema-tcc-api'
 
 export type TccRow = {
   id: string
+  uuidAluno: string
   aluno: string
   titulo: string
   orientador: string
@@ -67,6 +68,7 @@ async function joinTccRows(tccs: TccRaw[]): Promise<TccRow[]> {
 
   return tccs.map((tcc) => ({
     id: tcc.uuidTcc,
+    uuidAluno: tcc.uuidAluno,
     aluno: nomeAlunoPorId.get(tcc.uuidAluno) ?? 'Aluno não encontrado',
     titulo: tituloPorTemaId.get(tcc.uuidTemaTcc) ?? 'Tema não encontrado',
     orientador: tcc.uuidOrientador

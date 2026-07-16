@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
@@ -9,6 +10,7 @@ import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { getTccList, type TccRow } from '../../shared/api/tcc-api'
 import { useAuthStore } from '../../shared/stores/auth-store'
+import { getSubmissionByAluno } from '../../shared/utils/document-submission-storage'
 import {
   initialTccFilters,
   tccFiltersReducer,
@@ -99,6 +101,7 @@ export function TccListPage() {
   const [tccs, setTccs] = useState<TccRow[] | null>(null)
   const [hasError, setHasError] = useState(false)
   const user = useAuthStore((state) => state.user)
+  const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -122,6 +125,16 @@ export function TccListPage() {
       cancelled = true
     }
   }, [])
+
+  const sentDocumentAlunos = useMemo(() => {
+    const map = new Map<string, boolean>()
+    tccs?.forEach((tcc) => {
+      if (tcc.uuidAluno && getSubmissionByAluno(tcc.uuidAluno)) {
+        map.set(tcc.uuidAluno, true)
+      }
+    })
+    return map
+  }, [tccs])
 
   const statusOptions = useMemo<{ label: string; value: TccStatus }[]>(() => {
     const uniqueStatuses = new Set<string>()
@@ -215,11 +228,24 @@ export function TccListPage() {
           paginator
           rows={5}
           value={filteredTccs}
+          onRowClick={(event) => navigate(`/tccs/${event.data.id}`)}
+          rowClassName={() => 'cursor-pointer'}
         >
           <Column field="id" header="Código" style={{ width: '8rem' }} />
           <Column field="aluno" header="Aluno" />
           <Column field="titulo" header="Título" />
           <Column field="orientador" header="Orientador" />
+          <Column
+            body={(row: TccRow) => (
+              sentDocumentAlunos.get(row.uuidAluno) ? (
+                <Tag severity="success" value="Documento enviado" />
+              ) : (
+                <Tag severity="info" value="Sem envio" />
+              )
+            )}
+            header="Envio"
+            style={{ width: '11rem' }}
+          />
           <Column
             body={(row: TccRow) => (
               <Tag
@@ -229,6 +255,13 @@ export function TccListPage() {
             )}
             header="Status"
             style={{ width: '11rem' }}
+          />
+          <Column
+            body={() => (
+              <Button label="Revisar" icon="pi pi-eye" text />
+            )}
+            header="Ação"
+            style={{ width: '10rem' }}
           />
         </DataTable>
       </section>

@@ -277,7 +277,7 @@ export function StudentTopicPage() {
     }
 
     setProposalDraft(getTopicDraftFromOrientation(currentOrientation))
-  }, [currentOrientation])
+  }, [currentOrientation])  
 
   const requirements = [
     { label: 'Título provisório', done: title.trim().length >= 8 },
@@ -989,135 +989,95 @@ export function StudentTopicPage() {
         </div>
       </section>
 
-      <section className="student-topic-grid">
+      <section className={`student-topic-grid${!isRequestSent ? ' has-sidebar' : ''}`}>
         {requestPanel}
 
-        <aside className="student-topic-aside">
-          <InfoPanel icon="pi pi-list-check" title="Status do envio">
-            {isLoadingMinhaSolicitacao ? (
-              <div className="loading-panel">
-                <ProgressSpinner strokeWidth="4" />
-              </div>
-            ) : currentOrientation ? (
-              <>
-                <div className="draft-status">
-                  <div className="draft-status__icon">
-                    <i className="pi pi-check-circle" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <strong>{statusLabel[currentOrientation.status]}</strong>
-                    <span>{currentOrientation.etapaAtual}</span>
-                  </div>
+        {!isRequestSent ? (
+          <aside className="student-topic-aside">
+            <InfoPanel icon="pi pi-list-check" title="Status do envio">
+              {isLoadingMinhaSolicitacao ? (
+                <div className="loading-panel">
+                  <ProgressSpinner strokeWidth="4" />
                 </div>
-                <p className="muted-text">
-                  Professor: {currentOrientation.professor?.nome ?? 'Não informado'}.
-                </p>
-                <Tag
-                  severity={statusSeverity[currentOrientation.status]}
-                  value={currentOrientation.sourceType === 'tcc' ? 'TCC' : 'Proposta'}
-                />
-              </>
-            ) : createdTema ? (
-              <>
-                <div className="draft-status">
-                  <div className="draft-status__icon">
-                    <i className="pi pi-send" aria-hidden="true" />
+              ) : currentOrientation ? (
+                <>
+                  <div className="draft-status">
+                    <div className="draft-status__icon">
+                      <i className="pi pi-check-circle" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <strong>{statusLabel[currentOrientation.status]}</strong>
+                      <span>{currentOrientation.etapaAtual}</span>
+                    </div>
                   </div>
-                  <div>
-                    <strong>Solicitação enviada</strong>
-                    <span>Aguardando confirmação do acompanhamento.</span>
-                  </div>
-                </div>
-                <Tag severity="warning" value={createdTema.status ?? 'Solicitação pendente'} />
-              </>
-            ) : latestHistoricalOrientation ? (
-              <>
-                <div className="draft-status draft-status--closed">
-                  <div className="draft-status__icon">
-                    <i
-                      className={
-                        latestHistoricalOrientation.status === 'recusado'
-                          ? 'pi pi-times-circle'
-                          : 'pi pi-ban'
-                      }
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <div>
-                    <strong>{statusLabel[latestHistoricalOrientation.status]}</strong>
-                    <span>Você pode enviar uma nova proposta.</span>
-                  </div>
-                </div>
-                <p className="muted-text">
-                  Última atualização: {formatDateBr(latestHistoricalOrientation.atualizadoEm)}.
-                </p>
-                <Tag
-                  severity={statusSeverity[latestHistoricalOrientation.status]}
-                  value="Histórico"
-                />
-              </>
-            ) : (
-              <>
-                <div className="draft-status">
-                  <div className="draft-status__icon">
-                    <i className="pi pi-pencil" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <strong>Nenhuma proposta enviada</strong>
-                    <span>Seu tema ainda não foi enviado.</span>
-                  </div>
-                </div>
-                <p className="muted-text">
-                  Salve como rascunho para continuar editando. Quando estiver pronto,
-                  clique em <strong>Solicitar tema</strong> para enviar para análise.
-                </p>
-                <Tag severity="warning" value="Aguardando envio" />
-              </>
-            )}
-          </InfoPanel>
-
-          <InfoPanel icon="pi pi-clipboard" title="Requisitos">
-            <div className="requirements-progress">
-              <strong>{completedRequirements}/{requirements.length}</strong>
-              <span>itens completos</span>
-            </div>
-            <ul className="check-list">
-              {requirements.map((item) => (
-                <li key={item.label}>
-                  <i
-                    className={item.done ? 'pi pi-check-circle is-done' : 'pi pi-circle'}
-                    aria-hidden="true"
+                  <p className="muted-text">
+                    Professor: {currentOrientation.professor?.nome ?? 'Não informado'}.
+                  </p>
+                  <Tag
+                    severity={statusSeverity[currentOrientation.status]}
+                    value={currentOrientation.sourceType === 'tcc' ? 'TCC' : 'Proposta'}
                   />
-                  <span>{item.label}</span>
-                </li>
-              ))}
-            </ul>
-          </InfoPanel>
-
-          <InfoPanel icon="pi pi-book" title="Temas do aluno">
-            {isLoadingTemas ? (
-              <div className="loading-panel">
-                <ProgressSpinner strokeWidth="4" />
-              </div>
-            ) : temas.length > 0 ? (
-              <ul className="tema-list">
-                {temas.map((tema) => (
-                  <li key={tema.uuidTemaTcc}>
-                    <strong>{tema.titulo}</strong>
-                    <span>{tema.area}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : hasLoadedTemas ? (
-              <div className="empty-state">
-                <p>O aluno ainda não tem nenhum tema de TCC registrado.</p>
-                <p>Clique em Buscar meus temas para verificar se há temas no sistema.</p>
-              </div>
-            ) : (
-              <p>Clique em Buscar meus temas para ver os temas do aluno.</p>
-            )}
-          </InfoPanel>
-        </aside>
+                </>
+              ) : createdTema ? (
+                <>
+                  <div className="draft-status">
+                    <div className="draft-status__icon">
+                      <i className="pi pi-send" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <strong>Solicitação enviada</strong>
+                      <span>Aguardando confirmação do acompanhamento.</span>
+                    </div>
+                  </div>
+                  <Tag severity="warning" value={createdTema.status ?? 'Solicitação pendente'} />
+                </>
+              ) : latestHistoricalOrientation ? (
+                <>
+                  <div className="draft-status draft-status--closed">
+                    <div className="draft-status__icon">
+                      <i
+                        className={
+                          latestHistoricalOrientation.status === 'recusado'
+                            ? 'pi pi-times-circle'
+                            : 'pi pi-ban'
+                        }
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <div>
+                      <strong>{statusLabel[latestHistoricalOrientation.status]}</strong>
+                      <span>Você pode enviar uma nova proposta.</span>
+                    </div>
+                  </div>
+                  <p className="muted-text">
+                    Última atualização: {formatDateBr(latestHistoricalOrientation.atualizadoEm)}.
+                  </p>
+                  <Tag
+                    severity={statusSeverity[latestHistoricalOrientation.status]}
+                    value="Histórico"
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="draft-status">
+                    <div className="draft-status__icon">
+                      <i className="pi pi-pencil" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <strong>Nenhuma proposta enviada</strong>
+                      <span>Seu tema ainda não foi enviado.</span>
+                    </div>
+                  </div>
+                  <p className="muted-text">
+                    Salve como rascunho para continuar editando. Quando estiver pronto,
+                    clique em <strong>Solicitar tema</strong> para enviar para análise.
+                  </p>
+                  <Tag severity="warning" value="Aguardando envio" />
+                </>
+              )}
+            </InfoPanel>
+          </aside>
+          ) : null}
       </section>
     </div>
   )

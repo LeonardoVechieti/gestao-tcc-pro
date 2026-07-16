@@ -286,6 +286,11 @@ export async function getManagedOrientations(): Promise<OrientationItem[]> {
   return []
 }
 
+export async function getOrientationByTcc(uuidTcc: string): Promise<OrientationItem | null> {
+  const orientations = await getManagedOrientations()
+  return orientations.find((orientation) => orientation.uuidTcc === uuidTcc) ?? null
+}
+
 export async function getAlunoOrientations(uuidAluno?: string): Promise<OrientationItem[]> {
   const mock = normalizeMock(orientacoesMock as OrientationItem[])
 

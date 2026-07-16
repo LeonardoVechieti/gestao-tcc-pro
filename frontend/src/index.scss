@@ -1012,6 +1012,14 @@ select.p-inputtext:focus,
 	grid-template-columns: minmax(0, 1fr) 24rem;
 }
 
+.student-topic-grid.has-sidebar {
+	grid-template-columns: minmax(0, 1fr) 24rem;
+}
+
+.student-topic-grid:not(.has-sidebar) {
+	grid-template-columns: minmax(0, 1fr);
+}
+
 .form-panel,
 .info-panel {
 	background: var(--color-surface);
