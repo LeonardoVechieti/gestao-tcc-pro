@@ -25,6 +25,13 @@ export default class UsuarioRepository {
     return await Usuario.create(payload)
   }
 
+  async update(uuidUsuario: string, payload: Partial<Usuario>): Promise<Usuario> {
+    const model = await Usuario.findOrFail(uuidUsuario)
+    model.merge(payload)
+    await model.save()
+    return this.show(model.uuidUsuario)
+  }
+
   async index(data: any): Promise<ModelPaginatorContract<Usuario> | Usuario[]> {
     const query = Usuario.query().preload('perfil').preload('aluno')
 

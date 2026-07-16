@@ -1900,6 +1900,10 @@ input {
 	gap: var(--space-1);
 }
 
+.profile-account-panel .profile-section-title {
+	margin-bottom: var(--space-5);
+}
+
 .profile-empty-state {
 	align-items: flex-start;
 	display: flex;
@@ -1921,9 +1925,14 @@ input {
 	grid-column: 1 / -1;
 }
 
+.profile-account-form,
 .profile-professor-form {
 	display: grid;
 	gap: var(--space-5);
+}
+
+.profile-account-form {
+	gap: var(--space-4);
 }
 
 .profile-form-grid,
@@ -1931,12 +1940,89 @@ input {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.profile-account-grid {
+	column-gap: var(--space-5);
+	row-gap: var(--space-4);
+}
+
 .profile-form-grid .field-group {
 	min-width: 0;
 }
 
+.profile-account-grid .field-group {
+	gap: var(--space-2);
+	margin-bottom: 0;
+}
+
+.profile-account-grid .field-group label {
+	font-size: var(--font-size-sm);
+	line-height: 1.25;
+}
+
+.profile-account-grid .field-group input.p-inputtext,
+.profile-account-grid .field-group .p-password-input {
+	background: var(--color-surface-soft);
+	border-color: var(--color-border);
+	color: var(--color-text-strong);
+	height: 2.75rem;
+	box-shadow: none;
+}
+
+.profile-account-grid .field-group input.p-inputtext::placeholder,
+.profile-account-grid .field-group .p-password-input::placeholder {
+	color: var(--color-text-muted);
+	opacity: 1;
+}
+
+.profile-account-grid .p-password .p-icon {
+	color: var(--color-text-muted);
+}
+
 .profile-multiselect {
 	width: 100%;
+}
+
+.profile-static-details {
+	border-top: 1px solid var(--color-border);
+	margin-top: var(--space-4);
+	padding-top: var(--space-3);
+}
+
+.profile-account-form .p-password,
+.profile-account-form .p-password-input {
+	width: 100%;
+}
+
+.profile-account-form .profile-form-actions {
+	gap: var(--space-3);
+	margin-top: var(--space-1);
+	padding-top: var(--space-4);
+}
+
+.profile-account-form .profile-form-actions .p-button {
+	border-radius: var(--radius-sm);
+	font-size: var(--font-size-sm);
+	min-height: 2.5rem;
+	padding: 0 var(--space-4);
+}
+
+.profile-account-form .profile-form-actions .p-button:not(.p-button-text) {
+	min-width: 10rem;
+}
+
+.profile-account-form .profile-form-actions .p-button:disabled {
+	opacity: 1;
+}
+
+.profile-account-form .profile-form-actions .p-button.p-button-text:disabled {
+	color: var(--color-text-muted);
+	opacity: 0.65;
+}
+
+.profile-account-form .profile-form-actions .p-button:not(.p-button-text):disabled {
+	background: var(--color-surface-soft);
+	border-color: var(--color-border);
+	color: var(--color-text-muted);
 }
 
 .profile-research-summary {

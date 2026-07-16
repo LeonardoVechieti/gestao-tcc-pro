@@ -1,6 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
+import { InputText } from 'primereact/inputtext'
 import { MultiSelect } from 'primereact/multiselect'
+import { Password } from 'primereact/password'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { Toast } from 'primereact/toast'
@@ -8,7 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
-import { getMe, type MeResponse } from '../../shared/api/auth-api'
+import { getCurrentUser, getMe, updateUsuario, type MeResponse } from '../../shared/api/auth-api'
 import {
   createProfessor,
   findProfessorByEmail,
@@ -32,7 +34,40 @@ const professorProfileSchema = z.object({
   linhasPesquisa: z.array(z.string()).min(1, 'Selecione ao menos uma linha de pesquisa.'),
 })
 
+const accountProfileSchema = z
+  .object({
+    nome: z.string().trim().min(3, 'Informe seu nome completo.'),
+    email: z.string().trim().email('Informe um e-mail válido.'),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
+  })
+  .superRefine((data, context) => {
+    const password = data.password?.trim() ?? ''
+    const confirmPassword = data.confirmPassword?.trim() ?? ''
+
+    if (!password && !confirmPassword) {
+      return
+    }
+
+    if (password.length < 8) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['password'],
+        message: 'A senha deve ter ao menos 8 caracteres.',
+      })
+    }
+
+    if (password !== confirmPassword) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmPassword'],
+        message: 'As senhas não conferem.',
+      })
+    }
+  })
+
 type ProfessorProfileForm = z.infer<typeof professorProfileSchema>
+type AccountProfileForm = z.infer<typeof accountProfileSchema>
 
 function formatDate(value?: string): string {
   if (!value) {
@@ -80,6 +115,7 @@ function ResearchPreview({ labels, emptyLabel }: { labels: string[]; emptyLabel:
 export function PerfilPage() {
   const navigate = useNavigate()
   const logout = useAuthStore((state) => state.logout)
+  const login = useAuthStore((state) => state.login)
   const currentUser = useAuthStore((state) => state.user)
   const toast = useRef<Toast | null>(null)
   const [me, setMe] = useState<MeResponse | null>(null)
@@ -100,6 +136,25 @@ export function PerfilPage() {
     resolver: zodResolver(professorProfileSchema),
   })
 
+  const {
+    control: accountControl,
+    handleSubmit: handleAccountSubmit,
+    reset: resetAccountForm,
+    formState: {
+      errors: accountErrors,
+      isDirty: isAccountDirty,
+      isSubmitting: isAccountSubmitting,
+    },
+  } = useForm<AccountProfileForm>({
+    defaultValues: {
+      nome: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    resolver: zodResolver(accountProfileSchema),
+  })
+
   const perfilNome = me?.perfil?.nomePerfil ?? currentUser?.perfilNome ?? currentUser?.role ?? ''
   const isProfessorProfile = Boolean(
     me &&
@@ -117,13 +172,19 @@ export function PerfilPage() {
     getMe().then((result) => {
       if (!cancelled) {
         setMe(result)
+        resetAccountForm({
+          nome: result.nome ?? '',
+          email: result.email,
+          password: '',
+          confirmPassword: '',
+        })
       }
     })
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [resetAccountForm])
 
   useEffect(() => {
     if (!me?.email || !isProfessorProfile) {
@@ -172,6 +233,73 @@ export function PerfilPage() {
       areasInteresse: normalizeResearchValues(professor?.areasInteresse),
       linhasPesquisa: normalizeResearchValues(professor?.linhasPesquisa),
     })
+  }
+
+  function resetAccountFormToSaved() {
+    if (!me) {
+      return
+    }
+
+    resetAccountForm({
+      nome: me.nome ?? '',
+      email: me.email,
+      password: '',
+      confirmPassword: '',
+    })
+  }
+
+  async function handleSaveAccountProfile(data: AccountProfileForm) {
+    if (!me || !currentUser?.token) {
+      return
+    }
+
+    try {
+      const payload = {
+        uuidUsuario: me.uuidUsuario,
+        nome: data.nome.trim(),
+        email: data.email.trim(),
+        password: data.password?.trim() || undefined,
+      }
+      const savedUser = await updateUsuario(payload)
+
+      if (professor?.uuidProfessor) {
+        const savedProfessor = await updateProfessor({
+          uuidProfessor: professor.uuidProfessor,
+          nome: payload.nome,
+          email: payload.email,
+          ativo: professor.ativo ?? true,
+          areasInteresse: professor.areasInteresse,
+          linhasPesquisa: professor.linhasPesquisa,
+        })
+        setProfessor(savedProfessor)
+      }
+
+      setMe(savedUser)
+      resetAccountForm({
+        nome: savedUser.nome ?? '',
+        email: savedUser.email,
+        password: '',
+        confirmPassword: '',
+      })
+
+      const refreshedUser = await getCurrentUser(currentUser.token)
+      login(refreshedUser)
+
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Cadastro atualizado',
+        detail: 'Seus dados de acesso foram salvos.',
+        life: 3000,
+      })
+    } catch (error) {
+      console.error('Erro ao salvar cadastro do usuário:', error)
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao salvar cadastro',
+        detail: 'Não foi possível atualizar seus dados. Verifique as informações e tente novamente.',
+        life: 5000,
+      })
+    }
   }
 
   async function handleSaveProfessorProfile(data: ProfessorProfileForm) {
@@ -294,30 +422,125 @@ export function PerfilPage() {
       </section>
 
       <div className="profile-content-grid">
-        <div className="work-panel">
+        <div className="work-panel profile-account-panel">
           <div className="section-title profile-section-title">
             <div>
               <span className="profile-section-title__eyebrow">Identificação</span>
               <h2>Dados de acesso</h2>
             </div>
           </div>
-          <DescriptionList
-            items={[
-              { label: 'Nome', value: me.nome ?? '-' },
-              { label: 'E-mail', value: me.email },
-              { label: 'Perfil', value: profileLabel },
-              {
-                label: 'E-mail verificado',
-                value: (
-                  <Tag
-                    severity={me.emailVerified ? 'success' : 'warning'}
-                    value={me.emailVerified ? 'Verificado' : 'Não verificado'}
-                  />
-                ),
-              },
-              { label: 'Cadastrado em', value: formatDate(me.createdAt) },
-            ]}
-          />
+          <form className="profile-account-form" onSubmit={handleAccountSubmit(handleSaveAccountProfile)}>
+            <div className="profile-form-grid profile-account-grid">
+              <FormField label="Nome" htmlFor="profileNome" error={accountErrors.nome?.message}>
+                <Controller
+                  control={accountControl}
+                  name="nome"
+                  render={({ field }) => (
+                    <InputText
+                      id="profileNome"
+                      autoComplete="name"
+                      invalid={Boolean(accountErrors.nome)}
+                      placeholder="Nome completo"
+                      {...field}
+                    />
+                  )}
+                />
+              </FormField>
+
+              <FormField label="E-mail" htmlFor="profileEmail" error={accountErrors.email?.message}>
+                <Controller
+                  control={accountControl}
+                  name="email"
+                  render={({ field }) => (
+                    <InputText
+                      id="profileEmail"
+                      autoComplete="email"
+                      invalid={Boolean(accountErrors.email)}
+                      placeholder="E-mail institucional"
+                      type="email"
+                      {...field}
+                    />
+                  )}
+                />
+              </FormField>
+
+              <FormField label="Nova senha" htmlFor="profilePassword" error={accountErrors.password?.message}>
+                <Controller
+                  control={accountControl}
+                  name="password"
+                  render={({ field }) => (
+                    <Password
+                      id="profilePassword"
+                      autoComplete="new-password"
+                      feedback={false}
+                      invalid={Boolean(accountErrors.password)}
+                      placeholder="Nova senha (opcional)"
+                      toggleMask
+                      {...field}
+                    />
+                  )}
+                />
+              </FormField>
+
+              <FormField
+                label="Confirmar senha"
+                htmlFor="profileConfirmPassword"
+                error={accountErrors.confirmPassword?.message}
+              >
+                <Controller
+                  control={accountControl}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <Password
+                      id="profileConfirmPassword"
+                      autoComplete="new-password"
+                      feedback={false}
+                      invalid={Boolean(accountErrors.confirmPassword)}
+                      placeholder="Confirme a nova senha"
+                      toggleMask
+                      {...field}
+                    />
+                  )}
+                />
+              </FormField>
+            </div>
+
+            <div className="profile-form-actions">
+              <Button
+                type="button"
+                label="Desfazer"
+                icon="pi pi-undo"
+                text
+                disabled={!isAccountDirty || isAccountSubmitting}
+                onClick={resetAccountFormToSaved}
+              />
+              <Button
+                type="submit"
+                label="Salvar cadastro"
+                icon="pi pi-save"
+                disabled={!isAccountDirty}
+                loading={isAccountSubmitting}
+              />
+            </div>
+          </form>
+
+          <div className="profile-static-details">
+            <DescriptionList
+              items={[
+                { label: 'Perfil', value: profileLabel },
+                {
+                  label: 'E-mail verificado',
+                  value: (
+                    <Tag
+                      severity={me.emailVerified ? 'success' : 'warning'}
+                      value={me.emailVerified ? 'Verificado' : 'Não verificado'}
+                    />
+                  ),
+                },
+                { label: 'Cadastrado em', value: formatDate(me.createdAt) },
+              ]}
+            />
+          </div>
         </div>
 
         <div className="work-panel">

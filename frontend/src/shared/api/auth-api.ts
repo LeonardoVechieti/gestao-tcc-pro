@@ -18,6 +18,13 @@ export type GoogleLoginPayload = {
   idToken: string
 }
 
+export type UpdateUsuarioPayload = {
+  uuidUsuario: string
+  nome?: string
+  email?: string
+  password?: string
+}
+
 type AuthResponse = {
   token: string
   user: AuthUser
@@ -72,6 +79,19 @@ export async function getCurrentUser(token: string): Promise<AuthUser> {
     },
   })
   return { ...data, token }
+}
+
+export async function updateUsuario(payload: UpdateUsuarioPayload): Promise<MeResponse> {
+  if (!isBackendActive()) {
+    return {
+      ...(perfilMock as MeResponse),
+      nome: payload.nome ?? (perfilMock as MeResponse).nome,
+      email: payload.email ?? (perfilMock as MeResponse).email,
+    }
+  }
+
+  const { data } = await apiClient.put<MeResponse>('/tcc-pro/usuario', payload)
+  return data
 }
 
 export async function registerAluno({ nome, email, senha }: RegisterPayload): Promise<AuthUser> {

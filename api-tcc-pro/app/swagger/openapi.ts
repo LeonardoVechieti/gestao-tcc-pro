@@ -112,6 +112,40 @@ const swaggerDocument = {
         responses: { '200': { description: 'Roles removidos' } },
       },
     },
+    '/usuario': {
+      get: {
+        summary: 'Listar usuários',
+        responses: { '200': { description: 'Lista de usuários' } },
+      },
+      put: {
+        summary: 'Atualizar dados cadastrais do usuário',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['uuidUsuario'],
+                properties: {
+                  uuidUsuario: { type: 'string' },
+                  nome: { type: 'string' },
+                  email: { type: 'string', format: 'email' },
+                  password: { type: 'string', minLength: 8 },
+                },
+              },
+            },
+          },
+        },
+        responses: { '200': { description: 'Usuário atualizado' } },
+      },
+    },
+    '/usuario/{uuid}': {
+      get: {
+        summary: 'Buscar usuário por uuid',
+        parameters: [{ name: 'uuid', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Usuário encontrado' } },
+      },
+    },
     '/aluno': {
       post: {
         summary: 'Criar aluno',
