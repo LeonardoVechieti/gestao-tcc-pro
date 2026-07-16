@@ -59,17 +59,9 @@ type OrientationsResponse = {
 type ActionPayload = {
   mensagem?: string
   adjustmentType?: 'tema' | 'trabalho'
-  operation?: OrientationOperation
+  operation?: 'cancelar_orientacao'
   prazos?: Record<string, string>
 }
-
-export type OrientationOperation =
-  | 'parecer'
-  | 'finalizar_parecer'
-  | 'agendar_reuniao'
-  | 'notificar_aluno'
-  | 'encaminhar_banca'
-  | 'cancelar_orientacao'
 
 const requiredStageOrder = [
   'Tema aprovado',
@@ -200,17 +192,17 @@ export async function getProfessorOrientations(): Promise<OrientationItem[]> {
     const professor = await findProfessorByEmail(user?.email ?? '')
 
     if (!professor) {
-      return mock
+      return []
     }
 
     const { data } = await apiClient.get<OrientationsResponse>(
       `/tcc-pro/orientacoes/professor/${professor.uuidProfessor}`,
     )
 
-    return data.orientacoes.length > 0 ? data.orientacoes.map(normalizeOrientation) : mock
+    return data.orientacoes.map(normalizeOrientation)
   } catch (error) {
-    console.error('Falha ao buscar orientações do professor, usando dados fictícios', error)
-    return mock
+    console.error('Falha ao buscar orientações do professor', error)
+    throw error
   }
 }
 
@@ -269,7 +261,7 @@ export async function completeOrientationStage(
   stageId: string,
   nota?: number,
 ): Promise<OrientationItem> {
-  if (!isBackendActive() || stageId.startsWith('virtual-')) {
+  if (!isBackendActive()) {
     const etapas = sortStages(
       orientation.etapas.map((stage) =>
         stage.id === stageId ? { ...stage, status: 'concluida' as const } : stage,
@@ -301,22 +293,23 @@ export async function completeOrientationStage(
   return normalizeOrientation(data)
 }
 
-export async function performOrientationOperation(
+export async function cancelOrientation(
   orientation: OrientationItem,
-  operation: OrientationOperation,
-  mensagem?: string,
+  mensagem = 'Orientação cancelada.',
 ): Promise<OrientationItem> {
   if (!isBackendActive()) {
-    const status = operation === 'cancelar_orientacao' ? 'cancelado' : orientation.status
     return addLocalComment(
       orientation,
-      mensagem || 'Operação registrada na orientação.',
+      mensagem,
       useAuthStore.getState().user?.nome ?? 'Professor',
-      status,
+      'cancelado',
     )
   }
 
-  return postOrientationAction(orientation, 'operacoes', { operation, mensagem })
+  return postOrientationAction(orientation, 'operacoes', {
+    operation: 'cancelar_orientacao',
+    mensagem,
+  })
 }
 
 export async function approveThemeWithDeadlines(

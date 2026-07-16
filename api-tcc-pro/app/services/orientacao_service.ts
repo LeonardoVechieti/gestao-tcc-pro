@@ -30,13 +30,20 @@ type OrientationActionPayload = {
 type ApproveThemeWithDeadlinesPayload = {
   sourceType?: OrientationSourceType
   autorNome?: string
-  prazos: {
+  prazos?: {
     'Tema aprovado'?: string
     'Projeto de TCC'?: string
     'Entrega parcial'?: string
     'Versão final'?: string
     'Banca'?: string
   }
+}
+
+type OrientationStagePayload = {
+  id: string
+  titulo: string
+  status: 'pendente' | 'em_analise' | 'concluida'
+  prazo: string
 }
 
 const requiredStages = [
@@ -56,12 +63,20 @@ function normalizeTemaStatus(status?: string): OrientationStatus {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
 
-  if (!key || key.includes('aguardando') || key.includes('pendente')) {
+  if (!key) {
+    return 'solicitacao_pendente'
+  }
+
+  if (key.includes('orientacao_aprovada') || key.includes('tema_pendente')) {
     return 'tema_pendente'
   }
 
-  if (key.includes('orientacao_aprovada')) {
-    return 'tema_pendente'
+  if (key.includes('aguardando') || key.includes('pendente')) {
+    return 'solicitacao_pendente'
+  }
+
+  if (key.includes('solicitacao')) {
+    return 'solicitacao_pendente'
   }
 
   if (key.includes('ajuste') || key.includes('correcao')) {
@@ -260,6 +275,7 @@ export default class OrientacaoService {
 
   async approveThemeWithDeadlines(id: string, payload: ApproveThemeWithDeadlinesPayload) {
     const { tcc, tema } = await this.resolveOrientation(id, payload.sourceType)
+    const prazos = payload.prazos ?? {}
 
     if (tcc || ['aprovado', 'em_andamento', 'banca', 'concluido'].includes(tema.status)) {
       throw new GenericResponseException('Tema já aprovado para acompanhamento', 409)
@@ -267,7 +283,7 @@ export default class OrientacaoService {
 
     // Validar que próxima etapa tem prazo (obrigatório)
     const proximaEtapa = 'Tema aprovado'
-    if (!payload.prazos[proximaEtapa]) {
+    if (!prazos[proximaEtapa]) {
       throw new GenericResponseException('Prazo da próxima etapa é obrigatório', 400)
     }
 
@@ -282,7 +298,7 @@ export default class OrientacaoService {
     // Atualizar prazos das etapas
     const stages = await TccTimeline.query().where('uuid_tcc', currentTcc.uuidTcc)
     for (const stage of stages) {
-      const prazo = payload.prazos[stage.titulo as keyof typeof payload.prazos]
+      const prazo = prazos[stage.titulo as keyof typeof prazos]
       if (prazo) {
         stage.dataEntrega = prazo as any
         await stage.save()
@@ -389,13 +405,17 @@ export default class OrientacaoService {
 
     // Se for Banca e tiver nota, criar ou atualizar avaliação
     if (isBanca && nota !== undefined) {
+      if (!tcc.uuidOrientador) {
+        throw new GenericResponseException('TCC sem professor orientador vinculado', 400)
+      }
+
       const avaliacaoModule = await import('#models/DAO/avaliacao')
       const avaliacaoRepositoryModule = await import('#repositories/avaliacao_repository')
       const Avaliacao = avaliacaoModule.default
       const AvaliacaoRepository = avaliacaoRepositoryModule.default
       const avaliacaoRepo = new AvaliacaoRepository()
 
-      let avaliacao = await avaliacaoRepo.findByTccAndProfessor(tcc.uuidTcc)
+      let avaliacao = await avaliacaoRepo.findByTccAndProfessor(tcc.uuidTcc, tcc.uuidOrientador)
       if (avaliacao) {
         avaliacao.nota = nota
         avaliacao.publicado = true
@@ -405,6 +425,7 @@ export default class OrientacaoService {
           Object.assign(new Avaliacao(), {
             uuidAvaliacao: Uuid.generate(),
             uuidTcc: tcc.uuidTcc,
+            uuidProfessor: tcc.uuidOrientador,
             nota,
             publicado: true,
           })
@@ -458,19 +479,19 @@ export default class OrientacaoService {
     const operation = payload.operation ?? 'comentario'
     const mensagem = payload.mensagem?.trim() || this.defaultOperationMessage(operation)
 
-    if (operation === 'encaminhar_banca' && tcc) {
-      tcc.status = 'banca'
-      await tcc.save()
+    if (operation !== 'cancelar_orientacao') {
+      throw new GenericResponseException(
+        'Operação não suportada pela modelagem atual de orientação',
+        400
+      )
     }
 
-    if (operation === 'cancelar_orientacao') {
-      if (tcc) {
-        tcc.status = 'orientacao_cancelada'
-        await tcc.save()
-      }
-      tema.status = 'orientacao_cancelada'
-      await tema.save()
+    if (tcc) {
+      tcc.status = 'orientacao_cancelada'
+      await tcc.save()
     }
+    tema.status = 'orientacao_cancelada'
+    await tema.save()
 
     await this.createSystemComment({
       tcc,
@@ -533,7 +554,7 @@ export default class OrientacaoService {
   private async buildTemaOrientation(tema: TemaTcc, alunoNome?: string) {
     const comments = await this.findComments(undefined, tema.uuidTemaTcc)
     const status = normalizeTemaStatus(tema.status)
-    const stages = this.buildVirtualStages(status)
+    const etapas: OrientationStagePayload[] = []
 
     return {
       id: tema.uuidTemaTcc,
@@ -548,11 +569,9 @@ export default class OrientacaoService {
       prioridade: status === 'ajustes_solicitados' ? 'alta' : 'media',
       atualizadoEm: toDateString(tema.updatedAt),
       resumo: tema.descricao ?? 'Proposta de tema aguardando análise.',
-      etapaAtual:
-        stages.find((stage) => stage.status !== 'concluida')?.titulo ??
-        'Todas as etapas concluídas',
-      progresso: calculateProgress(stages),
-      etapas: stages,
+      etapaAtual: this.getTemaCurrentStage(status),
+      progresso: 0,
+      etapas,
       comentarios: comments,
     }
   }
@@ -598,15 +617,6 @@ export default class OrientacaoService {
     }
   }
 
-  private buildVirtualStages(status: OrientationStatus) {
-    return requiredStages.map((titulo, index) => ({
-      id: `virtual-${index}`,
-      titulo,
-      status: status === 'aprovado' ? 'concluida' : index === 0 ? 'em_analise' : 'pendente',
-      prazo: 'A definir',
-    }))
-  }
-
   private normalizeStageStatus(status: string) {
     if (status === 'concluido') {
       return 'concluida'
@@ -619,13 +629,20 @@ export default class OrientacaoService {
     return status === 'concluida' || status === 'em_analise' ? status : 'pendente'
   }
 
+  private getTemaCurrentStage(status: OrientationStatus): string {
+    const labels: Partial<Record<OrientationStatus, string>> = {
+      ajustes_solicitados: 'Ajustes solicitados no tema',
+      cancelado: 'Orientação cancelada',
+      recusado: 'Tema recusado',
+      solicitacao_pendente: 'Aguardando aceite de orientação',
+      tema_pendente: 'Aguardando análise do tema',
+    }
+
+    return labels[status] ?? 'Aguardando aprovação para acompanhamento'
+  }
+
   private defaultOperationMessage(operation: string): string {
     const messages: Record<string, string> = {
-      parecer: 'Parecer da orientação registrado.',
-      finalizar_parecer: 'Parecer da orientação finalizado.',
-      agendar_reuniao: 'Reunião de acompanhamento solicitada.',
-      notificar_aluno: 'Aluno notificado sobre a orientação.',
-      encaminhar_banca: 'TCC encaminhado para etapa de banca.',
       cancelar_orientacao: 'Orientação cancelada.',
     }
 

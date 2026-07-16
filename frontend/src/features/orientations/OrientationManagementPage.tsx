@@ -14,9 +14,9 @@ import {
   addOrientationComment,
   approveOrientation,
   approveThemeWithDeadlines,
+  cancelOrientation,
   completeOrientationStage,
   getProfessorOrientations,
-  performOrientationOperation,
   rejectOrientation,
   requestOrientationAdjustments,
   type OrientationItem,
@@ -30,12 +30,8 @@ type ModalAction =
   | 'ajustes_trabalho'
   | 'comentario'
   | 'recusa'
-  | 'parecer'
-  | 'reuniao'
-  | 'notificacao'
   | 'cancelamento'
   | null
-type InfoDialog = 'aluno' | 'proposta' | 'documentos' | 'historico' | null
 
 type ApprovalDeadlines = {
   'Tema aprovado'?: Date
@@ -138,27 +134,38 @@ function getSummary(orientations: OrientationItem[]) {
 }
 
 function canApproveTheme(orientation: OrientationItem): boolean {
-  return ['solicitacao_pendente', 'tema_pendente', 'ajustes_solicitados'].includes(orientation.status)
+  return (
+    orientation.sourceType === 'tema' &&
+    ['tema_pendente', 'ajustes_solicitados'].includes(orientation.status)
+  )
 }
 
 function canRejectOrientation(orientation: OrientationItem): boolean {
-  return ['solicitacao_pendente', 'tema_pendente', 'ajustes_solicitados'].includes(orientation.status)
+  return (
+    orientation.sourceType === 'tema' &&
+    ['solicitacao_pendente', 'tema_pendente', 'ajustes_solicitados'].includes(orientation.status)
+  )
 }
 
 function canRequestThemeAdjustments(orientation: OrientationItem): boolean {
-  return ['solicitacao_pendente', 'tema_pendente', 'em_acompanhamento'].includes(orientation.status)
+  return (
+    orientation.sourceType === 'tema' &&
+    ['solicitacao_pendente', 'tema_pendente', 'em_acompanhamento'].includes(orientation.status)
+  )
 }
 
 function canRequestWorkAdjustments(orientation: OrientationItem): boolean {
-  return ['em_acompanhamento', 'ajustes_solicitados'].includes(orientation.status)
+  return (
+    orientation.sourceType === 'tcc' &&
+    ['em_acompanhamento', 'ajustes_solicitados'].includes(orientation.status)
+  )
 }
 
 function canManageActiveOrientation(orientation: OrientationItem): boolean {
-  return ['em_acompanhamento', 'ajustes_solicitados'].includes(orientation.status)
-}
-
-function canForwardToPanel(orientation: OrientationItem): boolean {
-  return orientation.status === 'em_acompanhamento' && orientation.progresso === 100
+  return (
+    orientation.sourceType === 'tcc' &&
+    ['em_acompanhamento', 'ajustes_solicitados'].includes(orientation.status)
+  )
 }
 
 function OrientationCard({
@@ -230,9 +237,9 @@ export function OrientationManagementPage() {
   const [selectedId, setSelectedId] = useState<string>()
   const [filter, setFilter] = useState<OrientationFilter>('todos')
   const [modalAction, setModalAction] = useState<ModalAction>(null)
-  const [infoDialog, setInfoDialog] = useState<InfoDialog>(null)
   const [modalText, setModalText] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [completingStage, setCompletingStage] = useState<CompletingStageState>({
     stageId: null,
     nota: undefined,
@@ -243,12 +250,21 @@ export function OrientationManagementPage() {
   useEffect(() => {
     let cancelled = false
 
-    getProfessorOrientations().then((result) => {
-      if (!cancelled) {
-        setOrientations(result)
-        setSelectedId(result[0]?.id)
-      }
-    })
+    getProfessorOrientations()
+      .then((result) => {
+        if (!cancelled) {
+          setLoadError(false)
+          setOrientations(result)
+          setSelectedId(result[0]?.id)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoadError(true)
+          setOrientations([])
+          setSelectedId(undefined)
+        }
+      })
 
     return () => {
       cancelled = true
@@ -265,7 +281,9 @@ export function OrientationManagementPage() {
   )
   const selectedStages = useMemo(() => sortOrientationStages(selected?.etapas ?? []), [selected])
   const selectedCurrentStage =
-    selectedStages.find((stage) => stage.status !== 'concluida')?.titulo ?? 'Todas as etapas concluídas'
+    selectedStages.length === 0
+      ? selected?.etapaAtual ?? 'Etapas ainda não criadas'
+      : selectedStages.find((stage) => stage.status !== 'concluida')?.titulo ?? 'Todas as etapas concluídas'
   const selectedNextStageId = selectedStages.find((stage) => stage.status !== 'concluida')?.id
 
   function replaceSelected(updated: OrientationItem) {
@@ -366,20 +384,8 @@ export function OrientationManagementPage() {
         return rejectOrientation(orientation, message)
       }
 
-      if (modalAction === 'parecer') {
-        return performOrientationOperation(orientation, 'parecer', message)
-      }
-
-      if (modalAction === 'reuniao') {
-        return performOrientationOperation(orientation, 'agendar_reuniao', message)
-      }
-
-      if (modalAction === 'notificacao') {
-        return performOrientationOperation(orientation, 'notificar_aluno', message)
-      }
-
       if (modalAction === 'cancelamento') {
-        return performOrientationOperation(orientation, 'cancelar_orientacao', message)
+        return cancelOrientation(orientation, message)
       }
 
       return requestOrientationAdjustments(
@@ -406,9 +412,16 @@ export function OrientationManagementPage() {
         <div>
           <Tag icon="pi pi-users" severity="info" value="Orientação" />
           <h1>Gestão da orientação</h1>
-          <p>Acompanhe solicitações, propostas, ajustes, comentários e etapas dos TCCs orientados.</p>
+          <p>Acompanhe solicitações, propostas, ajustes, comentários e etapas registradas no sistema.</p>
         </div>
       </section>
+
+      {loadError && (
+        <Message
+          severity="error"
+          text="Não foi possível carregar as orientações do backend. Nenhum dado fictício foi exibido."
+        />
+      )}
 
       <section className="orientation-summary-grid">
         <article>
@@ -441,14 +454,21 @@ export function OrientationManagementPage() {
           </div>
 
           <div className="orientation-list-items">
-            {filteredOrientations.map((orientation) => (
-              <OrientationCard
-                isSelected={orientation.id === selected?.id}
-                key={orientation.id}
-                onSelect={() => setSelectedId(orientation.id)}
-                orientation={orientation}
-              />
-            ))}
+            {filteredOrientations.length > 0 ? (
+              filteredOrientations.map((orientation) => (
+                <OrientationCard
+                  isSelected={orientation.id === selected?.id}
+                  key={orientation.id}
+                  onSelect={() => setSelectedId(orientation.id)}
+                  orientation={orientation}
+                />
+              ))
+            ) : (
+              <div className="orientation-list-empty">
+                <i className="pi pi-inbox" aria-hidden="true" />
+                <span>Nenhuma orientação encontrada no banco.</span>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -518,47 +538,8 @@ export function OrientationManagementPage() {
               />
             </section>
 
-            <section className="orientation-secondary-actions">
-              <Button icon="pi pi-id-card" label="Ver aluno" onClick={() => setInfoDialog('aluno')} outlined />
-              <Button icon="pi pi-file" label="Ver proposta" onClick={() => setInfoDialog('proposta')} outlined />
-              {canManageActiveOrientation(selected) && (
-                <Button icon="pi pi-pencil" label="Editar parecer" onClick={() => setModalAction('parecer')} outlined />
-              )}
-              {canManageActiveOrientation(selected) && (
-                <Button
-                  disabled={isSaving}
-                  icon="pi pi-lock"
-                  label="Finalizar parecer"
-                  onClick={() =>
-                    runAction((orientation) =>
-                      performOrientationOperation(orientation, 'finalizar_parecer', 'Parecer da orientação finalizado.'),
-                    )
-                  }
-                  outlined
-                />
-              )}
-              <Button icon="pi pi-folder" label="Anexos" onClick={() => setInfoDialog('documentos')} outlined />
-              {canManageActiveOrientation(selected) && (
-                <Button icon="pi pi-calendar-plus" label="Agendar reunião" onClick={() => setModalAction('reuniao')} outlined />
-              )}
-              {canForwardToPanel(selected) && (
-                <Button
-                  disabled={isSaving}
-                  icon="pi pi-send"
-                  label="Encaminhar banca"
-                  onClick={() =>
-                    runAction((orientation) =>
-                      performOrientationOperation(orientation, 'encaminhar_banca', 'TCC encaminhado para etapa de banca.'),
-                    )
-                  }
-                  outlined
-                />
-              )}
-              <Button icon="pi pi-history" label="Histórico" onClick={() => setInfoDialog('historico')} outlined />
-              {canManageActiveOrientation(selected) && (
-                <Button icon="pi pi-bell" label="Notificar aluno" onClick={() => setModalAction('notificacao')} outlined />
-              )}
-              {canManageActiveOrientation(selected) && (
+            {canManageActiveOrientation(selected) && (
+              <section className="orientation-secondary-actions">
                 <Button
                   disabled={isSaving}
                   icon="pi pi-ban"
@@ -567,8 +548,8 @@ export function OrientationManagementPage() {
                   outlined
                   severity="danger"
                 />
-              )}
-            </section>
+              </section>
+            )}
 
             <section className="orientation-progress-panel">
               <div className="section-title">
@@ -578,17 +559,26 @@ export function OrientationManagementPage() {
                 </div>
                 <Tag severity="info" value={`${selected.progresso}%`} />
               </div>
-              <ProgressBar showValue={false} value={selected.progresso} />
-              <div className="orientation-stage-list">
-                {selectedStages.map((stage) => (
-                  <StageRow
-                    canComplete={stage.id === selectedNextStageId && stage.status === 'em_analise'}
-                    key={stage.id}
-                    onComplete={completeStage}
-                    stage={stage}
-                  />
-                ))}
-              </div>
+              {selectedStages.length > 0 ? (
+                <>
+                  <ProgressBar showValue={false} value={selected.progresso} />
+                  <div className="orientation-stage-list">
+                    {selectedStages.map((stage) => (
+                      <StageRow
+                        canComplete={stage.id === selectedNextStageId && stage.status === 'em_analise'}
+                        key={stage.id}
+                        onComplete={completeStage}
+                        stage={stage}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <Message
+                  severity="info"
+                  text="As etapas de timeline ainda não existem para esta proposta. Elas serão criadas quando o tema for aprovado para acompanhamento."
+                />
+              )}
               {canRequestWorkAdjustments(selected) && (
                 <Button
                   disabled={isSaving}
@@ -634,14 +624,8 @@ export function OrientationManagementPage() {
             ? 'Registrar comentário'
             : modalAction === 'recusa'
               ? 'Recusar orientação'
-              : modalAction === 'parecer'
-                ? 'Editar parecer da orientação'
-                : modalAction === 'reuniao'
-                  ? 'Agendar reunião'
-                  : modalAction === 'notificacao'
-                    ? 'Notificar aluno'
-                    : modalAction === 'cancelamento'
-                      ? 'Cancelar orientação'
+              : modalAction === 'cancelamento'
+                ? 'Cancelar orientação'
               : modalAction === 'ajustes_trabalho'
                 ? 'Solicitar ajustes no trabalho'
                 : 'Solicitar ajustes no tema'
@@ -668,62 +652,6 @@ export function OrientationManagementPage() {
             />
           </div>
         </div>
-      </Dialog>
-
-      <Dialog
-        header={
-          infoDialog === 'aluno'
-            ? 'Detalhes do aluno'
-            : infoDialog === 'proposta'
-              ? 'Proposta completa'
-              : infoDialog === 'documentos'
-                ? 'Anexos e documentos'
-                : 'Histórico da orientação'
-        }
-        onHide={() => setInfoDialog(null)}
-        style={{ width: 'min(42rem, calc(100vw - 2rem))' }}
-        visible={Boolean(infoDialog)}
-      >
-        {selected && (
-          <div className="orientation-info-dialog">
-            {infoDialog === 'aluno' && (
-              <>
-                <strong>{selected.aluno}</strong>
-                <span>TCC: {selected.titulo}</span>
-                <span>Situação: {statusLabel[selected.status]}</span>
-                <span>Etapa atual: {selected.etapaAtual}</span>
-              </>
-            )}
-            {infoDialog === 'proposta' && (
-              <>
-                <strong>{selected.titulo}</strong>
-                <span>Área: {selected.area}</span>
-                <span>Linha de pesquisa: {selected.linhaPesquisa}</span>
-                <p>{selected.resumo}</p>
-              </>
-            )}
-            {infoDialog === 'documentos' && (
-              <>
-                <strong>Anexos do TCC</strong>
-                <span>O backend ainda não possui entidade de documento. Esta área fica pronta para conectar upload, download, aprovação e solicitação de reenvio quando o módulo de documentos for criado.</span>
-              </>
-            )}
-            {infoDialog === 'historico' && (
-              <div className="orientation-comments-list">
-                {selected.comentarios.map((comment) => (
-                  <article key={comment.id}>
-                    <div>
-                      <strong>{comment.autor}</strong>
-                      <Tag severity={comment.tipo === 'Professor' ? 'info' : 'secondary'} value={comment.tipo} />
-                    </div>
-                    <p>{comment.mensagem}</p>
-                    <small>{formatDateBr(comment.data)}</small>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </Dialog>
 
       <Dialog
