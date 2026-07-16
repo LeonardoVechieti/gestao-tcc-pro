@@ -15,6 +15,29 @@ import type { Config } from '@japa/runner/types'
  */
 export const plugins: Config['plugins'] = [assert(), apiClient(), pluginAdonisJS(app)]
 
+function assertSafeTestDatabase() {
+  const databaseName = process.env.DB_DATABASE
+  const nodeEnv = process.env.NODE_ENV
+
+  if (nodeEnv !== 'test') {
+    throw new Error(`Testes devem rodar com NODE_ENV=test; valor atual: ${nodeEnv ?? 'indefinido'}`)
+  }
+
+  if (!databaseName || !/(^test_|_test$|test)/i.test(databaseName)) {
+    throw new Error(
+      [
+        `Recusando executar migrations de teste em DB_DATABASE="${databaseName ?? 'indefinido'}".`,
+        'Configure um banco dedicado de testes, por exemplo DB_DATABASE=dev_tcc_pro_test.',
+      ].join(' ')
+    )
+  }
+}
+
+function migrateTestDatabase() {
+  assertSafeTestDatabase()
+  return testUtils.db().migrate()
+}
+
 /**
  * Configure lifecycle function to run before and after all the
  * tests.
@@ -23,7 +46,7 @@ export const plugins: Config['plugins'] = [assert(), apiClient(), pluginAdonisJS
  * The teardown functions are executer after all the tests
  */
 export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
-  setup: [() => testUtils.db().migrate()],
+  setup: [migrateTestDatabase],
   teardown: [],
 }
 
@@ -33,6 +56,9 @@ export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
  */
 export const configureSuite: Config['configureSuite'] = (suite) => {
   if (['browser', 'functional', 'e2e'].includes(suite.name)) {
-    return suite.setup(() => testUtils.httpServer().start())
+    return suite.setup(() => {
+      assertSafeTestDatabase()
+      return testUtils.httpServer().start()
+    })
   }
 }

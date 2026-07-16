@@ -12,6 +12,10 @@ import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createTemaTcc, getTemaTccList, getMyTemaTcc, type TemaTcc } from '../../shared/api/tema-tcc-api'
 import { getProfessorRecommendations, getProfessorById, type ProfessorRecommendation } from '../../shared/api/professor-api'
+import {
+  professorAreaOptions as areaOptions,
+  professorLineOptions as lineOptions,
+} from '../../shared/professor/research-options'
 import { useAuthStore } from '../../shared/stores/auth-store'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 import { InfoPanel } from '../../shared/ui/organisms/InfoPanel/InfoPanel'
@@ -27,20 +31,6 @@ const topicSchema = z.object({
 })
 
 type TopicForm = z.infer<typeof topicSchema>
-
-const areaOptions = [
-  { label: 'Marketing', value: 'marketing' },
-  { label: 'Sistemas de Informação', value: 'sistemas' },
-  { label: 'Ciência de Dados', value: 'dados' },
-  { label: 'Engenharia de Software', value: 'software' },
-]
-
-const lineOptions = [
-  { label: 'Transformação digital', value: 'transformacao-digital' },
-  { label: 'Análise de dados educacionais', value: 'analise de dados educacionais' },
-  { label: 'Experiência do usuário', value: 'ux' },
-  { label: 'Gestão e processos', value: 'gestao-processos' },
-]
 
 export function StudentTopicPage() {
   const user = useAuthStore((state) => state.user)

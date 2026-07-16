@@ -86,12 +86,7 @@ const seedData: SeedData = {
     },
     {
       nomePerfil: 'Professor',
-      roles: [
-        'ROLE_TCC_VIEW',
-        'ROLE_AGENDA_VIEW',
-        'ROLE_DASH_PROFESSOR',
-        'ROLE_MENU_AGENDA',
-      ],
+      roles: ['ROLE_TCC_VIEW', 'ROLE_AGENDA_VIEW', 'ROLE_DASH_PROFESSOR', 'ROLE_MENU_AGENDA'],
     },
     {
       nomePerfil: 'Coordenador',
@@ -112,7 +107,7 @@ const seedData: SeedData = {
 }
 
 export default class RolePerfilSeeder {
-  public async run() {
+  async run() {
     const roleDefinitions = seedData.roles
     const perfilDefinitions = seedData.perfis
 

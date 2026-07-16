@@ -9,6 +9,7 @@ export function AdminPage() {
   const canViewRoles = Boolean(user?.roles?.some((role) => ['ROLE_ROLE_VIEW', 'ROLE_ROLE_EDIT'].includes(role)))
   const canViewPerfis = Boolean(user?.roles?.some((role) => ['ROLE_PERFIL_VIEW', 'ROLE_PERFIL_EDIT'].includes(role)))
   const canViewAlunos = Boolean(user?.roles?.some((role) => ['ROLE_ALUNO_VIEW', 'ROLE_ALUNO_EDIT'].includes(role)))
+  const canViewProfessores = Boolean(user?.roles?.some((role) => ['ROLE_PROFESSOR_VIEW', 'ROLE_PROFESSOR_EDIT'].includes(role)))
 
   return (
     <div className="page-stack">
@@ -49,6 +50,14 @@ export function AdminPage() {
             <h2>Alunos</h2>
             <p>Cadastre, edite e remova alunos aptos ao TCC.</p>
             <Button label="Gerenciar alunos" icon="pi pi-user-plus" onClick={() => navigate('/admin/alunos')} />
+          </div>
+        )}
+
+        {canViewProfessores && (
+          <div className="admin-card">
+            <h2>Professores</h2>
+            <p>Cadastre orientadores, áreas de interesse e linhas de pesquisa.</p>
+            <Button label="Gerenciar professores" icon="pi pi-graduation-cap" onClick={() => navigate('/admin/professores')} />
           </div>
         )}
       </section>

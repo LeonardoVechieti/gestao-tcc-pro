@@ -20,10 +20,14 @@ export default class Professor extends BaseModel {
   @column()
   declare email: string
 
-  @column()
+  @column({
+    prepare: (value: unknown) => (value === undefined ? value : JSON.stringify(value)),
+  })
   declare areasInteresse: string[] | null
 
-  @column()
+  @column({
+    prepare: (value: unknown) => (value === undefined ? value : JSON.stringify(value)),
+  })
   declare linhasPesquisa: string[] | null
 
   @column()

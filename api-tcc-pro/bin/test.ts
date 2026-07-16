@@ -12,15 +12,35 @@
 
 process.env.NODE_ENV = 'test'
 
+import { fileURLToPath } from 'node:url'
 import 'reflect-metadata'
 import { Ignitor, prettyPrintError } from '@adonisjs/core'
 import { configure, processCLIArgs, run } from '@japa/runner'
+import dotenv from 'dotenv'
 
 /**
  * URL to the application root. AdonisJS need it to resolve
  * paths to file and directories for scaffolding commands
  */
 const APP_ROOT = new URL('../', import.meta.url)
+
+dotenv.config({ path: fileURLToPath(new URL('.env', APP_ROOT)) })
+dotenv.config({ path: fileURLToPath(new URL('.env.test', APP_ROOT)), override: true })
+
+function assertSafeTestDatabase() {
+  const databaseName = process.env.DB_DATABASE
+
+  if (!databaseName || !/(^test_|_test$|test)/i.test(databaseName)) {
+    throw new Error(
+      [
+        `Recusando executar testes com DB_DATABASE="${databaseName ?? 'indefinido'}".`,
+        'Configure um banco dedicado de testes, por exemplo DB_DATABASE=dev_tcc_pro_test.',
+      ].join(' ')
+    )
+  }
+}
+
+assertSafeTestDatabase()
 
 /**
  * The importer is used to import files in context of the

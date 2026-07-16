@@ -43,7 +43,10 @@ export default class AvaliacaoController {
     return this.avaliacaoRepository.update(avaliacao)
   }
 
-  async findByTccAndProfessor({ params, request: _request }: HttpContext): Promise<Avaliacao | null> {
+  async findByTccAndProfessor({
+    params,
+    request: _request,
+  }: HttpContext): Promise<Avaliacao | null> {
     return this.avaliacaoRepository.findByTccAndProfessor(params.uuidTcc)
   }
 }

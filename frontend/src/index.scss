@@ -826,7 +826,8 @@ input {
 }
 
 .field-group .p-inputtext,
-.field-group .p-dropdown {
+.field-group .p-dropdown,
+.field-group .p-multiselect {
 	width: 100%;
 }
 
@@ -838,7 +839,8 @@ input {
 .field-group input.p-inputtext,
 .field-group .p-password-input,
 .field-group textarea.p-inputtext,
-.field-group .p-dropdown {
+.field-group .p-dropdown,
+.field-group .p-multiselect {
 	border-radius: var(--radius-sm);
 }
 
@@ -848,21 +850,30 @@ input {
 	height: 2.5rem;
 }
 
+.field-group .p-multiselect {
+	min-height: 2.5rem;
+}
+
 .field-group input.p-inputtext,
 .field-group .p-password-input,
 .field-group textarea.p-inputtext,
-.field-group .p-dropdown .p-dropdown-label {
+.field-group .p-dropdown .p-dropdown-label,
+.field-group .p-multiselect .p-multiselect-label {
 	font-size: var(--font-size-sm);
 	padding: var(--space-2) var(--space-3);
 }
 
-.field-group .p-dropdown .p-dropdown-label {
+.field-group .p-dropdown .p-dropdown-label,
+.field-group .p-multiselect .p-multiselect-label {
 	align-items: center;
 	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
 	line-height: 1.25;
 }
 
-.field-group .p-dropdown .p-dropdown-trigger {
+.field-group .p-dropdown .p-dropdown-trigger,
+.field-group .p-multiselect .p-multiselect-trigger {
 	width: var(--space-8);
 }
 
@@ -1036,6 +1047,12 @@ input {
 .selected-professor-summary strong {
 	display: block;
 	margin-bottom: var(--space-2);
+}
+
+.research-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
 }
 
 .loading-panel {
@@ -1687,6 +1704,15 @@ input {
 	color: var(--color-text-strong);
 	display: block;
 	font-size: var(--font-size-lg);
+}
+
+.profile-professor-panel {
+	grid-column: 1 / -1;
+}
+
+.profile-form-actions {
+	display: flex;
+	justify-content: flex-end;
 }
 
 .profile-avatar {

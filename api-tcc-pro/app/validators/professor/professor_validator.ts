@@ -6,6 +6,8 @@ export const ProfessorValidator = vine.compile(
     uuidProfessor: vine.string().optional(),
     nome: vine.string().optional(),
     email: vine.string().optional(),
+    areasInteresse: vine.array(vine.string()).optional(),
+    linhasPesquisa: vine.array(vine.string()).optional(),
     ativo: vine.boolean().optional(),
   })
 )
@@ -15,6 +17,8 @@ export const ProfessorIndexValidator = vine.compile(
     nome: vine.string().optional(),
     filterNome: vine.string().optional(),
     filterEmail: vine.string().optional(),
+    area: vine.string().optional(),
+    linhaPesquisa: vine.string().optional(),
     ...DataIndexPaginateValidatorBase,
   })
 )

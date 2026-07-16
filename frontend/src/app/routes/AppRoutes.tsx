@@ -14,6 +14,8 @@ import { AdminPage } from '../../features/admin/AdminPage'
 import { UsuariosPage } from '../../features/admin/UsuariosPage'
 import { AlunosPage } from '../../features/admin/AlunosPage'
 import { AlunoFormPage } from '../../features/admin/AlunoFormPage'
+import { ProfessoresPage } from '../../features/admin/ProfessoresPage'
+import { ProfessorFormPage } from '../../features/admin/ProfessorFormPage'
 import { RolesPage } from '../../features/admin/RolesPage'
 import { RoleFormPage } from '../../features/admin/RoleFormPage'
 import { PerfisPage } from '../../features/admin/PerfisPage'
@@ -244,6 +246,30 @@ export function AppRoutes() {
           element={
             <RequireRole role="ROLE_ALUNO_EDIT">
               <AlunoFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/professores"
+          element={
+            <RequireRole role="ROLE_PROFESSOR_VIEW">
+              <ProfessoresPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/professores/novo"
+          element={
+            <RequireRole role="ROLE_PROFESSOR_EDIT">
+              <ProfessorFormPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="admin/professores/:id"
+          element={
+            <RequireRole role="ROLE_PROFESSOR_EDIT">
+              <ProfessorFormPage />
             </RequireRole>
           }
         />

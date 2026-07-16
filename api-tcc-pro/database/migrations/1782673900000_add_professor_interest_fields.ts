@@ -12,9 +12,7 @@ export default class extends BaseSchema {
   }
 
   async down() {
-    this.schema.alterTable(this.tableName, (table) => {
-      table.dropColumn('areas_interesse')
-      table.dropColumn('linhas_pesquisa')
-    })
+    await this.schema.raw(`ALTER TABLE "${this.tableName}" DROP COLUMN IF EXISTS "areas_interesse"`)
+    await this.schema.raw(`ALTER TABLE "${this.tableName}" DROP COLUMN IF EXISTS "linhas_pesquisa"`)
   }
 }

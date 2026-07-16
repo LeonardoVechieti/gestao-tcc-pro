@@ -258,10 +258,7 @@ export default class OrientacaoService {
     return this.buildTccOrientation(currentTcc, tema)
   }
 
-  async approveThemeWithDeadlines(
-    id: string,
-    payload: ApproveThemeWithDeadlinesPayload,
-  ) {
+  async approveThemeWithDeadlines(id: string, payload: ApproveThemeWithDeadlinesPayload) {
     const { tcc, tema } = await this.resolveOrientation(id, payload.sourceType)
 
     if (tcc || ['aprovado', 'em_andamento', 'banca', 'concluido'].includes(tema.status)) {
@@ -347,7 +344,8 @@ export default class OrientacaoService {
     const tema = await TemaTcc.findOrFail(tcc.uuidTemaTcc)
     // Ordena pela sequência canônica das etapas: created_at pode empatar
     // porque as etapas são criadas em paralelo
-    const stages = (await TccTimeline.query().where('uuid_tcc', tcc.uuidTcc)).sort(
+    const queriedStages = await TccTimeline.query().where('uuid_tcc', tcc.uuidTcc)
+    const stages = queriedStages.sort(
       (current, next) => getStageOrder(current.titulo) - getStageOrder(next.titulo)
     )
     const nextStage = stages.find((stage) => stage.status !== 'concluida')
@@ -358,24 +356,18 @@ export default class OrientacaoService {
         nextStage
           ? `A próxima etapa a concluir é "${nextStage.titulo}".`
           : 'Todas as etapas já foram concluídas.',
-        400,
+        400
       )
     }
 
     // Exigir nota se estiver marcando Banca como concluída
     if (isBanca && nota === undefined) {
-      throw new GenericResponseException(
-        'Nota é obrigatória ao concluir a Banca',
-        400,
-      )
+      throw new GenericResponseException('Nota é obrigatória ao concluir a Banca', 400)
     }
 
     // Validar nota (0-10)
     if (nota !== undefined && (nota < 0 || nota > 10)) {
-      throw new GenericResponseException(
-        'Nota deve estar entre 0 e 10',
-        400,
-      )
+      throw new GenericResponseException('Nota deve estar entre 0 e 10', 400)
     }
 
     timeline.status = 'concluida'
@@ -384,9 +376,9 @@ export default class OrientacaoService {
     // Ativar próxima etapa (marcar como em_analise)
     const currentStageIndex = stages.findIndex((s) => s.uuidTimeline === uuidTimeline)
     if (currentStageIndex !== -1 && currentStageIndex < stages.length - 1) {
-      const nextStage = stages[currentStageIndex + 1]
-      nextStage.status = 'em_analise'
-      await nextStage.save()
+      const followingStage = stages[currentStageIndex + 1]
+      followingStage.status = 'em_analise'
+      await followingStage.save()
     }
 
     // Se todas as etapas estão concluídas, marcar TCC como aprovado
@@ -397,8 +389,10 @@ export default class OrientacaoService {
 
     // Se for Banca e tiver nota, criar ou atualizar avaliação
     if (isBanca && nota !== undefined) {
-      const Avaliacao = (await import('#models/DAO/avaliacao')).default
-      const AvaliacaoRepository = (await import('#repositories/avaliacao_repository')).default
+      const avaliacaoModule = await import('#models/DAO/avaliacao')
+      const avaliacaoRepositoryModule = await import('#repositories/avaliacao_repository')
+      const Avaliacao = avaliacaoModule.default
+      const AvaliacaoRepository = avaliacaoRepositoryModule.default
       const avaliacaoRepo = new AvaliacaoRepository()
 
       let avaliacao = await avaliacaoRepo.findByTccAndProfessor(tcc.uuidTcc)
@@ -413,7 +407,7 @@ export default class OrientacaoService {
             uuidTcc: tcc.uuidTcc,
             nota,
             publicado: true,
-          }),
+          })
         )
       }
     }
@@ -428,10 +422,7 @@ export default class OrientacaoService {
     return this.buildTccOrientation(tcc, tema)
   }
 
-  async updateStageDeadlines(
-    uuidTcc: string,
-    prazos: Record<string, string>,
-  ) {
+  async updateStageDeadlines(uuidTcc: string, prazos: Record<string, string>) {
     const stages = await TccTimeline.query().where('uuid_tcc', uuidTcc)
 
     if (stages.length === 0) {
@@ -443,7 +434,7 @@ export default class OrientacaoService {
     if (nextStage && !prazos[nextStage.titulo]) {
       throw new GenericResponseException(
         `Prazo da próxima etapa (${nextStage.titulo}) é obrigatório`,
-        400,
+        400
       )
     }
 

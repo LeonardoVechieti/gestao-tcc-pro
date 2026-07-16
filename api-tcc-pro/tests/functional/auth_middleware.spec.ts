@@ -1,11 +1,8 @@
 import { test } from '@japa/runner'
-import testUtils from '@adonisjs/core/services/test_utils'
 
-test.group('Auth Middleware', (group) => {
-  group.each.setup(() => testUtils.httpServer().start())
-
+test.group('Auth Middleware', () => {
   test('deve retornar 401 quando o token não é fornecido', async ({ client }) => {
-    const response = await client.get('/api/exemplo/protegido')
+    const response = await client.get('/tcc-pro/auth/me')
 
     response.assertStatus(401)
     response.assertBodyContains({
@@ -15,7 +12,7 @@ test.group('Auth Middleware', (group) => {
   })
 
   test('deve retornar 401 quando o formato é inválido', async ({ client }) => {
-    const response = await client.get('/api/exemplo/protegido').header('Authorization', 'Invalid')
+    const response = await client.get('/tcc-pro/auth/me').header('Authorization', 'Invalid')
 
     response.assertStatus(401)
     response.assertBodyContains({
@@ -26,7 +23,7 @@ test.group('Auth Middleware', (group) => {
 
   test('deve retornar 401 quando o token é inválido', async ({ client }) => {
     const response = await client
-      .get('/api/exemplo/protegido')
+      .get('/tcc-pro/auth/me')
       .header('Authorization', 'Bearer token-invalido')
 
     response.assertStatus(401)
@@ -37,20 +34,24 @@ test.group('Auth Middleware', (group) => {
   })
 
   test('deve permitir acesso quando o token é válido', async ({ client, assert }) => {
-    const validToken = process.env.API_AUTH_TOKEN
+    const email = `usuario.teste.${Date.now()}@gestaotcc.local`
+    const loginResponse = await client.post('/tcc-pro/auth/register').json({
+      nome: 'Usuário Teste',
+      email,
+      password: 'Teste@12345',
+    })
+    const token = loginResponse.body().token
 
-    const response = await client
-      .get('/api/exemplo/protegido')
-      .header('Authorization', `Bearer ${validToken}`)
+    const response = await client.get('/tcc-pro/auth/me').header('Authorization', `Bearer ${token}`)
 
     response.assertStatus(200)
-    assert.properties(response.body(), ['message', 'authenticated'])
+    assert.properties(response.body(), ['uuidUsuario', 'email'])
+    assert.equal(response.body().email, email)
   })
 
-  test('rota de health deve ser pública', async ({ client }) => {
-    const response = await client.get('/portal-dados/health')
+  test('rota de swagger deve ser pública', async ({ client }) => {
+    const response = await client.get('/tcc-pro/swagger.json')
 
-    // Deve retornar 200 sem necessidade de token
     response.assertStatus(200)
   })
 })

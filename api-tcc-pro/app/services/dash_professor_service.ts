@@ -144,7 +144,11 @@ export default class DashProfessorService {
       },
       avaliacoes: tccData,
       proximasBancas,
-      avisos: createAvisos({ pendentes: emAndamento, rascunhos: aguardandoBanca, proximasApresentacoes }),
+      avisos: createAvisos({
+        pendentes: emAndamento,
+        rascunhos: aguardandoBanca,
+        proximasApresentacoes,
+      }),
     }
   }
 }
