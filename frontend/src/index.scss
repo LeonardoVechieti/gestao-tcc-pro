@@ -1454,10 +1454,39 @@ input {
 	.orientation-summary-grid,
 	.work-area,
 	.student-dashboard-grid,
+	.profile-metrics,
+	.profile-content-grid,
+	.profile-form-grid,
+	.profile-research-summary,
 	.professor-dashboard-grid,
 	.student-topic-grid,
 	.orientation-workspace {
 		grid-template-columns: 1fr;
+	}
+
+	.profile-hero {
+		align-items: flex-start;
+	}
+
+	.profile-hero__identity {
+		align-items: flex-start;
+		width: 100%;
+	}
+
+	.profile-hero__status {
+		align-items: flex-start;
+		justify-content: flex-start;
+		text-align: left;
+	}
+
+	.profile-form-actions {
+		align-items: stretch;
+		flex-direction: column-reverse;
+	}
+
+	.profile-form-actions .p-button {
+		justify-content: center;
+		width: 100%;
 	}
 
 	.orientation-list {
@@ -1697,22 +1726,189 @@ input {
 .profile-hero {
 	align-items: center;
 	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-5);
+	justify-content: space-between;
+}
+
+.profile-hero__identity {
+	align-items: center;
+	display: flex;
 	gap: var(--space-4);
+	min-width: 0;
+}
+
+.profile-hero__copy {
+	display: grid;
+	gap: var(--space-2);
+	min-width: 0;
+}
+
+.profile-kicker,
+.profile-section-title__eyebrow {
+	color: var(--color-brand);
+	font-size: var(--font-size-xs);
+	font-weight: 800;
+	letter-spacing: 0;
+	text-transform: uppercase;
 }
 
 .profile-hero strong {
 	color: var(--color-text-strong);
 	display: block;
-	font-size: var(--font-size-lg);
+	font-size: var(--font-size-2xl);
+	line-height: 1.2;
+}
+
+.profile-hero__meta,
+.profile-hero__status {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+.profile-hero__email {
+	align-items: center;
+	background: var(--color-surface-soft);
+	border-radius: var(--radius-sm);
+	display: inline-flex;
+	gap: var(--space-2);
+	max-width: 100%;
+	min-height: 2rem;
+	min-width: 0;
+	padding: 0 var(--space-3);
+}
+
+.profile-hero__email > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.profile-hero__email i {
+	color: var(--color-brand);
+	flex-shrink: 0;
+}
+
+.profile-hero__status {
+	justify-content: flex-end;
+	text-align: right;
+}
+
+.profile-metrics,
+.profile-content-grid,
+.profile-form-grid,
+.profile-research-summary {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.profile-metrics {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-metric {
+	align-items: center;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	box-shadow: var(--color-shadow);
+	display: flex;
+	gap: var(--space-3);
+	min-width: 0;
+	padding: var(--space-4);
+}
+
+.profile-metric__text {
+	display: grid;
+	gap: var(--space-1);
+	min-width: 0;
+}
+
+.profile-metric strong {
+	color: var(--color-text-strong);
+	overflow-wrap: anywhere;
+}
+
+.profile-content-grid {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.profile-section-title {
+	align-items: flex-start;
+}
+
+.profile-section-title > div {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.profile-empty-state {
+	align-items: flex-start;
+	display: flex;
+	gap: var(--space-3);
+	padding-top: var(--space-2);
+}
+
+.profile-empty-state strong {
+	color: var(--color-text-strong);
+	display: block;
+	margin-bottom: var(--space-1);
+}
+
+.profile-empty-state p {
+	margin: 0;
 }
 
 .profile-professor-panel {
 	grid-column: 1 / -1;
 }
 
-.profile-form-actions {
+.profile-professor-form {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.profile-form-grid,
+.profile-research-summary {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-form-grid .field-group {
+	min-width: 0;
+}
+
+.profile-multiselect {
+	width: 100%;
+}
+
+.profile-research-summary {
+	border-top: 1px solid var(--color-border);
+	padding-top: var(--space-4);
+}
+
+.profile-research-summary__block {
+	display: grid;
+	gap: var(--space-3);
+	min-width: 0;
+}
+
+.profile-research-preview {
 	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	min-height: 2rem;
+}
+
+.profile-form-actions {
+	align-items: center;
+	border-top: 1px solid var(--color-border);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
 	justify-content: flex-end;
+	padding-top: var(--space-4);
 }
 
 .profile-avatar {
