@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
+import { Message } from 'primereact/message'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
@@ -16,6 +17,7 @@ import {
   type PerfilRow,
   updateAluno,
 } from '../../shared/api/admin-api'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 
 const alunoSchema = z.object({
   nome: z.string().min(3, 'Informe o nome do aluno.'),
@@ -161,7 +163,10 @@ export function AlunoFormPage() {
       toast.current?.show({
         severity: 'error',
         summary: 'Erro ao salvar',
-        detail: 'Não foi possível salvar o aluno. Verifique os campos e tente novamente.',
+        detail: getApiErrorMessage(
+          error,
+          'Não foi possível salvar o aluno. Verifique os campos e tente novamente.'
+        ),
         life: 5000,
       })
     }
@@ -186,7 +191,15 @@ export function AlunoFormPage() {
       </section>
 
       <section className="form-panel">
-        <form onSubmit={handleSubmit(handleSave)}>
+        <form className="admin-form admin-form-grid" onSubmit={handleSubmit(handleSave)}>
+          {id ? (
+            <Message
+              className="admin-form-note"
+              severity="info"
+              text="Matrícula e e-mail são identificadores sensíveis. Se este aluno já tiver usuário, tema ou TCC, o backend bloqueará alterações que possam quebrar o histórico."
+            />
+          ) : null}
+
           <FormField label="Nome" htmlFor="nome" error={errors.nome?.message}>
             <Controller
               control={control}

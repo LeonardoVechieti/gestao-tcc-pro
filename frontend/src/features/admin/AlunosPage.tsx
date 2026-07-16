@@ -2,11 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
 import { DataTable } from 'primereact/datatable'
 import { InputText } from 'primereact/inputtext'
 import { ProgressSpinner } from 'primereact/progressspinner'
+import { Tag } from 'primereact/tag'
 import { Toast } from 'primereact/toast'
-import { getAlunos, type AlunoRow } from '../../shared/api/admin-api'
+import { deleteAluno, getAlunos, type AlunoRow } from '../../shared/api/admin-api'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 
 export function AlunosPage() {
   const [alunos, setAlunos] = useState<AlunoRow[] | null>(null)
@@ -42,6 +45,38 @@ export function AlunosPage() {
     })
   }, [search, alunos])
 
+  async function removeAluno(aluno: AlunoRow) {
+    try {
+      await deleteAluno(aluno.uuidAluno)
+      setAlunos((current) => current?.filter((item) => item.uuidAluno !== aluno.uuidAluno) ?? null)
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Aluno removido',
+        detail: 'O aluno foi removido com sucesso.',
+        life: 3000,
+      })
+    } catch (error) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao remover',
+        detail: getApiErrorMessage(error, 'Não foi possível remover o aluno.'),
+        life: 6000,
+      })
+    }
+  }
+
+  function handleDeleteAluno(aluno: AlunoRow) {
+    confirmDialog({
+      header: 'Remover aluno',
+      message: `Remover "${aluno.nome}"? Alunos com usuário, tema ou TCC são protegidos; nesses casos, inative o cadastro.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Remover',
+      rejectLabel: 'Cancelar',
+      acceptClassName: 'p-button-danger',
+      accept: () => void removeAluno(aluno),
+    })
+  }
+
   if (!alunos) {
     return (
       <div className="page-loading">
@@ -53,10 +88,11 @@ export function AlunosPage() {
   return (
     <div className="page-stack">
       <Toast ref={toast} />
+      <ConfirmDialog />
       <section className="page-header">
         <div>
           <h1>Alunos</h1>
-          <p>Listagem de alunos aptos ao TCC com busca rápida.</p>
+          <p>Cadastre alunos aptos ao TCC; cadastros com histórico devem ser inativados, não removidos.</p>
         </div>
         <Button label="Novo aluno" icon="pi pi-plus" onClick={() => navigate('/admin/alunos/novo')} />
       </section>
@@ -86,7 +122,9 @@ export function AlunosPage() {
           <Column field="curso" header="Curso" />
           <Column field="situacao" header="Situação" />
           <Column
-            body={(row: AlunoRow) => (row.ativo ? 'Ativo' : 'Inativo')}
+            body={(row: AlunoRow) => (
+              <Tag severity={row.ativo ? 'success' : 'warning'} value={row.ativo ? 'Ativo' : 'Inativo'} />
+            )}
             header="Status"
             style={{ width: '8rem' }}
           />
@@ -99,10 +137,16 @@ export function AlunosPage() {
                   label="Editar"
                   onClick={() => navigate(`/admin/alunos/${row.uuidAluno}`)}
                 />
+                <Button
+                  className="p-button-text p-button-danger"
+                  icon="pi pi-trash"
+                  label="Remover"
+                  onClick={() => handleDeleteAluno(row)}
+                />
               </div>
             )}
             header="Ações"
-            style={{ width: '12rem' }}
+            style={{ width: '18rem' }}
           />
         </DataTable>
       </section>

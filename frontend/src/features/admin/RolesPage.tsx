@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
 import { DataTable } from 'primereact/datatable'
 import { InputText } from 'primereact/inputtext'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Toast } from 'primereact/toast'
 import { useRef } from 'react'
 import { deleteRole, getRoles, type RoleRow } from '../../shared/api/admin-api'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 
 export function RolesPage() {
   const [roles, setRoles] = useState<RoleRow[] | null>(null)
@@ -43,10 +45,10 @@ export function RolesPage() {
     })
   }, [search, roles])
 
-  async function handleDeleteRole(uuidRole: string) {
+  async function removeRole(role: RoleRow) {
     try {
-      await deleteRole(uuidRole)
-      setRoles((current) => current?.filter((item) => item.uuidRole !== uuidRole) ?? null)
+      await deleteRole(role.uuidRole)
+      setRoles((current) => current?.filter((item) => item.uuidRole !== role.uuidRole) ?? null)
       toast.current?.show({
         severity: 'success',
         summary: 'Role removida',
@@ -57,10 +59,22 @@ export function RolesPage() {
       toast.current?.show({
         severity: 'error',
         summary: 'Erro ao remover',
-        detail: 'Não foi possível remover a role.',
+        detail: getApiErrorMessage(error, 'Não foi possível remover a role.'),
         life: 5000,
       })
     }
+  }
+
+  function handleDeleteRole(role: RoleRow) {
+    confirmDialog({
+      header: 'Remover role',
+      message: `Remover "${role.desRole}"? Roles vinculadas a perfis são protegidas pelo sistema.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Remover',
+      rejectLabel: 'Cancelar',
+      acceptClassName: 'p-button-danger',
+      accept: () => void removeRole(role),
+    })
   }
 
   if (!roles) {
@@ -74,10 +88,11 @@ export function RolesPage() {
   return (
     <div className="page-stack">
       <Toast ref={toast} />
+      <ConfirmDialog />
       <section className="page-header">
         <div>
           <h1>Roles</h1>
-          <p>Crie, edite e gerencie roles do sistema.</p>
+          <p>Crie roles auxiliares e preserve códigos já vinculados a perfis.</p>
         </div>
         <Button label="Nova role" icon="pi pi-plus" onClick={() => navigate('/admin/roles/novo')} />
       </section>
@@ -116,7 +131,7 @@ export function RolesPage() {
                   className="p-button-text p-button-danger"
                   icon="pi pi-trash"
                   label="Remover"
-                  onClick={() => handleDeleteRole(role.uuidRole)}
+                  onClick={() => handleDeleteRole(role)}
                 />
               </div>
             )}

@@ -1,4 +1,5 @@
 import { Button } from 'primereact/button'
+import { Tag } from 'primereact/tag'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../shared/stores/auth-store'
 
@@ -10,56 +11,86 @@ export function AdminPage() {
   const canViewPerfis = Boolean(user?.roles?.some((role) => ['ROLE_PERFIL_VIEW', 'ROLE_PERFIL_EDIT'].includes(role)))
   const canViewAlunos = Boolean(user?.roles?.some((role) => ['ROLE_ALUNO_VIEW', 'ROLE_ALUNO_EDIT'].includes(role)))
   const canViewProfessores = Boolean(user?.roles?.some((role) => ['ROLE_PROFESSOR_VIEW', 'ROLE_PROFESSOR_EDIT'].includes(role)))
+  const modules = [
+    {
+      title: 'Usuários',
+      description: 'Consulte contas, perfis e vínculos de aluno.',
+      icon: 'pi pi-users',
+      action: 'Ir para usuários',
+      to: '/admin/usuarios',
+      canView: canViewUsuarios,
+      tag: 'Consulta',
+    },
+    {
+      title: 'Roles',
+      description: 'Controle permissões técnicas usadas por menus e rotas.',
+      icon: 'pi pi-key',
+      action: 'Gerenciar roles',
+      to: '/admin/roles',
+      canView: canViewRoles,
+      tag: 'Protegido',
+    },
+    {
+      title: 'Perfis',
+      description: 'Monte conjuntos de roles para cada tipo de usuário.',
+      icon: 'pi pi-id-card',
+      action: 'Gerenciar perfis',
+      to: '/admin/perfis',
+      canView: canViewPerfis,
+      tag: 'Protegido',
+    },
+    {
+      title: 'Alunos',
+      description: 'Cadastre alunos aptos e preserve o histórico acadêmico.',
+      icon: 'pi pi-user-plus',
+      action: 'Gerenciar alunos',
+      to: '/admin/alunos',
+      canView: canViewAlunos,
+      tag: 'TCC',
+    },
+    {
+      title: 'Professores',
+      description: 'Mantenha orientadores, áreas e linhas de pesquisa.',
+      icon: 'pi pi-graduation-cap',
+      action: 'Gerenciar professores',
+      to: '/admin/professores',
+      canView: canViewProfessores,
+      tag: 'Orientação',
+    },
+  ]
 
   return (
     <div className="page-stack">
       <section className="page-header">
         <div>
           <h1>Administração</h1>
-          <p>Gerencie usuários, roles e perfis do sistema.</p>
+          <p>Gerencie cadastros estruturais preservando vínculos já usados no fluxo de TCC.</p>
         </div>
       </section>
 
       <section className="admin-home-panel">
-        {canViewUsuarios && (
-          <div className="admin-card">
-            <h2>Usuários</h2>
-            <p>Visualize os usuários do sistema. Esta página é apenas de consulta.</p>
-            <Button label="Ir para usuários" icon="pi pi-users" onClick={() => navigate('/admin/usuarios')} />
-          </div>
-        )}
-
-        {canViewRoles && (
-          <div className="admin-card">
-            <h2>Roles</h2>
-            <p>Cadastre e edite roles para controle de permissões.</p>
-            <Button label="Gerenciar roles" icon="pi pi-key" onClick={() => navigate('/admin/roles')} />
-          </div>
-        )}
-
-        {canViewPerfis && (
-          <div className="admin-card">
-            <h2>Perfis</h2>
-            <p>Cadastre e edite perfis, associando roles sempre que necessário.</p>
-            <Button label="Gerenciar perfis" icon="pi pi-id-card" onClick={() => navigate('/admin/perfis')} />
-          </div>
-        )}
-
-        {canViewAlunos && (
-          <div className="admin-card">
-            <h2>Alunos</h2>
-            <p>Cadastre, edite e remova alunos aptos ao TCC.</p>
-            <Button label="Gerenciar alunos" icon="pi pi-user-plus" onClick={() => navigate('/admin/alunos')} />
-          </div>
-        )}
-
-        {canViewProfessores && (
-          <div className="admin-card">
-            <h2>Professores</h2>
-            <p>Cadastre orientadores, áreas de interesse e linhas de pesquisa.</p>
-            <Button label="Gerenciar professores" icon="pi pi-graduation-cap" onClick={() => navigate('/admin/professores')} />
-          </div>
-        )}
+        {modules
+          .filter((item) => item.canView)
+          .map((item) => (
+            <article className="admin-card" key={item.to}>
+              <div className="admin-card__header">
+                <span className="admin-card__icon">
+                  <i className={item.icon} aria-hidden="true" />
+                </span>
+                <Tag value={item.tag} />
+              </div>
+              <div>
+                <h2>{item.title}</h2>
+                <p>{item.description}</p>
+              </div>
+              <Button
+                icon={item.icon}
+                iconPos="right"
+                label={item.action}
+                onClick={() => navigate(item.to)}
+              />
+            </article>
+          ))}
       </section>
     </div>
   )

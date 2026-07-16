@@ -32,11 +32,7 @@ export default class PerfilController {
   }
 
   async delete({ params }: HttpContext): Promise<void> {
-    try {
-      await this.perfilRepository.delete(params.id)
-    } catch (error) {
-      throw new Error('Perfil não encontrado.')
-    }
+    await this.perfilRepository.delete(params.id)
   }
 
   async getPerfilRoles({ params }: HttpContext): Promise<PerfilRole[]> {
@@ -49,11 +45,7 @@ export default class PerfilController {
   }
 
   async deletePerfilRoles({ request }: HttpContext): Promise<void> {
-    try {
-      const payload = (await PerfilRoleValidator.validate(request.all())) as unknown as PerfilRole
-      await this.perfilRepository.deletePerfilRoles(payload)
-    } catch (error) {
-      throw new Error('Perfil Role não encontrado')
-    }
+    const payload = (await PerfilRoleValidator.validate(request.all())) as unknown as PerfilRole
+    await this.perfilRepository.deletePerfilRoles(payload)
   }
 }

@@ -1,8 +1,14 @@
 import Professor from '#models/DAO/professor'
 import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
+import TemaTcc from '#models/DAO/tema_tcc'
+import Tcc from '#models/DAO/tcc'
+import Avaliacao from '#models/DAO/avaliacao'
+import Agenda from '#models/DAO/agenda'
+import GenericResponseException from '#exceptions/generic_response_exception'
 
 export default class ProfessorRepository {
   async store(data: Professor): Promise<Professor> {
+    await this.ensureUniqueEmail(data.email)
     return await Professor.create(data)
   }
 
@@ -46,12 +52,59 @@ export default class ProfessorRepository {
 
   async update(data: Professor): Promise<Professor> {
     const model = await Professor.findOrFail(data.uuidProfessor)
+
+    await this.ensureUniqueEmail(data.email, model.uuidProfessor)
+
+    if (data.email && data.email !== model.email) {
+      await this.ensureProfessorHasNoUsage(
+        model.uuidProfessor,
+        'Não é possível alterar o e-mail de um professor que já possui vínculo no fluxo de TCC.'
+      )
+    }
+
     model.merge(data)
     return await model.save()
   }
 
   async delete(id: string): Promise<void> {
+    await this.ensureProfessorHasNoUsage(
+      id,
+      'Não é possível remover um professor vinculado a tema, TCC, agenda ou avaliação. Inative o cadastro para preservar o histórico.'
+    )
     const professor = await Professor.findOrFail(id)
     await professor.delete()
+  }
+
+  private async ensureUniqueEmail(email?: string | null, ignoredUuid?: string) {
+    const normalizedEmail = email?.trim()
+
+    if (!normalizedEmail) {
+      return
+    }
+
+    const query = Professor.query().where('email', normalizedEmail)
+
+    if (ignoredUuid) {
+      query.whereNot('uuidProfessor', ignoredUuid)
+    }
+
+    const existingProfessor = await query.first()
+
+    if (existingProfessor) {
+      throw new GenericResponseException('Já existe um professor cadastrado com este e-mail.', 409)
+    }
+  }
+
+  private async ensureProfessorHasNoUsage(uuidProfessor: string, message: string) {
+    const [tema, tcc, avaliacao, agenda] = await Promise.all([
+      TemaTcc.query().where('uuidProfessor', uuidProfessor).first(),
+      Tcc.query().where('uuidOrientador', uuidProfessor).first(),
+      Avaliacao.query().where('uuidProfessor', uuidProfessor).first(),
+      Agenda.query().where('uuidProfessor', uuidProfessor).first(),
+    ])
+
+    if (tema || tcc || avaliacao || agenda) {
+      throw new GenericResponseException(message, 409)
+    }
   }
 }

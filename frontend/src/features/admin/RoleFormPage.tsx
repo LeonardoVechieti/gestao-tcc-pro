@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
+import { Message } from 'primereact/message'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
@@ -13,6 +14,7 @@ import {
   type RoleRow,
   updateRole,
 } from '../../shared/api/admin-api'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 
 const roleSchema = z.object({
@@ -97,7 +99,10 @@ export function RoleFormPage() {
       toast.current?.show({
         severity: 'error',
         summary: 'Erro ao salvar',
-        detail: 'Não foi possível salvar a role. Verifique os campos e tente novamente.',
+        detail: getApiErrorMessage(
+          error,
+          'Não foi possível salvar a role. Verifique os campos e tente novamente.'
+        ),
         life: 5000,
       })
     }
@@ -122,7 +127,15 @@ export function RoleFormPage() {
       </section>
 
       <section className="form-panel">
-        <form onSubmit={handleSubmit(handleSave)}>
+        <form className="admin-form" onSubmit={handleSubmit(handleSave)}>
+          {id ? (
+            <Message
+              className="admin-form-note"
+              severity="info"
+              text="O código da role é usado para liberar menus e rotas. Se a role já estiver vinculada a algum perfil, o backend bloqueará a troca do código."
+            />
+          ) : null}
+
           <FormField label="Código da role" htmlFor="codRole" error={errors.codRole?.message}>
             <Controller
               control={control}

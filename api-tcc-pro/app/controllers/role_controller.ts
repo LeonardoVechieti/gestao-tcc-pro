@@ -30,10 +30,6 @@ export default class RoleController {
   }
 
   async delete({ params }: HttpContext): Promise<void> {
-    try {
-      await this.roleRepository.delete(params.id)
-    } catch (error) {
-      throw new Error('Role não encontrada.')
-    }
+    await this.roleRepository.delete(params.id)
   }
 }

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
 import { DataTable } from 'primereact/datatable'
 import { InputText } from 'primereact/inputtext'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { Toast } from 'primereact/toast'
-import { getProfessores, type ProfessorRow } from '../../shared/api/professor-api'
+import { deleteProfessor, getProfessores, type ProfessorRow } from '../../shared/api/professor-api'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 import {
   getResearchOptionLabel,
   normalizeResearchValues,
@@ -88,6 +90,40 @@ export function ProfessoresPage() {
     })
   }, [search, professores])
 
+  async function removeProfessor(professor: ProfessorRow) {
+    try {
+      await deleteProfessor(professor.uuidProfessor)
+      setProfessores((current) =>
+        current?.filter((item) => item.uuidProfessor !== professor.uuidProfessor) ?? null
+      )
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Professor removido',
+        detail: 'O professor foi removido com sucesso.',
+        life: 3000,
+      })
+    } catch (error) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao remover',
+        detail: getApiErrorMessage(error, 'Não foi possível remover o professor.'),
+        life: 6000,
+      })
+    }
+  }
+
+  function handleDeleteProfessor(professor: ProfessorRow) {
+    confirmDialog({
+      header: 'Remover professor',
+      message: `Remover "${professor.nome}"? Professores com tema, TCC, agenda ou avaliação são protegidos; nesses casos, inative o cadastro.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Remover',
+      rejectLabel: 'Cancelar',
+      acceptClassName: 'p-button-danger',
+      accept: () => void removeProfessor(professor),
+    })
+  }
+
   if (!professores) {
     return (
       <div className="page-loading">
@@ -99,10 +135,11 @@ export function ProfessoresPage() {
   return (
     <div className="page-stack">
       <Toast ref={toast} />
+      <ConfirmDialog />
       <section className="page-header">
         <div>
           <h1>Professores</h1>
-          <p>Cadastro de orientadores, áreas de interesse e linhas de pesquisa.</p>
+          <p>Gerencie orientadores; vínculos acadêmicos preservam o histórico do professor.</p>
         </div>
         <Button label="Novo professor" icon="pi pi-plus" onClick={() => navigate('/admin/professores/novo')} />
       </section>
@@ -156,10 +193,16 @@ export function ProfessoresPage() {
                   label="Editar"
                   onClick={() => navigate(`/admin/professores/${professor.uuidProfessor}`)}
                 />
+                <Button
+                  className="p-button-text p-button-danger"
+                  icon="pi pi-trash"
+                  label="Remover"
+                  onClick={() => handleDeleteProfessor(professor)}
+                />
               </div>
             )}
             header="Ações"
-            style={{ width: '12rem' }}
+            style={{ width: '18rem' }}
           />
         </DataTable>
       </section>

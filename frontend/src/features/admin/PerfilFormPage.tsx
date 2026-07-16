@@ -6,6 +6,7 @@ import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Dialog } from 'primereact/dialog'
 import { InputText } from 'primereact/inputtext'
+import { Message } from 'primereact/message'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
@@ -21,6 +22,7 @@ import {
   type RoleRow,
   updatePerfil,
 } from '../../shared/api/admin-api'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 
 const perfilSchema = z.object({
@@ -134,7 +136,10 @@ export function PerfilFormPage() {
       toast.current?.show({
         severity: 'error',
         summary: 'Erro ao salvar',
-        detail: 'Não foi possível salvar o perfil. Verifique os dados e tente novamente.',
+        detail: getApiErrorMessage(
+          error,
+          'Não foi possível salvar o perfil. Verifique os dados e tente novamente.'
+        ),
         life: 5000,
       })
     }
@@ -178,7 +183,15 @@ export function PerfilFormPage() {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(handleSave)}>
+        <form className="admin-form" onSubmit={handleSubmit(handleSave)}>
+          {id ? (
+            <Message
+              className="admin-form-note"
+              severity="info"
+              text="Perfis estruturais como Administrador, Aluno, Professor e Coordenador têm nome e roles essenciais protegidos para evitar perda de acesso."
+            />
+          ) : null}
+
           {activeTab === 'perfil' ? (
             <>
               <FormField label="Nome do perfil" htmlFor="nomePerfil" error={errors.nomePerfil?.message}>

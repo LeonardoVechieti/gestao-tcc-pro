@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
+import { Message } from 'primereact/message'
 import { MultiSelect } from 'primereact/multiselect'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Toast } from 'primereact/toast'
@@ -19,6 +20,7 @@ import {
   professorAreaOptions,
   professorLineOptions,
 } from '../../shared/professor/research-options'
+import { getApiErrorMessage } from '../../shared/api/api-errors'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 
 const professorSchema = z.object({
@@ -121,11 +123,14 @@ export function ProfessorFormPage() {
         life: 3000,
       })
       navigate('/admin/professores')
-    } catch {
+    } catch (error) {
       toast.current?.show({
         severity: 'error',
         summary: 'Erro ao salvar',
-        detail: 'Não foi possível salvar o professor. Verifique os campos e tente novamente.',
+        detail: getApiErrorMessage(
+          error,
+          'Não foi possível salvar o professor. Verifique os campos e tente novamente.'
+        ),
         life: 5000,
       })
     }
@@ -150,7 +155,15 @@ export function ProfessorFormPage() {
       </section>
 
       <section className="form-panel">
-        <form onSubmit={handleSubmit(handleSave)}>
+        <form className="admin-form admin-form-grid" onSubmit={handleSubmit(handleSave)}>
+          {id ? (
+            <Message
+              className="admin-form-note"
+              severity="info"
+              text="O e-mail identifica o professor em várias telas. Se ele já estiver vinculado a temas, TCCs, agendas ou avaliações, o backend bloqueará a troca do e-mail."
+            />
+          ) : null}
+
           <FormField label="Nome" htmlFor="nome" error={errors.nome?.message}>
             <Controller
               control={control}
