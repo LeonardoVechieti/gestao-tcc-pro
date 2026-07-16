@@ -1,8 +1,13 @@
 import TemaTcc from '#models/DAO/tema_tcc'
+import Tcc from '#models/DAO/tcc'
+import GenericResponseException from '#exceptions/generic_response_exception'
 import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
+
+const inactiveOrientationStatuses = ['recusado', 'cancelado', 'orientacao_cancelada']
 
 export default class TemaTccRepository {
   async store(data: TemaTcc): Promise<TemaTcc> {
+    await this.ensureAlunoCanCreateTema(data.uuidAluno)
     return await TemaTcc.create(data)
   }
 
@@ -51,6 +56,39 @@ export default class TemaTccRepository {
       .where('uuid_aluno', uuidAluno)
       .orderBy('created_at', 'desc')
       .first()
+  }
+
+  async findActiveByAluno(uuidAluno: string): Promise<TemaTcc | Tcc | null> {
+    const activeTcc = await Tcc.query()
+      .where('uuid_aluno', uuidAluno)
+      .whereNotIn('status', inactiveOrientationStatuses)
+      .orderBy('created_at', 'desc')
+      .first()
+
+    if (activeTcc) {
+      return activeTcc
+    }
+
+    return await TemaTcc.query()
+      .where('uuid_aluno', uuidAluno)
+      .whereNotIn('status', inactiveOrientationStatuses)
+      .orderBy('created_at', 'desc')
+      .first()
+  }
+
+  private async ensureAlunoCanCreateTema(uuidAluno?: string) {
+    if (!uuidAluno) {
+      return
+    }
+
+    const activeOrientation = await this.findActiveByAluno(uuidAluno)
+
+    if (activeOrientation) {
+      throw new GenericResponseException(
+        'Aluno já possui uma proposta ou TCC ativo. Finalize, cancele ou aguarde a recusa antes de criar uma nova proposta.',
+        409
+      )
+    }
   }
 
   async delete(id: string): Promise<void> {

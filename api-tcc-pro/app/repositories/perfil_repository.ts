@@ -90,7 +90,10 @@ export default class PerfilRepository {
     const profileName = normalizeProfileName(perfil.nomePerfil)
 
     if (PROTECTED_PROFILE_REQUIRED_ROLES[profileName]) {
-      throw new GenericResponseException('Não é possível remover um perfil estrutural do sistema.', 409)
+      throw new GenericResponseException(
+        'Não é possível remover um perfil estrutural do sistema.',
+        409
+      )
     }
 
     const assignedUser = await Usuario.query().where('uuidPerfil', id).first()

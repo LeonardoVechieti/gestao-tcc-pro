@@ -1027,6 +1027,108 @@ select.p-inputtext:focus,
 	position: relative;
 }
 
+.topic-form-panel {
+	gap: var(--space-6);
+}
+
+.topic-form-header {
+	align-items: flex-start;
+	border-bottom: 1px solid var(--color-border);
+	display: grid;
+	gap: var(--space-4);
+	grid-template-columns: minmax(0, 1fr) auto;
+	padding-bottom: var(--space-5);
+}
+
+.topic-form-header h2,
+.topic-form-section__header h2 {
+	color: var(--color-text-strong);
+	margin: var(--space-2) 0 var(--space-1);
+}
+
+.topic-form-header h2 {
+	font-size: var(--font-size-2xl);
+}
+
+.topic-form-header p,
+.topic-form-section__header p {
+	color: var(--color-text-muted);
+	margin: 0;
+}
+
+.topic-form-progress,
+.requirements-progress {
+	align-items: end;
+	background: var(--color-surface-soft);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	display: grid;
+	min-width: 8rem;
+	padding: var(--space-3) var(--space-4);
+	text-align: right;
+}
+
+.topic-form-progress strong,
+.requirements-progress strong {
+	color: var(--color-text-strong);
+	font-size: var(--font-size-2xl);
+	line-height: 1;
+}
+
+.topic-form-progress span,
+.requirements-progress span {
+	color: var(--color-text-muted);
+	font-size: var(--font-size-xs);
+}
+
+.topic-form-section {
+	border-top: 1px solid var(--color-border);
+	display: grid;
+	gap: var(--space-4);
+	padding-top: var(--space-5);
+}
+
+.topic-form-header + .topic-form-section,
+.topic-form-header + .historical-proposal-panel + .topic-form-section {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.topic-form-section__header {
+	align-items: start;
+	display: grid;
+	gap: var(--space-3);
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.topic-form-section__icon {
+	align-items: center;
+	background: var(--tint-blue-bg);
+	border-radius: var(--radius-sm);
+	color: var(--color-brand);
+	display: inline-flex;
+	height: 2.75rem;
+	justify-content: center;
+	width: 2.75rem;
+}
+
+.topic-form-section__body,
+.professor-picker {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.topic-form-section__body > .field-group,
+.topic-field-grid .field-group {
+	margin-bottom: 0;
+}
+
+.topic-field-grid {
+	display: grid;
+	gap: var(--space-4);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .tab-header {
 	display: flex;
 	gap: var(--space-3);
@@ -1296,6 +1398,13 @@ select.p-inputtext:focus,
 	color: var(--color-green);
 }
 
+.requirements-progress {
+	align-items: center;
+	grid-template-columns: auto minmax(0, 1fr);
+	justify-items: end;
+	text-align: right;
+}
+
 .draft-status {
 	align-items: center;
 	background: var(--tint-purple-bg);
@@ -1315,6 +1424,25 @@ select.p-inputtext:focus,
 	height: 3rem;
 	place-items: center;
 	width: 3rem;
+}
+
+.draft-status--closed {
+	background: var(--tint-danger-bg);
+	border-color: var(--color-danger);
+}
+
+.draft-status--closed .draft-status__icon {
+	background: var(--color-danger);
+}
+
+.historical-proposal-panel {
+	background: var(--color-surface-soft);
+	border: 1px solid var(--color-border);
+	border-left: 3px solid var(--color-danger);
+	border-radius: var(--radius-sm);
+	display: grid;
+	gap: var(--space-4);
+	padding: var(--space-5);
 }
 
 .submitted-panel {
@@ -1388,14 +1516,29 @@ select.p-inputtext:focus,
 	background: var(--color-surface-soft);
 	border: 1px solid var(--color-border);
 	border-radius: var(--radius-sm);
+	color: inherit;
 	cursor: pointer;
 	display: grid;
 	gap: var(--space-2);
+	grid-template-columns: minmax(0, 1fr) auto;
 	padding: var(--space-4);
+	text-align: left;
 	transition:
 		border-color 0.2s ease,
 		background-color 0.2s ease,
 		transform 0.2s ease;
+	width: 100%;
+}
+
+.professor-item small,
+.professor-item span {
+	color: var(--color-text-muted);
+}
+
+.professor-item > span {
+	display: grid;
+	gap: var(--space-1);
+	min-width: 0;
 }
 
 .professor-item:hover {
@@ -1407,6 +1550,19 @@ select.p-inputtext:focus,
 .professor-item.is-selected {
 	border-color: var(--color-brand);
 	background: var(--tint-brand-bg);
+}
+
+.professor-item.is-selected i {
+	color: var(--color-brand);
+}
+
+.topic-professor-list,
+.tema-list {
+	display: grid;
+	gap: var(--space-3);
+	list-style: none;
+	margin: 0;
+	padding: 0;
 }
 
 .selected-professor-summary {
@@ -2106,6 +2262,17 @@ select.p-inputtext:focus,
 	.submitted-actions {
 		align-items: stretch;
 		flex-direction: column;
+	}
+
+	.topic-form-header,
+	.topic-field-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.topic-form-progress {
+		justify-items: start;
+		text-align: left;
+		width: 100%;
 	}
 
 	.submitted-actions .p-button {

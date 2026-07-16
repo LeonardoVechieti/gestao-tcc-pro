@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from 'primereact/button'
 import { Dropdown } from 'primereact/dropdown'
@@ -97,11 +98,68 @@ function sortStudentOrientations(orientations: OrientationItem[]): OrientationIt
   })
 }
 
+const closedOrientationStatuses = new Set<OrientationStatus>(['recusado', 'cancelado'])
+
+function isClosedOrientation(orientation: OrientationItem): boolean {
+  return closedOrientationStatuses.has(orientation.status)
+}
+
+function isActiveOrientation(orientation: OrientationItem): boolean {
+  return !isClosedOrientation(orientation)
+}
+
+function getTopicDraftFromOrientation(orientation: OrientationItem): TopicForm {
+  return {
+    title: orientation.titulo === 'Tema não encontrado' ? '' : orientation.titulo,
+    area: orientation.area === 'Área não informada' ? '' : orientation.area,
+    researchLine:
+      orientation.linhaPesquisa === 'Linha não informada' ? '' : orientation.linhaPesquisa,
+    description:
+      orientation.resumo === 'Proposta de tema aguardando análise.' ? '' : orientation.resumo,
+  }
+}
+
+function getClosureComment(orientation: OrientationItem) {
+  return (
+    orientation.comentarios.find((comment) =>
+      ['recusa', 'cancelar_orientacao'].includes(comment.categoria ?? ''),
+    ) ?? orientation.comentarios[0]
+  )
+}
+
+function TopicFormSection({
+  children,
+  description,
+  icon,
+  title,
+}: {
+  children: ReactNode
+  description: string
+  icon: string
+  title: string
+}) {
+  return (
+    <section className="topic-form-section">
+      <div className="topic-form-section__header">
+        <span className="topic-form-section__icon">
+          <i className={icon} aria-hidden="true" />
+        </span>
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+      <div className="topic-form-section__body">{children}</div>
+    </section>
+  )
+}
+
 export function StudentTopicPage() {
   const user = useAuthStore((state) => state.user)
   const {
     control,
     handleSubmit,
+    reset,
     watch,
     formState: { errors },
   } = useForm<TopicForm>({
@@ -141,7 +199,12 @@ export function StudentTopicPage() {
   const researchLine = watch('researchLine')
   const description = watch('description')
   const studentId = user?.uuidAluno ?? user?.aluno?.uuidAluno
-  const currentOrientation = studentOrientations[0] ?? null
+  const currentOrientation = studentOrientations.find(isActiveOrientation) ?? null
+  const historicalOrientations = studentOrientations.filter(isClosedOrientation)
+  const latestHistoricalOrientation = historicalOrientations[0] ?? null
+  const latestHistoricalComment = latestHistoricalOrientation
+    ? getClosureComment(latestHistoricalOrientation)
+    : null
   const latestAdjustment = currentOrientation?.comentarios.find((comment) =>
     ['ajuste_tema', 'ajuste_trabalho'].includes(comment.categoria ?? ''),
   )
@@ -173,19 +236,19 @@ export function StudentTopicPage() {
     try {
       const data = await getAlunoOrientations(studentId)
       const sorted = sortStudentOrientations(data)
-      const primary = sorted[0]
+      const activeOrientation = sorted.find(isActiveOrientation)
 
       setStudentOrientations(sorted)
 
-      if (primary) {
+      if (activeOrientation) {
         setCreatedTema(null)
       }
 
-      if (primary?.professor?.uuidProfessor) {
+      if (activeOrientation?.professor?.uuidProfessor) {
         setSelectedProfessor({
-          uuidProfessor: primary.professor.uuidProfessor,
-          nome: primary.professor.nome ?? 'Professor não informado',
-          email: primary.professor.email,
+          uuidProfessor: activeOrientation.professor.uuidProfessor,
+          nome: activeOrientation.professor.nome ?? 'Professor não informado',
+          email: activeOrientation.professor.email,
         })
       }
     } catch (error) {
@@ -213,18 +276,7 @@ export function StudentTopicPage() {
       return
     }
 
-    setProposalDraft({
-      title: currentOrientation.titulo === 'Tema não encontrado' ? '' : currentOrientation.titulo,
-      area: currentOrientation.area === 'Área não informada' ? '' : currentOrientation.area,
-      researchLine:
-        currentOrientation.linhaPesquisa === 'Linha não informada'
-          ? ''
-          : currentOrientation.linhaPesquisa,
-      description:
-        currentOrientation.resumo === 'Proposta de tema aguardando análise.'
-          ? ''
-          : currentOrientation.resumo,
-    })
+    setProposalDraft(getTopicDraftFromOrientation(currentOrientation))
   }, [currentOrientation])
 
   const requirements = [
@@ -234,6 +286,7 @@ export function StudentTopicPage() {
     { label: 'Descrição / justificativa', done: description.trim().length >= 80 },
     { label: 'Professor selecionado', done: Boolean(selectedProfessor) },
   ]
+  const completedRequirements = requirements.filter((item) => item.done).length
 
   const isRequestSent = Boolean(currentOrientation || createdTema)
   const submittedProfessor = currentOrientation?.professor ?? selectedProfessor
@@ -478,10 +531,22 @@ export function StudentTopicPage() {
       </div>
     </div>
   ) : (
-    <form className="form-panel" onSubmit={handleSubmit(handleSendTopic)}>
+    <form className="form-panel topic-form-panel" onSubmit={handleSubmit(handleSendTopic)}>
       <Toast ref={toast} />
       <div className={`form-loading ${isSubmitting ? 'active' : ''}`}>
         <ProgressSpinner strokeWidth="4" />
+      </div>
+
+      <div className="topic-form-header">
+        <div>
+          <Tag icon="pi pi-file-edit" severity="info" value="Nova proposta" />
+          <h2>Dados para análise do orientador</h2>
+          <p>Organize a proposta antes de enviar para o professor escolhido.</p>
+        </div>
+        <div className="topic-form-progress">
+          <strong>{completedRequirements}/{requirements.length}</strong>
+          <span>itens completos</span>
+        </div>
       </div>
 
       {acompanhamentoError ? (
@@ -492,139 +557,213 @@ export function StudentTopicPage() {
       ) : null}
 
       {hasLoadedMinhaSolicitacao ? (
-        <Message severity="info" text="Nenhuma proposta enviada." />
+        latestHistoricalOrientation ? (
+          <section className="historical-proposal-panel">
+            <div className="submitted-panel__header">
+              <div>
+                <h2>Última proposta encerrada</h2>
+                <p>
+                  Esta solicitação ficou no histórico e não bloqueia uma nova proposta.
+                </p>
+              </div>
+              <Tag
+                severity={statusSeverity[latestHistoricalOrientation.status]}
+                value={statusLabel[latestHistoricalOrientation.status]}
+              />
+            </div>
+            <div className="submitted-details">
+              <div>
+                <strong>Título:</strong>
+                <p>{latestHistoricalOrientation.titulo}</p>
+              </div>
+              <div>
+                <strong>Professor indicado:</strong>
+                <p>{latestHistoricalOrientation.professor?.nome ?? 'Não informado'}</p>
+                <p>{latestHistoricalOrientation.professor?.email ?? ''}</p>
+              </div>
+              <div>
+                <strong>Atualizado em:</strong>
+                <p>{formatDateBr(latestHistoricalOrientation.atualizadoEm)}</p>
+              </div>
+            </div>
+            {latestHistoricalComment ? (
+              <Message
+                severity={latestHistoricalOrientation.status === 'recusado' ? 'warn' : 'info'}
+                text={`${latestHistoricalComment.autor}: ${latestHistoricalComment.mensagem}`}
+              />
+            ) : null}
+            <div className="submitted-actions">
+              <Button
+                icon="pi pi-copy"
+                label="Usar dados da proposta"
+                onClick={() => handleReuseHistoricalProposal(latestHistoricalOrientation)}
+                outlined
+                type="button"
+              />
+            </div>
+          </section>
+        ) : (
+          <Message severity="info" text="Nenhuma proposta enviada." />
+        )
       ) : null}
 
-      <FormField
-        label="Título provisório *"
-        htmlFor="title"
-        error={errors.title?.message}
-        counter={{ current: title.length, max: 150 }}
+      <TopicFormSection
+        description="Defina o assunto e a área usada para encontrar orientadores compatíveis."
+        icon="pi pi-bookmark"
+        title="Tema e linha de pesquisa"
       >
-        <Controller
-          control={control}
-          name="title"
-          render={({ field }) => (
-            <InputText
-              id="title"
-              invalid={Boolean(errors.title)}
-              placeholder="Digite um título provisório para o seu tema de TCC"
-              disabled={isSubmitting}
-              {...field}
-            />
-          )}
-        />
-      </FormField>
+        <FormField
+          label="Título provisório *"
+          htmlFor="title"
+          error={errors.title?.message}
+          counter={{ current: title.length, max: 150 }}
+        >
+          <Controller
+            control={control}
+            name="title"
+            render={({ field }) => (
+              <InputText
+                id="title"
+                invalid={Boolean(errors.title)}
+                placeholder="Digite um título provisório para o seu tema de TCC"
+                disabled={isSubmitting}
+                {...field}
+              />
+            )}
+          />
+        </FormField>
 
-      <FormField label="Área de interesse *" htmlFor="area" error={errors.area?.message}>
-        <Controller
-          control={control}
-          name="area"
-          render={({ field }) => (
-            <Dropdown
-              id="area"
-              invalid={Boolean(errors.area)}
-              options={areaOptions}
-              placeholder="Selecione a área de interesse"
-              disabled={isSubmitting}
-              value={field.value}
-              onChange={(event) => field.onChange(event.value)}
-            />
-          )}
-        />
-      </FormField>
-
-      <FormField
-        label="Linha de pesquisa *"
-        htmlFor="researchLine"
-        error={errors.researchLine?.message}
-      >
-        <Controller
-          control={control}
-          name="researchLine"
-          render={({ field }) => (
-            <Dropdown
-              id="researchLine"
-              invalid={Boolean(errors.researchLine)}
-              options={lineOptions}
-              placeholder="Selecione a linha de pesquisa"
-              disabled={isSubmitting}
-              value={field.value}
-              onChange={(event) => field.onChange(event.value)}
-            />
-          )}
-        />
-      </FormField>
-
-      <InfoPanel icon="pi pi-users" title="Professores disponíveis">
-        {isLoadingProfessores ? (
-          <div className="loading-panel">
-            <ProgressSpinner strokeWidth="4" />
-          </div>
-        ) : area && researchLine ? (
-          professores.length > 0 ? (
-            <>
-              <p className="muted-text">Escolha o professor que será envolvido na solicitação.</p>
-              <ul className="tema-list">
-                {professores.map((professor) => (
-                  <li
-                    key={professor.uuidProfessor}
-                    className={`professor-item ${
-                      selectedProfessor?.uuidProfessor === professor.uuidProfessor
-                        ? 'is-selected'
-                        : ''
-                    }`}
-                    onClick={() => setSelectedProfessor(professor)}
-                  >
-                    <strong>{professor.nome}</strong>
-                    <span>{professor.email ?? 'Sem e-mail registrado'}</span>
-                  </li>
-                ))}
-              </ul>
-              {selectedProfessor ? (
-                <div className="selected-professor-summary">
-                  <strong>Professor selecionado:</strong>
-                  <p>{selectedProfessor.nome}</p>
-                  <p>{selectedProfessor.email ?? 'Sem e-mail registrado'}</p>
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <p>Selecione um professor acima para incluir na solicitação.</p>
-                </div>
+        <div className="topic-field-grid">
+          <FormField label="Área de interesse *" htmlFor="area" error={errors.area?.message}>
+            <Controller
+              control={control}
+              name="area"
+              render={({ field }) => (
+                <Dropdown
+                  id="area"
+                  invalid={Boolean(errors.area)}
+                  options={areaOptions}
+                  placeholder="Selecione a área de interesse"
+                  disabled={isSubmitting}
+                  value={field.value}
+                  onChange={(event) => field.onChange(event.value)}
+                />
               )}
-            </>
+            />
+          </FormField>
+
+          <FormField
+            label="Linha de pesquisa *"
+            htmlFor="researchLine"
+            error={errors.researchLine?.message}
+          >
+            <Controller
+              control={control}
+              name="researchLine"
+              render={({ field }) => (
+                <Dropdown
+                  id="researchLine"
+                  invalid={Boolean(errors.researchLine)}
+                  options={lineOptions}
+                  placeholder="Selecione a linha de pesquisa"
+                  disabled={isSubmitting}
+                  value={field.value}
+                  onChange={(event) => field.onChange(event.value)}
+                />
+              )}
+            />
+          </FormField>
+        </div>
+      </TopicFormSection>
+
+      <TopicFormSection
+        description="A lista aparece conforme a área e linha de pesquisa escolhidas."
+        icon="pi pi-users"
+        title="Professor orientador"
+      >
+        <div className="professor-picker">
+          {isLoadingProfessores ? (
+            <div className="loading-panel">
+              <ProgressSpinner strokeWidth="4" />
+            </div>
+          ) : area && researchLine ? (
+            professores.length > 0 ? (
+              <>
+                <ul className="tema-list topic-professor-list">
+                  {professores.map((professor) => (
+                    <li key={professor.uuidProfessor}>
+                      <button
+                        className={`professor-item ${
+                          selectedProfessor?.uuidProfessor === professor.uuidProfessor
+                            ? 'is-selected'
+                            : ''
+                        }`}
+                        onClick={() => setSelectedProfessor(professor)}
+                        type="button"
+                      >
+                        <span>
+                          <strong>{professor.nome}</strong>
+                          <small>{professor.email ?? 'Sem e-mail registrado'}</small>
+                        </span>
+                        {selectedProfessor?.uuidProfessor === professor.uuidProfessor ? (
+                          <i className="pi pi-check-circle" aria-hidden="true" />
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {selectedProfessor ? (
+                  <div className="selected-professor-summary">
+                    <strong>Professor selecionado</strong>
+                    <p>{selectedProfessor.nome}</p>
+                    <p>{selectedProfessor.email ?? 'Sem e-mail registrado'}</p>
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <p>Selecione um professor para incluir na solicitação.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="empty-state">
+                <p>Nenhum professor encontrado para os filtros selecionados.</p>
+              </div>
+            )
           ) : (
             <div className="empty-state">
-              <p>Nenhum professor encontrado para os filtros selecionados.</p>
+              <p>Informe área e linha de pesquisa para carregar os professores disponíveis.</p>
             </div>
-          )
-        ) : (
-          <p>Selecione área e linha de pesquisa para ver os professores disponíveis.</p>
-        )}
-      </InfoPanel>
-
-      <FormField
-        label="Descrição / justificativa *"
-        htmlFor="description"
-        hint="Explique a relevância, o problema de pesquisa e os objetivos do seu tema."
-        error={errors.description?.message}
-        counter={{ current: description.length, max: 2000 }}
-      >
-        <Controller
-          control={control}
-          name="description"
-          render={({ field }) => (
-            <InputTextarea
-              id="description"
-              invalid={Boolean(errors.description)}
-              placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e a relevância para a área escolhida..."
-              rows={6}
-              disabled={isSubmitting}
-              {...field}
-            />
           )}
-        />
-      </FormField>
+        </div>
+      </TopicFormSection>
+
+      <TopicFormSection
+        description="Explique relevância, problema de pesquisa, objetivos e contexto do trabalho."
+        icon="pi pi-align-left"
+        title="Descrição e justificativa"
+      >
+        <FormField
+          label="Descrição / justificativa *"
+          htmlFor="description"
+          error={errors.description?.message}
+          counter={{ current: description.length, max: 2000 }}
+        >
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <InputTextarea
+                id="description"
+                invalid={Boolean(errors.description)}
+                placeholder="Descreva seu tema, justificativa, problema de pesquisa, objetivos e relevância para a área escolhida..."
+                rows={7}
+                disabled={isSubmitting}
+                {...field}
+              />
+            )}
+          />
+        </FormField>
+      </TopicFormSection>
 
       <div className="form-actions">
         <Button
@@ -699,6 +838,27 @@ export function StudentTopicPage() {
     } finally {
       setIsSendingReply(false)
     }
+  }
+
+  function handleReuseHistoricalProposal(orientation: OrientationItem) {
+    const draft = getTopicDraftFromOrientation(orientation)
+    reset(draft)
+    setCreatedTema(null)
+
+    if (orientation.professor?.uuidProfessor) {
+      setSelectedProfessor({
+        uuidProfessor: orientation.professor.uuidProfessor,
+        nome: orientation.professor.nome ?? 'Professor não informado',
+        email: orientation.professor.email,
+      })
+    }
+
+    toast.current?.show({
+      severity: 'info',
+      summary: 'Dados reaproveitados',
+      detail: 'Revise os dados antes de enviar uma nova proposta.',
+      life: 5000,
+    })
   }
 
   function handleSaveDraft(data: TopicForm) {
@@ -833,22 +993,6 @@ export function StudentTopicPage() {
         {requestPanel}
 
         <aside className="student-topic-aside">
-          <InfoPanel icon="pi pi-clipboard" title="Requisitos">
-            <p>Para cadastrar seu tema, todos os itens abaixo devem ser preenchidos.</p>
-            <ul className="check-list">
-              {requirements.map((item) => (
-                <li key={item.label}>
-                  <i
-                    className={item.done ? 'pi pi-check-circle is-done' : 'pi pi-circle'}
-                    aria-hidden="true"
-                  />
-                  <span>{item.label}</span>
-                </li>
-              ))}
-            </ul>
-            <Message severity="info" text="Todos os campos são obrigatórios." />
-          </InfoPanel>
-
           <InfoPanel icon="pi pi-list-check" title="Status do envio">
             {isLoadingMinhaSolicitacao ? (
               <div className="loading-panel">
@@ -886,6 +1030,32 @@ export function StudentTopicPage() {
                 </div>
                 <Tag severity="warning" value={createdTema.status ?? 'Solicitação pendente'} />
               </>
+            ) : latestHistoricalOrientation ? (
+              <>
+                <div className="draft-status draft-status--closed">
+                  <div className="draft-status__icon">
+                    <i
+                      className={
+                        latestHistoricalOrientation.status === 'recusado'
+                          ? 'pi pi-times-circle'
+                          : 'pi pi-ban'
+                      }
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div>
+                    <strong>{statusLabel[latestHistoricalOrientation.status]}</strong>
+                    <span>Você pode enviar uma nova proposta.</span>
+                  </div>
+                </div>
+                <p className="muted-text">
+                  Última atualização: {formatDateBr(latestHistoricalOrientation.atualizadoEm)}.
+                </p>
+                <Tag
+                  severity={statusSeverity[latestHistoricalOrientation.status]}
+                  value="Histórico"
+                />
+              </>
             ) : (
               <>
                 <div className="draft-status">
@@ -904,6 +1074,24 @@ export function StudentTopicPage() {
                 <Tag severity="warning" value="Aguardando envio" />
               </>
             )}
+          </InfoPanel>
+
+          <InfoPanel icon="pi pi-clipboard" title="Requisitos">
+            <div className="requirements-progress">
+              <strong>{completedRequirements}/{requirements.length}</strong>
+              <span>itens completos</span>
+            </div>
+            <ul className="check-list">
+              {requirements.map((item) => (
+                <li key={item.label}>
+                  <i
+                    className={item.done ? 'pi pi-check-circle is-done' : 'pi pi-circle'}
+                    aria-hidden="true"
+                  />
+                  <span>{item.label}</span>
+                </li>
+              ))}
+            </ul>
           </InfoPanel>
 
           <InfoPanel icon="pi pi-book" title="Temas do aluno">
@@ -927,36 +1115,6 @@ export function StudentTopicPage() {
               </div>
             ) : (
               <p>Clique em Buscar meus temas para ver os temas do aluno.</p>
-            )}
-          </InfoPanel>
-
-          <InfoPanel icon="pi pi-users" title="Professores disponíveis">
-            {isLoadingProfessores ? (
-              <div className="loading-panel">
-                <ProgressSpinner strokeWidth="4" />
-              </div>
-            ) : professores.length > 0 ? (
-              <>
-                <p className="muted-text">Selecione um professor disponível abaixo.</p>
-                <ul className="tema-list">
-                  {professores.map((professor) => (
-                    <li
-                      key={professor.uuidProfessor}
-                      className={`professor-item ${selectedProfessor?.uuidProfessor === professor.uuidProfessor ? 'is-selected' : ''}`}
-                      onClick={() => setSelectedProfessor(professor)}
-                    >
-                      <strong>{professor.nome}</strong>
-                      <span>{professor.email ?? 'Sem e-mail registrado'}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : area && researchLine ? (
-              <div className="empty-state">
-                <p>Nenhum professor encontrado para os filtros selecionados.</p>
-              </div>
-            ) : (
-              <p>Selecione área e linha de pesquisa para ver os professores disponíveis.</p>
             )}
           </InfoPanel>
         </aside>

@@ -383,8 +383,10 @@ export default class OrientacaoService {
     const mensagem = payload.mensagem?.trim() || 'Solicitação de orientação recusada.'
 
     if (tcc) {
-      tcc.status = 'recusado'
-      await tcc.save()
+      throw new GenericResponseException(
+        'TCC em acompanhamento não pode ser recusado. Use cancelamento de orientação ou troca de orientador.',
+        409
+      )
     }
 
     tema.status = 'recusado'

@@ -22,9 +22,7 @@ tema pelo aluno, indicação de professor, aceite/recusa do professor, aprovaç�
 tema com prazos, criação do TCC, criação de timeline, comentários, resposta do aluno,
 notificações e cronograma real baseado em `tcc_timeline`.
 
-O próximo passo funcional recomendado é **ORIENT-014 - Resolver fluxo pós-recusa da
-orientação/proposta**, porque hoje o aluno fica sem saída prática depois que o
-professor recusa a solicitação.
+O próximo passo funcional recomendado é **ORIENT-008 - Modelar entregas/documentos**.
 
 O próximo passo transversal recomendado, se a prioridade for segurança/controle de
 acesso, é **ORIENT-012 - Autorização real no backend**.
@@ -283,29 +281,21 @@ Comportamento:
 - O backend cria comentário de sistema.
 - O backend cria notificação para o aluno quando há usuário destinatário.
 
-Status: implementado.
+Status: implementado, incluindo o pós-recusa em ORIENT-014.
 
-Limitação atual:
+Pós-recusa implementado:
 
-- `recusado` é tratado como estado terminal.
-- A tela `/tema` considera que ainda existe uma solicitação do aluno e mantém o
-  painel de acompanhamento no lugar do formulário.
-- O aluno não consegue responder, reenviar, trocar professor ou criar uma nova
-  proposta a partir da recusa.
-- O backend ainda permite marcar um `tcc` como `recusado` se a API for chamada
-  diretamente, embora a tela do professor só exponha recusa para `sourceType = tema`.
-
-Fluxo desejado:
-
-- Recusa deve encerrar somente aquela solicitação/proposta específica.
-- A proposta recusada deve permanecer como histórico/auditoria.
-- O aluno deve conseguir criar uma nova proposta após a recusa.
-- A nova proposta deve gerar um novo registro em `tema_tcc`.
-- O sistema deve impedir múltiplas propostas/orientações ativas simultâneas para o
-  mesmo aluno, mas deve permitir nova proposta quando a anterior estiver `recusado`
-  ou `orientacao_cancelada`.
-- TCC já em acompanhamento não deve ser recusado; para esse caso usar cancelamento
-  de orientação ou um futuro fluxo de troca de orientador.
+- `recusado` encerra somente a solicitação/proposta específica.
+- A proposta recusada permanece no histórico do aluno.
+- A tela `/tema` separa orientação ativa de histórico recusado/cancelado.
+- Se só houver histórico recusado/cancelado, o formulário de nova proposta volta a
+  ficar disponível.
+- O aluno pode reaproveitar dados da proposta encerrada como rascunho editável.
+- `POST /tcc-pro/tema-tcc` bloqueia nova proposta somente quando há proposta/TCC
+  ativo para o aluno.
+- O endpoint de recusa não permite recusar um `tcc` já em acompanhamento.
+- TCC já em acompanhamento deve usar cancelamento de orientação ou um futuro fluxo
+  de troca de orientador.
 
 ### Etapa 6 - Professor aprova tema com prazos
 
@@ -578,9 +568,6 @@ Atenção:
 
 Não tratar como pronto:
 
-- Fluxo pós-recusa permitindo o aluno criar nova proposta.
-- Separação entre orientação/proposta ativa e histórico recusado/cancelado do aluno.
-- Bloqueio no backend para impedir `recusar` em TCC já em acompanhamento.
 - Upload de documentos do TCC.
 - Entidade formal de entrega/documento.
 - Controle de versão de documentos.
@@ -610,9 +597,7 @@ Não tratar como pronto:
 7. `/documentos` e `/apresentacao` existem no menu, mas são placeholders.
 8. Mocks ainda existem para modo backend inativo; ao testar fluxo real, garantir
    backend ativo em `frontend/.env`.
-9. Recusa de proposta deixa o aluno preso em um estado terminal sem ação de nova
-   tentativa.
-10. Cobertura de testes automatizados do fluxo ainda é baixa.
+9. Cobertura de testes automatizados do fluxo ainda é baixa.
 
 ## Fila Recomendada de Implementação
 
@@ -903,9 +888,9 @@ Escopo recomendado:
 
 ### ORIENT-014 - Resolver fluxo pós-recusa da orientação/proposta
 
-Status: pendente.
+Status: implementado.
 
-Prioridade: alta e recomendada antes de novas features grandes.
+Prioridade: concluída antes de novas features grandes.
 
 Objetivo:
 
@@ -989,21 +974,29 @@ Critérios de aceite:
 - Comentário e notificação de recusa continuam sendo gerados.
 - Testar com professor, aluno, coordenador e administrador.
 
+Implementado:
+
+- `TemaTccRepository` passou a verificar proposta/TCC ativo antes de criar novo tema.
+- Propostas/TCCs `recusado`, `cancelado` ou `orientacao_cancelada` não bloqueiam
+  nova proposta.
+- `OrientacaoService.rejectOrientation` passou a rejeitar recusa de TCC já existente.
+- `/tema` passou a usar a primeira orientação ativa como acompanhamento atual.
+- `/tema` passou a exibir proposta recusada/cancelada como histórico.
+- `/tema` libera o formulário quando só há histórico encerrado.
+- `/tema` permite reaproveitar os dados da proposta encerrada como rascunho.
+
 ## Ordem Recomendada
 
-1. **ORIENT-014** - Resolver fluxo pós-recusa da orientação/proposta.
-2. **ORIENT-008** - Modelar entregas/documentos.
-3. **ORIENT-009** - Modelar banca explicitamente.
-4. **ORIENT-010** - Implementar avaliação final multiavaliador.
-5. **ORIENT-011** - Resultado do aluno.
-6. **ORIENT-012** - Autorização real no backend.
-7. **ORIENT-013** - Remover dependência de busca por e-mail.
+1. **ORIENT-008** - Modelar entregas/documentos.
+2. **ORIENT-009** - Modelar banca explicitamente.
+3. **ORIENT-010** - Implementar avaliação final multiavaliador.
+4. **ORIENT-011** - Resultado do aluno.
+5. **ORIENT-012** - Autorização real no backend.
+6. **ORIENT-013** - Remover dependência de busca por e-mail.
 
 Observação:
 
 - ORIENT-012 é transversal e pode ser antecipado a qualquer momento.
-- ORIENT-014 fecha uma quebra de fluxo atual e deve ser priorizado antes de avançar
-  em documentos/banca se o objetivo for deixar o ciclo aluno-professor consistente.
 - Se a prioridade for apresentar valor acadêmico visível, começar por ORIENT-008.
 - Se a prioridade for segurança, começar por ORIENT-012 e ORIENT-013.
 
@@ -1101,12 +1094,12 @@ Depois de implementar:
 
 ## Próximo Passo Recomendado
 
-Implementar **ORIENT-014 - Resolver fluxo pós-recusa da orientação/proposta**.
+Implementar **ORIENT-008 - Modelar entregas/documentos**.
 
 Justificativa:
 
-- O fluxo atual permite recusar, mas não oferece uma próxima ação para o aluno.
-- A recusa deve manter histórico sem bloquear uma nova tentativa.
-- O backend precisa impedir recusa indevida de TCC já em acompanhamento.
-- Depois desse ajuste, o próximo avanço funcional volta a ser **ORIENT-008 -
-  Modelar entregas/documentos**.
+- O fluxo pós-recusa já permite nova tentativa sem perder histórico.
+- O fluxo aluno-professor já chega até acompanhamento e comentários reais.
+- A próxima lacuna do MVP acadêmico é o envio de documentos obrigatórios.
+- Sem documentos, `tcc_timeline` controla prazo, mas não controla a entrega real.
+- `/documentos` ainda é placeholder e precisa virar tela funcional.
