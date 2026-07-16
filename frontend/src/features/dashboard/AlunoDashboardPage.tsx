@@ -1,4 +1,5 @@
 import { Button } from 'primereact/button'
+import { Message } from 'primereact/message'
 import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { useEffect, useState } from 'react'
@@ -15,6 +16,7 @@ import { AlertsPanel } from '../../shared/ui/organisms/AlertsPanel/AlertsPanel'
 const summaryCardRoutes: Record<string, string> = {
   'Tema Atual': '/tema',
   Status: '/tccs',
+  'Próxima Entrega': '/cronograma',
   'Proxima Entrega': '/cronograma',
   Apresentacao: '/apresentacao',
 }
@@ -31,20 +33,46 @@ export function AlunoDashboardPage() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [data, setData] = useState<DashboardAlunoData | null>(null)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     let cancelled = false
 
-    getDashboardAluno().then((result) => {
-      if (!cancelled) {
-        setData(result)
-      }
-    })
+    getDashboardAluno()
+      .then((result) => {
+        if (!cancelled) {
+          setData(result)
+          setError(false)
+        }
+      })
+      .catch((requestError) => {
+        console.error(requestError)
+        if (!cancelled) {
+          setError(true)
+        }
+      })
 
     return () => {
       cancelled = true
     }
   }, [])
+
+  if (error) {
+    return (
+      <div className="page-stack">
+        <section className="page-header">
+          <div>
+            <h1>Ola, {user?.nome ?? 'aluno'}!</h1>
+            <p>Acompanhe o andamento do seu Trabalho de Conclusão de Curso.</p>
+          </div>
+        </section>
+        <Message
+          severity="error"
+          text="Não foi possível carregar o dashboard do aluno agora."
+        />
+      </div>
+    )
+  }
 
   if (!data) {
     return (
@@ -99,6 +127,7 @@ export function AlunoDashboardPage() {
         </div>
 
         <TimelinePanel
+          emptyText="Nenhuma etapa real cadastrada para o seu TCC."
           onViewAll={() => navigate('/tccs')}
           title="Linha do Tempo"
           items={data.timelineItems}
@@ -106,14 +135,17 @@ export function AlunoDashboardPage() {
       </section>
 
       <AlertsPanel
+        emptyText="Nenhum aviso real registrado para o seu TCC."
         onViewAll={() => navigate('/mensagens')}
         title="Avisos e pendencias"
-        alerts={data.alerts.map((alert) => ({
-          ...alert,
-          onAction: alertActionRoutes[alert.action]
-            ? () => navigate(alertActionRoutes[alert.action])
-            : undefined,
-        }))}
+        alerts={data.alerts.map((alert) => {
+          const route = alert.target ?? alertActionRoutes[alert.action]
+
+          return {
+            ...alert,
+            onAction: route ? () => navigate(route) : undefined,
+          }
+        })}
       />
     </div>
   )

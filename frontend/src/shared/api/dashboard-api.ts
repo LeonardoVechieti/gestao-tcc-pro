@@ -30,6 +30,7 @@ export type AlertData = {
   status: string
   statusSeverity: TagProps['severity']
   action: string
+  target?: string
 }
 
 export type DashboardAlunoData = {
@@ -75,15 +76,32 @@ export type DashboardProfessorData = {
   alerts: AlertData[]
 }
 
-// Contrato real de `GET /tcc-pro/dash-alunos/:uuidAluno`. Bem mais enxuto que
-// o `DashboardAlunoData` que a tela usa: só da pra preencher os 4 cards de
-// resumo. "Meu Tema", linha do tempo e avisos ainda não tem endpoint que
-// devolva esses dados, entao continuam vindo do mock.
 type DashAlunoResponse = {
-  temaAtual: { exibir: boolean; temaAtual?: string; uuidTema?: string; icone?: string }
+  temaAtual: {
+    exibir: boolean
+    temaAtual?: string
+    uuidTema?: string
+    areaInteresse?: string
+    orientador?: string
+    ultimaAtualizacao?: string
+    statusAtual?: string
+    icone?: string
+  }
   statusTcc: { exibir: boolean; statusTcc?: string; uuidTcc?: string }
   proximaEntrega: { exibir: boolean; data?: string }
   apresentacao: { exibir: boolean; data?: string }
+  timelineItems?: Array<{
+    titulo: string
+    data?: string
+    status: string
+  }>
+  avisos?: Array<{
+    tipo: string
+    titulo: string
+    descricao?: string
+    status: string
+    linkAcao?: string
+  }>
 }
 
 type AlunoLookup = { uuidAluno: string }
@@ -290,20 +308,6 @@ function buildProfessorDashboard(real: DashProfessorResponse): DashboardProfesso
   }
 }
 
-function buildSummaryCards(real: DashAlunoResponse, mockCards: SummaryCardData[]): SummaryCardData[] {
-  const realValues = [
-    real.temaAtual.exibir ? real.temaAtual.temaAtual : undefined,
-    real.statusTcc.exibir ? real.statusTcc.statusTcc : undefined,
-    formatDateBr(real.proximaEntrega.exibir ? real.proximaEntrega.data : undefined),
-    formatDateBr(real.apresentacao.exibir ? real.apresentacao.data : undefined),
-  ]
-
-  return mockCards.map((mockCard, index) => {
-    const realValue = realValues[index]
-    return realValue ? { ...mockCard, value: realValue } : mockCard
-  })
-}
-
 async function findUuidAlunoByEmail(email: string): Promise<string | undefined> {
   if (!email) {
     return undefined
@@ -326,6 +330,190 @@ async function findUuidProfessorByEmail(email: string): Promise<string | undefin
   return data[0]?.uuidProfessor
 }
 
+function formatStatusLabel(status?: string): string {
+  if (!status) {
+    return 'Sem registro'
+  }
+
+  const labels: Record<string, string> = {
+    aguardando_aprovacao: 'Aguardando aprovação',
+    aguardando_aprovacao_sem_acento: 'Aguardando aprovação',
+    aprovado: 'Aprovado',
+    ajustes_solicitados: 'Ajustes solicitados',
+    banca: 'Banca',
+    concluido: 'Concluído',
+    em_andamento: 'Em andamento',
+    orientacao_aprovada: 'Orientação aprovada',
+    pendente: 'Pendente',
+    recusado: 'Recusado',
+    tema_pendente: 'Tema pendente',
+  }
+  const normalized = status
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '_')
+
+  return labels[normalized] ?? status.replace(/_/g, ' ')
+}
+
+function getStatusSeverity(status?: string): TagProps['severity'] {
+  const normalized = status
+    ?.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+  if (!normalized) {
+    return 'secondary'
+  }
+
+  if (normalized.includes('aprov') || normalized.includes('conclu')) {
+    return 'success'
+  }
+
+  if (normalized.includes('ajuste') || normalized.includes('recus') || normalized.includes('cancel')) {
+    return 'danger'
+  }
+
+  if (normalized.includes('pendente') || normalized.includes('aguardando')) {
+    return 'warning'
+  }
+
+  return 'info'
+}
+
+function getTimelineSeverity(status: string): TagProps['severity'] {
+  if (status === 'concluida' || status === 'concluido') {
+    return 'success'
+  }
+
+  if (status === 'em_analise' || status === 'em_andamento') {
+    return 'info'
+  }
+
+  return 'secondary'
+}
+
+function getTimelineIcon(status: string): string {
+  if (status === 'concluida' || status === 'concluido') {
+    return 'pi pi-check'
+  }
+
+  if (status === 'em_analise' || status === 'em_andamento') {
+    return 'pi pi-clock'
+  }
+
+  return 'pi pi-circle'
+}
+
+function getAlertPresentation(alert: NonNullable<DashAlunoResponse['avisos']>[number]): Pick<
+  AlertData,
+  'icon' | 'tone' | 'statusSeverity' | 'action' | 'target'
+> {
+  const normalized = alert.tipo.toLowerCase()
+
+  if (normalized.includes('ajuste')) {
+    return {
+      icon: 'pi pi-exclamation-circle',
+      tone: 'danger',
+      statusSeverity: 'danger',
+      action: 'Ver detalhes',
+      target: alert.linkAcao ?? '/tema',
+    }
+  }
+
+  if (normalized.includes('comentario') || normalized.includes('resposta')) {
+    return {
+      icon: 'pi pi-comments',
+      tone: 'blue',
+      statusSeverity: 'info',
+      action: 'Ler mensagem',
+      target: alert.linkAcao ?? '/tema',
+    }
+  }
+
+  if (normalized.includes('etapa')) {
+    return {
+      icon: 'pi pi-flag',
+      tone: 'green',
+      statusSeverity: 'success',
+      action: 'Ver cronograma',
+      target: alert.linkAcao ?? '/cronograma',
+    }
+  }
+
+  return {
+    icon: 'pi pi-bell',
+    tone: 'orange',
+    statusSeverity: getStatusSeverity(alert.status),
+    action: 'Ver detalhes',
+    target: alert.linkAcao ?? '/tema',
+  }
+}
+
+function buildAlunoDashboard(real: DashAlunoResponse): DashboardAlunoData {
+  const formattedStatus = formatStatusLabel(real.statusTcc.statusTcc ?? real.temaAtual.statusAtual)
+  const temaTitulo = real.temaAtual.temaAtual ?? 'Nenhum tema registrado'
+
+  return {
+    summaryCards: [
+      {
+        label: 'Tema Atual',
+        value: real.temaAtual.exibir ? temaTitulo : 'Nenhum tema',
+        icon: 'pi pi-book',
+        action: 'Ver detalhes',
+        tone: 'blue',
+      },
+      {
+        label: 'Status',
+        value: real.statusTcc.exibir ? formattedStatus : 'Sem TCC',
+        icon: 'pi pi-check-circle',
+        action: 'Ver andamento',
+        tone: 'green',
+      },
+      {
+        label: 'Próxima Entrega',
+        value: formatDateBr(real.proximaEntrega.data) ?? 'A definir',
+        icon: 'pi pi-calendar',
+        action: 'Ver cronograma',
+        tone: 'purple',
+      },
+      {
+        label: 'Apresentação',
+        value: formatDateBr(real.apresentacao.data) ?? 'A definir',
+        icon: 'pi pi-clipboard',
+        action: 'Ver detalhes',
+        tone: 'orange',
+      },
+    ],
+    meuTema: {
+      titulo: temaTitulo,
+      areaInteresse: real.temaAtual.areaInteresse ?? 'A definir',
+      orientador: real.temaAtual.orientador ?? 'Não vinculado',
+      ultimaAtualizacao: formatDateBr(real.temaAtual.ultimaAtualizacao) ?? 'A definir',
+      statusAtual: {
+        label: real.temaAtual.statusAtual ? formatStatusLabel(real.temaAtual.statusAtual) : formattedStatus,
+        severity: getStatusSeverity(real.temaAtual.statusAtual ?? real.statusTcc.statusTcc),
+      },
+    },
+    timelineItems:
+      real.timelineItems?.map((item) => ({
+        title: item.titulo,
+        date: formatDateBr(item.data) ?? 'A definir',
+        status: formatStatusLabel(item.status),
+        severity: getTimelineSeverity(item.status),
+        icon: getTimelineIcon(item.status),
+      })) ?? [],
+    alerts:
+      real.avisos?.map((alert) => ({
+        ...getAlertPresentation(alert),
+        title: alert.titulo,
+        description: alert.descricao ?? 'Atualização registrada no acompanhamento do TCC.',
+        status: formatStatusLabel(alert.status),
+      })) ?? [],
+  }
+}
+
 export async function getDashboardAluno(): Promise<DashboardAlunoData> {
   const mock = dashboardAlunoMock as DashboardAlunoData
 
@@ -335,27 +523,27 @@ export async function getDashboardAluno(): Promise<DashboardAlunoData> {
 
   const loggedUser = useAuthStore.getState().user
 
-  try {
-    const uuidAluno =
-      loggedUser?.uuidAluno ??
-      (await findUuidAlunoByEmail(loggedUser?.email ?? getDevAlunoEmail() ?? ''))
+  const uuidAluno =
+    loggedUser?.uuidAluno ??
+    loggedUser?.aluno?.uuidAluno ??
+    (await findUuidAlunoByEmail(loggedUser?.email ?? getDevAlunoEmail() ?? ''))
 
-    if (!uuidAluno) {
-      return mock
-    }
-
-    const { data: real } = await apiClient.get<DashAlunoResponse>(
-      `/tcc-pro/dash-alunos/${uuidAluno}`,
-    )
-
-    return {
-      ...mock,
-      summaryCards: buildSummaryCards(real, mock.summaryCards),
-    }
-  } catch (error) {
-    console.error('Falha ao buscar dashboard do aluno, usando dados fictícios', error)
-    return mock
+  if (!uuidAluno) {
+    return buildAlunoDashboard({
+      temaAtual: { exibir: false },
+      statusTcc: { exibir: false },
+      proximaEntrega: { exibir: false },
+      apresentacao: { exibir: false },
+      timelineItems: [],
+      avisos: [],
+    })
   }
+
+  const { data: real } = await apiClient.get<DashAlunoResponse>(
+    `/tcc-pro/dash-alunos/${uuidAluno}`,
+  )
+
+  return buildAlunoDashboard(real)
 }
 
 export async function getDashboardProfessor(): Promise<DashboardProfessorData> {

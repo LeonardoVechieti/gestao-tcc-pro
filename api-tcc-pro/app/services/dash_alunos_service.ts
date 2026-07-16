@@ -1,5 +1,7 @@
 import Tcc from '#models/DAO/tcc'
-import { DashAlunoResponse } from '#interfaces/dash_aluno'
+import TemaTcc from '#models/DAO/tema_tcc'
+import Professor from '#models/DAO/professor'
+import { DashAlunoAviso, DashAlunoResponse, DashAlunoTimelineItem } from '#interfaces/dash_aluno'
 import { getDashboardIcon, toDateString } from '#helpers/dashboard_helpers'
 import TccTimeline from '#models/DAO/tcc_timeline'
 
@@ -39,41 +41,111 @@ function isTimelineComplete(status: string): boolean {
 }
 
 function getNextDelivery(timelines?: TccTimeline[]): string | undefined {
-  const nextStage = [...(timelines ?? [])]
-    .sort((current, next) => getStageOrder(current.titulo) - getStageOrder(next.titulo))
-    .find((stage) => !isTimelineComplete(stage.status))
+  const nextStage = getSortedTimeline(timelines).find((stage) => !isTimelineComplete(stage.status))
 
   return toDateString(nextStage?.dataEntrega)
+}
+
+function getSortedTimeline(timelines?: TccTimeline[]): TccTimeline[] {
+  return [...(timelines ?? [])].sort(
+    (current, next) => getStageOrder(current.titulo) - getStageOrder(next.titulo)
+  )
+}
+
+function buildTimelineItems(timelines?: TccTimeline[]): DashAlunoTimelineItem[] {
+  return getSortedTimeline(timelines).map((stage) => ({
+    titulo: stage.titulo,
+    data: toDateString(stage.dataEntrega),
+    status: stage.status,
+  }))
+}
+
+function buildNotificationTitle(tipo: string): string {
+  const titles: Record<string, string> = {
+    ajuste_tema: 'Ajustes solicitados no tema',
+    ajuste_trabalho: 'Ajustes solicitados no trabalho',
+    aprovacao: 'Tema aprovado',
+    cancelar_orientacao: 'Orientação cancelada',
+    comentario: 'Comentário registrado',
+    etapa_concluida: 'Etapa concluída',
+    recusa: 'Solicitação recusada',
+    resposta_aluno: 'Resposta enviada',
+  }
+
+  return titles[tipo] ?? 'Atualização da orientação'
+}
+
+function buildStatusAlert(status?: string): DashAlunoAviso | null {
+  if (!status?.includes('ajuste')) {
+    return null
+  }
+
+  return {
+    tipo: 'ajustes_solicitados',
+    titulo: 'Ajustes solicitados',
+    descricao: 'Há ajustes pendentes de resposta na sua orientação.',
+    status: 'pendente',
+    linkAcao: '/tema',
+  }
 }
 
 export default class DashAlunosService {
   async getAlunoDashboard(uuidAluno: string): Promise<DashAlunoResponse> {
     const tcc = await Tcc.query()
       .where('uuid_aluno', uuidAluno)
-      .preload('temaTcc')
+      .preload('temaTcc', (query) => {
+        query.preload('professor')
+      })
       .preload('timelines', (query) => {
         query.orderBy('created_at', 'asc')
+      })
+      .preload('notificacoes', (query) => {
+        query.orderBy('created_at', 'desc')
       })
       .preload('agendas', (query) => {
         query.whereNotNull('data').orderBy('data', 'desc').limit(1)
       })
       .orderBy('created_at', 'desc')
       .first()
+    const tema =
+      tcc?.temaTcc ??
+      (await TemaTcc.query()
+        .where('uuid_aluno', uuidAluno)
+        .preload('professor')
+        .orderBy('created_at', 'desc')
+        .first())
 
-    const tema = tcc?.temaTcc
     const agenda = tcc?.agendas?.[0]
     const proximaEntrega = getNextDelivery(tcc?.timelines)
+    const professorId = tcc?.uuidOrientador ?? tema?.uuidProfessor
+    const professor = professorId ? await Professor.find(professorId) : null
+    const orientador = professor?.nome ?? tema?.professor?.nome
+    const statusAtual = tcc?.status ?? tema?.status
+    const ultimaAtualizacao = toDateString(tcc?.updatedAt ?? tema?.updatedAt ?? tema?.createdAt)
+    const notificationAlerts =
+      tcc?.notificacoes?.map((notificacao) => ({
+        tipo: notificacao.tipo,
+        titulo: buildNotificationTitle(notificacao.tipo),
+        descricao: notificacao.descricao,
+        status: notificacao.status,
+        linkAcao: notificacao.linkAcao,
+      })) ?? []
+    const statusAlert = buildStatusAlert(statusAtual)
 
     return {
       temaAtual: {
         exibir: Boolean(tema?.titulo),
         temaAtual: tema?.titulo,
         uuidTema: tema?.uuidTemaTcc,
+        areaInteresse: tema?.area,
+        orientador,
+        ultimaAtualizacao,
+        statusAtual,
         icone: tema ? getDashboardIcon(tema.area) : undefined,
       },
       statusTcc: {
-        exibir: Boolean(tcc?.status),
-        statusTcc: tcc?.status,
+        exibir: Boolean(statusAtual),
+        statusTcc: statusAtual,
         uuidTcc: tcc?.uuidTcc,
       },
       proximaEntrega: {
@@ -84,6 +156,8 @@ export default class DashAlunosService {
         exibir: Boolean(agenda?.data),
         data: toDateString(agenda?.data),
       },
+      timelineItems: buildTimelineItems(tcc?.timelines),
+      avisos: statusAlert ? [statusAlert, ...notificationAlerts] : notificationAlerts,
     }
   }
 }
