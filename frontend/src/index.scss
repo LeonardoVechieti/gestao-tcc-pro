@@ -1034,6 +1034,20 @@ input {
 	grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
+.student-response-form {
+	gap: var(--space-4);
+}
+
+.student-response-grid {
+	display: grid;
+	gap: var(--space-4);
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.student-response-grid .field-group:last-child {
+	grid-column: 1 / -1;
+}
+
 .professor-item {
 	align-items: center;
 	background: var(--color-surface-soft);
@@ -1578,6 +1592,14 @@ input {
 	.submitted-actions .p-button {
 		justify-content: center;
 		width: 100%;
+	}
+
+	.student-response-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.student-response-grid .field-group:last-child {
+		grid-column: auto;
 	}
 }
 

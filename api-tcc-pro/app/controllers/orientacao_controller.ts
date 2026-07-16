@@ -46,6 +46,13 @@ export default class OrientacaoController {
     )
   }
 
+  async addStudentComment({ params, request }: HttpContext) {
+    return this.orientacaoService.addStudentComment(
+      params.id,
+      request.only(['sourceType', 'mensagem', 'autorNome', 'tema'])
+    )
+  }
+
   async completeStage({ params, request }: HttpContext) {
     const nota = request.input('nota') as number | undefined
     return this.orientacaoService.completeStage(params.uuidTimeline, nota)

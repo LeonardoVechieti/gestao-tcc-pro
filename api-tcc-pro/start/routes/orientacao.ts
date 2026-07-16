@@ -27,6 +27,9 @@ router
       .post('/orientacoes/:id/comentarios', [OrientacaoController, 'addComment'])
       .middleware(middleware.auth())
     router
+      .post('/orientacoes/:id/comentarios-aluno', [OrientacaoController, 'addStudentComment'])
+      .middleware(middleware.auth())
+    router
       .post('/orientacoes/:id/operacoes', [OrientacaoController, 'performOperation'])
       .middleware(middleware.auth())
     router

@@ -28,6 +28,7 @@ export type OrientationComment = {
   id: string
   autor: string
   tipo: 'Aluno' | 'Professor' | 'Sistema'
+  categoria?: string
   mensagem: string
   data: string
 }
@@ -70,11 +71,24 @@ type StudentOrientationsResponse = OrientationsResponse & {
   }
 }
 
+type ThemeUpdatePayload = {
+  titulo?: string
+  descricao?: string
+  area?: string
+  linhaPesquisa?: string
+}
+
 type ActionPayload = {
   mensagem?: string
   adjustmentType?: 'tema' | 'trabalho'
   operation?: 'cancelar_orientacao'
   prazos?: Record<string, string>
+  tema?: ThemeUpdatePayload
+}
+
+type StudentResponsePayload = {
+  mensagem: string
+  tema?: ThemeUpdatePayload
 }
 
 const requiredStageOrder = [
@@ -150,6 +164,7 @@ function addLocalComment(
   message: string,
   author: string,
   status?: OrientationStatus,
+  authorType: OrientationComment['tipo'] = author === 'Sistema' ? 'Sistema' : 'Professor',
 ): OrientationItem {
   return {
     ...orientation,
@@ -159,7 +174,7 @@ function addLocalComment(
       {
         id: crypto.randomUUID(),
         autor: author,
-        tipo: author === 'Sistema' ? 'Sistema' : 'Professor',
+        tipo: authorType,
         mensagem: message,
         data: today(),
       },
@@ -291,6 +306,31 @@ export async function addOrientationComment(
   }
 
   return postOrientationAction(orientation, 'comentarios', { mensagem })
+}
+
+export async function addStudentOrientationResponse(
+  orientation: OrientationItem,
+  payload: StudentResponsePayload,
+): Promise<OrientationItem> {
+  const nextStatus: OrientationStatus = orientation.sourceType === 'tcc' ? 'em_acompanhamento' : 'tema_pendente'
+
+  if (!isBackendActive()) {
+    return addLocalComment(
+      {
+        ...orientation,
+        titulo: payload.tema?.titulo ?? orientation.titulo,
+        area: payload.tema?.area ?? orientation.area,
+        linhaPesquisa: payload.tema?.linhaPesquisa ?? orientation.linhaPesquisa,
+        resumo: payload.tema?.descricao ?? orientation.resumo,
+      },
+      payload.mensagem,
+      useAuthStore.getState().user?.nome ?? 'Aluno',
+      nextStatus,
+      'Aluno',
+    )
+  }
+
+  return postOrientationAction(orientation, 'comentarios-aluno', payload)
 }
 
 export async function completeOrientationStage(

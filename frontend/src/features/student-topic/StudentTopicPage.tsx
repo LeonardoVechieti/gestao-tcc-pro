@@ -12,6 +12,7 @@ import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import {
+  addStudentOrientationResponse,
   getAlunoOrientations,
   type OrientationItem,
   type OrientationStage,
@@ -126,6 +127,14 @@ export function StudentTopicPage() {
   const [isLoadingMinhaSolicitacao, setIsLoadingMinhaSolicitacao] = useState(false)
   const [hasLoadedMinhaSolicitacao, setHasLoadedMinhaSolicitacao] = useState(false)
   const [acompanhamentoError, setAcompanhamentoError] = useState(false)
+  const [studentReply, setStudentReply] = useState('')
+  const [isSendingReply, setIsSendingReply] = useState(false)
+  const [proposalDraft, setProposalDraft] = useState<TopicForm>({
+    title: '',
+    area: '',
+    researchLine: '',
+    description: '',
+  })
 
   const title = watch('title')
   const area = watch('area')
@@ -133,6 +142,29 @@ export function StudentTopicPage() {
   const description = watch('description')
   const studentId = user?.uuidAluno ?? user?.aluno?.uuidAluno
   const currentOrientation = studentOrientations[0] ?? null
+  const latestAdjustment = currentOrientation?.comentarios.find((comment) =>
+    ['ajuste_tema', 'ajuste_trabalho'].includes(comment.categoria ?? ''),
+  )
+  const canReplyToProfessor = Boolean(
+    currentOrientation &&
+      currentOrientation.status !== 'aprovado' &&
+      currentOrientation.status !== 'cancelado' &&
+      currentOrientation.status !== 'recusado' &&
+      (currentOrientation.comentarios.length > 0 ||
+        currentOrientation.status === 'ajustes_solicitados'),
+  )
+  const canEditAdjustedTheme = Boolean(
+    currentOrientation?.status === 'ajustes_solicitados' &&
+      (currentOrientation.sourceType === 'tema' || latestAdjustment?.categoria === 'ajuste_tema'),
+  )
+  const isProposalDraftValid =
+    !canEditAdjustedTheme ||
+    (proposalDraft.title.trim().length >= 8 &&
+      proposalDraft.area.trim().length > 0 &&
+      proposalDraft.researchLine.trim().length > 0 &&
+      proposalDraft.description.trim().length >= 80)
+  const isStudentReplyDisabled =
+    isSendingReply || !currentOrientation || studentReply.trim().length === 0 || !isProposalDraftValid
 
   const loadAcompanhamentoAluno = useCallback(async () => {
     setIsLoadingMinhaSolicitacao(true)
@@ -175,6 +207,25 @@ export function StudentTopicPage() {
   useEffect(() => {
     void loadAcompanhamentoAluno()
   }, [loadAcompanhamentoAluno])
+
+  useEffect(() => {
+    if (!currentOrientation) {
+      return
+    }
+
+    setProposalDraft({
+      title: currentOrientation.titulo === 'Tema não encontrado' ? '' : currentOrientation.titulo,
+      area: currentOrientation.area === 'Área não informada' ? '' : currentOrientation.area,
+      researchLine:
+        currentOrientation.linhaPesquisa === 'Linha não informada'
+          ? ''
+          : currentOrientation.linhaPesquisa,
+      description:
+        currentOrientation.resumo === 'Proposta de tema aguardando análise.'
+          ? ''
+          : currentOrientation.resumo,
+    })
+  }, [currentOrientation])
 
   const requirements = [
     { label: 'Título provisório', done: title.trim().length >= 8 },
@@ -312,6 +363,103 @@ export function StudentTopicPage() {
                 <Message severity="info" text="Nenhum comentário registrado para esta solicitação." />
               )}
             </section>
+
+            {canReplyToProfessor ? (
+              <section className="submitted-section student-response-form">
+                <div className="section-title">
+                  <div>
+                    <h2>Resposta do aluno</h2>
+                    <span>
+                      {currentOrientation.status === 'ajustes_solicitados'
+                        ? 'Retorne a solicitação para reanálise do professor.'
+                        : 'Envie uma mensagem para o professor.'}
+                    </span>
+                  </div>
+                </div>
+
+                {canEditAdjustedTheme ? (
+                  <div className="student-response-grid">
+                    <FormField label="Título revisado *" htmlFor="proposal-title">
+                      <InputText
+                        id="proposal-title"
+                        value={proposalDraft.title}
+                        disabled={isSendingReply}
+                        onChange={(event) =>
+                          setProposalDraft((draft) => ({ ...draft, title: event.target.value }))
+                        }
+                      />
+                    </FormField>
+
+                    <FormField label="Área revisada *" htmlFor="proposal-area">
+                      <Dropdown
+                        id="proposal-area"
+                        options={areaOptions}
+                        value={proposalDraft.area}
+                        disabled={isSendingReply}
+                        onChange={(event) =>
+                          setProposalDraft((draft) => ({ ...draft, area: event.value }))
+                        }
+                      />
+                    </FormField>
+
+                    <FormField label="Linha revisada *" htmlFor="proposal-line">
+                      <Dropdown
+                        id="proposal-line"
+                        options={lineOptions}
+                        value={proposalDraft.researchLine}
+                        disabled={isSendingReply}
+                        onChange={(event) =>
+                          setProposalDraft((draft) => ({ ...draft, researchLine: event.value }))
+                        }
+                      />
+                    </FormField>
+
+                    <FormField label="Descrição revisada *" htmlFor="proposal-description">
+                      <InputTextarea
+                        id="proposal-description"
+                        value={proposalDraft.description}
+                        rows={6}
+                        disabled={isSendingReply}
+                        onChange={(event) =>
+                          setProposalDraft((draft) => ({
+                            ...draft,
+                            description: event.target.value,
+                          }))
+                        }
+                      />
+                    </FormField>
+                  </div>
+                ) : null}
+
+                {!isProposalDraftValid ? (
+                  <Message
+                    severity="warn"
+                    text="Revise título, área, linha de pesquisa e descrição antes de responder."
+                  />
+                ) : null}
+
+                <FormField label="Mensagem *" htmlFor="student-reply">
+                  <InputTextarea
+                    id="student-reply"
+                    value={studentReply}
+                    rows={4}
+                    disabled={isSendingReply}
+                    onChange={(event) => setStudentReply(event.target.value)}
+                  />
+                </FormField>
+
+                <div className="submitted-actions">
+                  <Button
+                    icon="pi pi-send"
+                    label="Enviar resposta"
+                    loading={isSendingReply}
+                    onClick={() => void handleStudentResponse()}
+                    type="button"
+                    disabled={isStudentReplyDisabled}
+                  />
+                </div>
+              </section>
+            ) : null}
           </>
         ) : (
           <Message severity="info" text="Acompanhamento será atualizado após a confirmação do backend." />
@@ -505,6 +653,53 @@ export function StudentTopicPage() {
       </div>
     </form>
   )
+
+  async function handleStudentResponse() {
+    if (!currentOrientation || isStudentReplyDisabled) {
+      return
+    }
+
+    setIsSendingReply(true)
+
+    try {
+      const updated = await addStudentOrientationResponse(currentOrientation, {
+        mensagem: studentReply.trim(),
+        tema: canEditAdjustedTheme
+          ? {
+              titulo: proposalDraft.title,
+              descricao: proposalDraft.description,
+              area: proposalDraft.area,
+              linhaPesquisa: proposalDraft.researchLine,
+            }
+          : undefined,
+      })
+
+      setStudentOrientations((orientations) =>
+        sortStudentOrientations([
+          updated,
+          ...orientations.filter((orientation) => orientation.id !== updated.id),
+        ]),
+      )
+      setStudentReply('')
+
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Resposta enviada',
+        detail: 'Sua resposta foi registrada para reanálise.',
+        life: 5000,
+      })
+    } catch (error) {
+      console.error(error)
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao responder',
+        detail: 'Não foi possível registrar sua resposta. Tente novamente.',
+        life: 5000,
+      })
+    } finally {
+      setIsSendingReply(false)
+    }
+  }
 
   function handleSaveDraft(data: TopicForm) {
     localStorage.setItem('gestaotcc:tema-draft', JSON.stringify(data))

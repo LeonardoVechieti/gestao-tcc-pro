@@ -27,6 +27,17 @@ type OrientationActionPayload = {
   operation?: string
 }
 
+type StudentThemeUpdatePayload = {
+  titulo?: string
+  descricao?: string
+  area?: string
+  linhaPesquisa?: string
+}
+
+type StudentResponsePayload = OrientationActionPayload & {
+  tema?: StudentThemeUpdatePayload
+}
+
 type ApproveThemeWithDeadlinesPayload = {
   sourceType?: OrientationSourceType
   autorNome?: string
@@ -432,6 +443,59 @@ export default class OrientacaoService {
     return tcc ? this.buildTccOrientation(tcc, tema) : this.buildTemaOrientation(tema)
   }
 
+  async addStudentComment(id: string, payload: StudentResponsePayload) {
+    const { tcc, tema } = await this.resolveOrientation(id, payload.sourceType)
+    const mensagem = payload.mensagem?.trim()
+
+    if (!mensagem) {
+      throw new GenericResponseException('Mensagem é obrigatória', 400)
+    }
+
+    const hasThemeUpdates = this.hasThemeUpdates(payload.tema)
+
+    if (hasThemeUpdates) {
+      const latestAdjustment = await this.findLatestAdjustment(tcc, tema)
+      const isThemeAdjustment =
+        latestAdjustment?.tipo === 'ajuste_tema' ||
+        (!latestAdjustment && !tcc && normalizeTemaStatus(tema.status) === 'ajustes_solicitados')
+
+      if (!isThemeAdjustment) {
+        throw new GenericResponseException(
+          'A proposta só pode ser editada quando o ajuste solicitado for no tema',
+          400
+        )
+      }
+
+      this.mergeThemeUpdates(tema, payload.tema)
+    }
+
+    if (tcc) {
+      tcc.status =
+        normalizeTccStatus(tcc.status) === 'ajustes_solicitados' ? 'em_andamento' : tcc.status
+      await tcc.save()
+      tema.status = hasThemeUpdates ? 'aprovado' : tema.status
+      await tema.save()
+    } else {
+      tema.status =
+        normalizeTemaStatus(tema.status) === 'ajustes_solicitados' ? 'tema_pendente' : tema.status
+      await tema.save()
+    }
+
+    await this.createSystemComment({
+      tcc,
+      tema,
+      mensagem,
+      tipo: 'resposta_aluno',
+      autorNome: payload.autorNome ?? 'Aluno',
+      autorTipo: 'Aluno',
+    })
+
+    const professor = await this.findOrientationProfessor(tcc, tema)
+    return tcc
+      ? this.buildTccOrientation(tcc, tema, undefined, professor)
+      : this.buildTemaOrientation(tema, undefined, professor)
+  }
+
   async completeStage(uuidTimeline: string, nota?: number) {
     const timeline = await TccTimeline.findOrFail(uuidTimeline)
     const isBanca = timeline.titulo === 'Banca'
@@ -611,6 +675,49 @@ export default class OrientacaoService {
     })
   }
 
+  private hasThemeUpdates(tema?: StudentThemeUpdatePayload): boolean {
+    if (!tema) {
+      return false
+    }
+
+    return ['titulo', 'descricao', 'area', 'linhaPesquisa'].some((field) => {
+      const value = tema[field as keyof StudentThemeUpdatePayload]
+      return typeof value === 'string' && value.trim().length > 0
+    })
+  }
+
+  private mergeThemeUpdates(tema: TemaTcc, updates?: StudentThemeUpdatePayload) {
+    if (!updates) {
+      return
+    }
+
+    if (updates.titulo?.trim()) {
+      tema.titulo = updates.titulo.trim()
+    }
+
+    if (updates.descricao?.trim()) {
+      tema.descricao = updates.descricao.trim()
+    }
+
+    if (updates.area?.trim()) {
+      tema.area = updates.area.trim()
+    }
+
+    if (updates.linhaPesquisa?.trim()) {
+      tema.linhaPesquisa = updates.linhaPesquisa.trim()
+    }
+  }
+
+  private async findOrientationProfessor(tcc?: Tcc | null, tema?: TemaTcc | null) {
+    const professorId = tcc?.uuidOrientador ?? tema?.uuidProfessor
+
+    if (!professorId) {
+      return null
+    }
+
+    return Professor.find(professorId)
+  }
+
   private async ensureRequiredStages(uuidTcc: string) {
     const existing = await TccTimeline.query().where('uuid_tcc', uuidTcc)
     const existingTitles = new Set(existing.map((stage) => stage.titulo))
@@ -769,9 +876,28 @@ export default class OrientacaoService {
       id: comment.uuidOrientacaoComentario,
       autor: comment.autorNome,
       tipo: comment.autorTipo,
+      categoria: comment.tipo,
       mensagem: comment.mensagem,
       data: toDateString(comment.createdAt),
     }))
+  }
+
+  private async findLatestAdjustment(tcc?: Tcc | null, tema?: TemaTcc | null) {
+    const query = TccOrientacaoComentario.query()
+      .whereIn('tipo', ['ajuste_tema', 'ajuste_trabalho'])
+      .orderBy('created_at', 'desc')
+
+    if (tcc?.uuidTcc && tema?.uuidTemaTcc) {
+      query.where((builder) => {
+        builder.where('uuid_tcc', tcc.uuidTcc).orWhere('uuid_tema_tcc', tema.uuidTemaTcc)
+      })
+    } else if (tcc?.uuidTcc) {
+      query.where('uuid_tcc', tcc.uuidTcc)
+    } else if (tema?.uuidTemaTcc) {
+      query.where('uuid_tema_tcc', tema.uuidTemaTcc)
+    }
+
+    return query.first()
   }
 
   private async createSystemComment({
@@ -780,19 +906,21 @@ export default class OrientacaoService {
     mensagem,
     tipo = 'comentario',
     autorNome = 'Sistema',
+    autorTipo,
   }: {
     tcc?: Tcc | null
     tema?: TemaTcc | null
     mensagem: string
     tipo?: string
     autorNome?: string
+    autorTipo?: 'Aluno' | 'Professor' | 'Sistema'
   }) {
     const comentario = await TccOrientacaoComentario.create({
       uuidOrientacaoComentario: Uuid.generate(),
       uuidTcc: tcc?.uuidTcc,
       uuidTemaTcc: tema?.uuidTemaTcc,
       autorNome,
-      autorTipo: autorNome === 'Sistema' ? 'Sistema' : 'Professor',
+      autorTipo: autorTipo ?? (autorNome === 'Sistema' ? 'Sistema' : 'Professor'),
       tipo,
       mensagem,
     })
