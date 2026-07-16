@@ -15,6 +15,7 @@
   --color-text-strong: #0f1b3d;
   --color-text-muted: #64748b;
   --color-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --color-overlay: rgba(255, 255, 255, 0.88);
 
   // Marca e estados
   --color-brand: #006bff;
@@ -23,8 +24,10 @@
   --color-green: #15803d;
   --color-orange: #c2410c;
   --color-danger: #dc2626;
+  --color-error: var(--color-danger);
 
   // Tons (fundo suave + cor do ícone) usados em cards, alertas e badges
+  --tint-brand-bg: #eaf3ff;
   --tint-blue-bg: #dbeafe;
   --tint-blue-fg: var(--color-brand);
   --tint-green-bg: #dcfce7;
@@ -87,6 +90,7 @@
   --color-text-strong: #f1f5f9;
   --color-text-muted: #8b96ab;
   --color-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --color-overlay: rgba(11, 17, 32, 0.82);
 
   --color-brand: #4c9aff;
   --color-brand-dark: #8ec2ff;
@@ -95,6 +99,7 @@
   --color-orange: #fb923c;
   --color-danger: #f87171;
 
+  --tint-brand-bg: #132d4f;
   --tint-blue-bg: #17335c;
   --tint-green-bg: #103821;
   --tint-purple-bg: #2c2154;

@@ -30,7 +30,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
 	font: inherit;
 }
 
@@ -335,6 +337,228 @@ input {
 
 .form-status-message {
 	margin-top: var(--space-4);
+}
+
+// O projeto usa o tema pre-compilado `lara-light-cyan` do PrimeReact, que é
+// claro por padrão. Esta camada faz os componentes de formulário/overlay
+// seguirem os tokens do app quando o tema escuro está ativo.
+.p-component {
+	font-family: inherit;
+}
+
+.p-inputtext,
+.p-inputtextarea,
+.p-password-input,
+.p-inputnumber-input,
+select.p-inputtext,
+.p-dropdown,
+.p-multiselect {
+	background: var(--color-surface-soft);
+	border-color: var(--color-border);
+	box-shadow: none;
+	color: var(--color-text-strong);
+}
+
+.p-inputtext::placeholder,
+.p-inputtextarea::placeholder,
+.p-password-input::placeholder,
+.p-inputnumber-input::placeholder {
+	color: var(--color-text-muted);
+	opacity: 1;
+}
+
+.p-inputtext:enabled:hover,
+.p-inputtextarea:enabled:hover,
+.p-password-input:enabled:hover,
+.p-inputnumber-input:enabled:hover,
+select.p-inputtext:hover,
+.p-dropdown:not(.p-disabled):hover,
+.p-multiselect:not(.p-disabled):hover {
+	border-color: var(--color-brand);
+}
+
+.p-inputtext:enabled:focus,
+.p-inputtextarea:enabled:focus,
+.p-password-input:enabled:focus,
+.p-inputnumber-input:enabled:focus,
+select.p-inputtext:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-multiselect:not(.p-disabled).p-focus {
+	border-color: var(--color-brand);
+	box-shadow: 0 0 0 2px rgba(0, 107, 255, 0.18);
+}
+
+.p-inputtext.p-invalid,
+.p-inputtextarea.p-invalid,
+.p-password-input.p-invalid,
+.p-inputnumber-input.p-invalid,
+.p-dropdown.p-invalid,
+.p-multiselect.p-invalid {
+	border-color: var(--color-danger);
+}
+
+.p-dropdown .p-dropdown-label,
+.p-multiselect .p-multiselect-label {
+	color: var(--color-text-strong);
+}
+
+.p-dropdown .p-dropdown-label.p-placeholder,
+.p-multiselect .p-multiselect-label.p-placeholder {
+	color: var(--color-text-muted);
+}
+
+.p-dropdown .p-dropdown-trigger,
+.p-multiselect .p-multiselect-trigger,
+.p-password .p-icon {
+	color: var(--color-text-muted);
+}
+
+.p-dropdown-panel,
+.p-multiselect-panel,
+.p-datepicker,
+.p-dialog {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	box-shadow: var(--color-shadow);
+	color: var(--color-text);
+}
+
+.p-dropdown-panel .p-dropdown-header,
+.p-multiselect-panel .p-multiselect-header,
+.p-datepicker .p-datepicker-header,
+.p-dialog .p-dialog-header,
+.p-dialog .p-dialog-content,
+.p-dialog .p-dialog-footer {
+	background: var(--color-surface);
+	border-color: var(--color-border);
+	color: var(--color-text);
+}
+
+.p-dropdown-panel .p-dropdown-item,
+.p-multiselect-panel .p-multiselect-item,
+.p-datepicker table td > span {
+	background: transparent;
+	color: var(--color-text);
+}
+
+.p-dropdown-panel .p-dropdown-item:not(.p-highlight):not(.p-disabled):hover,
+.p-multiselect-panel .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover,
+.p-datepicker table td > span:not(.p-highlight):not(.p-disabled):hover {
+	background: var(--color-surface-soft);
+	color: var(--color-text-strong);
+}
+
+.p-dropdown-panel .p-dropdown-item.p-highlight,
+.p-multiselect-panel .p-multiselect-item.p-highlight,
+.p-datepicker table td > span.p-highlight {
+	background: var(--tint-brand-bg);
+	color: var(--color-text-strong);
+}
+
+.p-datepicker .p-datepicker-header .p-datepicker-title,
+.p-datepicker .p-datepicker-header .p-datepicker-prev,
+.p-datepicker .p-datepicker-header .p-datepicker-next,
+.p-dialog .p-dialog-header-icon {
+	color: var(--color-text-strong);
+}
+
+.p-checkbox .p-checkbox-box {
+	background: var(--color-surface-soft);
+	border-color: var(--color-border);
+}
+
+.p-checkbox:not(.p-disabled) .p-checkbox-box:hover {
+	border-color: var(--color-brand);
+}
+
+.p-checkbox .p-checkbox-box.p-highlight {
+	background: var(--color-brand);
+	border-color: var(--color-brand);
+}
+
+.p-message,
+.p-inline-message {
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-sm);
+	color: var(--color-text-strong);
+}
+
+.p-message .p-message-wrapper {
+	gap: var(--space-2);
+}
+
+.p-message .p-message-text,
+.p-message .p-message-summary,
+.p-message .p-message-detail,
+.p-inline-message .p-inline-message-text {
+	color: inherit;
+}
+
+.p-message.p-message-info,
+.p-inline-message.p-inline-message-info {
+	background: var(--tint-blue-bg) !important;
+	border: 1px solid var(--tint-blue-fg) !important;
+	color: var(--color-brand-dark) !important;
+}
+
+.p-message.p-message-info .p-message-icon,
+.p-message.p-message-info .p-message-close,
+.p-inline-message.p-inline-message-info .p-inline-message-icon {
+	color: var(--tint-blue-fg);
+}
+
+.p-message.p-message-warn,
+.p-inline-message.p-inline-message-warn {
+	background: var(--tint-orange-bg) !important;
+	border: 1px solid var(--tint-orange-fg) !important;
+	color: var(--color-orange) !important;
+}
+
+.p-message.p-message-warn .p-message-icon,
+.p-message.p-message-warn .p-message-close,
+.p-inline-message.p-inline-message-warn .p-inline-message-icon {
+	color: var(--tint-orange-fg);
+}
+
+.p-message.p-message-error,
+.p-inline-message.p-inline-message-error {
+	background: var(--tint-danger-bg) !important;
+	border: 1px solid var(--tint-danger-fg) !important;
+	color: var(--color-danger) !important;
+}
+
+.p-message.p-message-error .p-message-icon,
+.p-message.p-message-error .p-message-close,
+.p-inline-message.p-inline-message-error .p-inline-message-icon {
+	color: var(--tint-danger-fg);
+}
+
+.p-message.p-message-success,
+.p-inline-message.p-inline-message-success {
+	background: var(--tint-green-bg) !important;
+	border: 1px solid var(--tint-green-fg) !important;
+	color: var(--color-green) !important;
+}
+
+.p-message.p-message-success .p-message-icon,
+.p-message.p-message-success .p-message-close,
+.p-inline-message.p-inline-message-success .p-inline-message-icon {
+	color: var(--tint-green-fg);
+}
+
+.p-toast .p-toast-message {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	box-shadow: var(--color-shadow);
+	color: var(--color-text);
+}
+
+.p-toast .p-toast-summary {
+	color: var(--color-text-strong);
+}
+
+.p-toast .p-toast-detail {
+	color: var(--color-text);
 }
 
 .page-stack {
@@ -793,7 +1017,7 @@ input {
 
 .form-loading {
 	align-items: center;
-	background: rgba(255, 255, 255, 0.88);
+	background: var(--color-overlay);
 	border-radius: var(--radius-lg);
 	display: none;
 	inset: 0;
@@ -964,7 +1188,7 @@ input {
 .draft-status {
 	align-items: center;
 	background: var(--tint-purple-bg);
-	border: 1px solid #ddd6fe;
+	border: 1px solid var(--color-purple);
 	border-radius: var(--radius-sm);
 	display: flex;
 	gap: var(--space-4);
