@@ -131,7 +131,7 @@ export function AppLayout() {
         </div>
 
         <Menu
-          aria-label="Navegacao principal"
+          aria-label="Navegação principal"
           className="student-menu"
           model={createMenuItems(showLabels, onNavigate)}
         />

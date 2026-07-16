@@ -399,7 +399,7 @@ export function CronogramaPage() {
         <header className="calendar-panel__toolbar">
           <div className="calendar-panel__month-nav">
             <Button
-              aria-label="Mes anterior"
+              aria-label="Mês anterior"
               icon="pi pi-chevron-left"
               onClick={goToPreviousMonth}
               rounded
@@ -409,7 +409,7 @@ export function CronogramaPage() {
               {MONTH_LABELS[referenceDate.getMonth()]} {referenceDate.getFullYear()}
             </strong>
             <Button
-              aria-label="Proximo mes"
+              aria-label="Próximo mês"
               icon="pi pi-chevron-right"
               onClick={goToNextMonth}
               rounded

@@ -18,8 +18,8 @@ import { SummaryCards } from '../../shared/ui/organisms/SummaryCards/SummaryCard
 import { AlertsPanel } from '../../shared/ui/organisms/AlertsPanel/AlertsPanel'
 
 const statusLabel: Record<ProfessorEvaluationStatus, string> = {
-  pendente: 'Aguardando Banca',
-  rascunho: 'Em Andamento',
+  pendente: 'Aguardando banca',
+  rascunho: 'Em andamento',
   concluida: 'Concluído',
 }
 
@@ -124,9 +124,9 @@ export function ProfessorDashboardPage() {
         >
           <Column field="aluno" header="Aluno" />
           <Column field="tcc" header="Título do TCC" />
-          <Column field="apresentacao" header="Data Apresentação" style={{ width: '14rem' }} />
+          <Column field="apresentacao" header="Data da apresentação" style={{ width: '14rem' }} />
           <Column body={renderStatus} header="Situação" style={{ width: '10rem' }} />
-          <Column field="nota" header="Nota Final" style={{ width: '8rem' }} />
+          <Column field="nota" header="Nota final" style={{ width: '8rem' }} />
         </DataTable>
       </section>
 

@@ -365,7 +365,7 @@ export function PerfilPage() {
       <Toast ref={toast} />
       <section className="page-header">
         <div>
-          <h1>Meu Perfil</h1>
+          <h1>Meu perfil</h1>
           <p>Seus dados de acesso e informações acadêmicas.</p>
         </div>
         <Button icon="pi pi-sign-out" label="Sair" onClick={handleLogout} outlined severity="danger" />

@@ -577,7 +577,7 @@ export function StudentTopicPage() {
                     onClick={() => setSelectedProfessor(professor)}
                   >
                     <strong>{professor.nome}</strong>
-                    <span>{professor.email ?? 'Sem email registrado'}</span>
+                    <span>{professor.email ?? 'Sem e-mail registrado'}</span>
                   </li>
                 ))}
               </ul>
@@ -585,7 +585,7 @@ export function StudentTopicPage() {
                 <div className="selected-professor-summary">
                   <strong>Professor selecionado:</strong>
                   <p>{selectedProfessor.nome}</p>
-                  <p>{selectedProfessor.email ?? 'Sem email registrado'}</p>
+                  <p>{selectedProfessor.email ?? 'Sem e-mail registrado'}</p>
                 </div>
               ) : (
                 <div className="empty-state">
@@ -645,7 +645,7 @@ export function StudentTopicPage() {
         />
         <Button
           icon="pi pi-send"
-          label="Solicitar Tema"
+          label="Solicitar tema"
           loading={isSubmitting}
           type="submit"
           disabled={isSubmitting || isLoadingTemas}
@@ -821,7 +821,7 @@ export function StudentTopicPage() {
     <div className="page-stack">
       <section className="page-header">
         <div>
-          <h1>Registrar Tema de TCC</h1>
+          <h1>Registrar tema de TCC</h1>
           <p>
             Informe os dados do seu tema de Trabalho de Conclusão de Curso. Após o
             cadastro, ele será analisado pelo possível orientador.
@@ -846,7 +846,7 @@ export function StudentTopicPage() {
                 </li>
               ))}
             </ul>
-            <Message severity="info" text="Todos os campos sao obrigatorios." />
+            <Message severity="info" text="Todos os campos são obrigatórios." />
           </InfoPanel>
 
           <InfoPanel icon="pi pi-list-check" title="Status do envio">
@@ -899,7 +899,7 @@ export function StudentTopicPage() {
                 </div>
                 <p className="muted-text">
                   Salve como rascunho para continuar editando. Quando estiver pronto,
-                  clique em <strong>Solicitar Tema</strong> para enviar para análise.
+                  clique em <strong>Solicitar tema</strong> para enviar para análise.
                 </p>
                 <Tag severity="warning" value="Aguardando envio" />
               </>
@@ -946,7 +946,7 @@ export function StudentTopicPage() {
                       onClick={() => setSelectedProfessor(professor)}
                     >
                       <strong>{professor.nome}</strong>
-                      <span>{professor.email ?? 'Sem email registrado'}</span>
+                      <span>{professor.email ?? 'Sem e-mail registrado'}</span>
                     </li>
                   ))}
                 </ul>

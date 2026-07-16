@@ -14,7 +14,7 @@ export const navItems: NavItem[] = [
   },
   {
     to: '/tema',
-    label: 'Registrar Tema',
+    label: 'Registrar tema',
     icon: 'pi pi-file-edit',
     requiredRoles: ['ROLE_TEMA_VIEW'],
   },
@@ -60,5 +60,5 @@ export const navItems: NavItem[] = [
     icon: 'pi pi-cog',
     requiredRoles: ['ROLE_MENU_ADM'],
   },
-  { to: '/perfil', label: 'Meu Perfil', icon: 'pi pi-user' },
+  { to: '/perfil', label: 'Meu perfil', icon: 'pi pi-user' },
 ]

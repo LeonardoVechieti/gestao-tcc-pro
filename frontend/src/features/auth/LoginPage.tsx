@@ -13,7 +13,7 @@ import { useAuthStore } from '../../shared/stores/auth-store'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 
 const loginSchema = z.object({
-  email: z.string().min(1, 'Informe seu e-mail.').email('Informe um e-mail valido.'),
+  email: z.string().min(1, 'Informe seu e-mail.').email('Informe um e-mail válido.'),
   senha: z.string().min(1, 'Informe sua senha.'),
 })
 

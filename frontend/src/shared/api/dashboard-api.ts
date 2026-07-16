@@ -151,7 +151,7 @@ function formatDateBr(iso?: string): string | undefined {
     return `${day}/${month}/${year}`
   }
 
-  // O backend as vezes devolve a data como string de Date do JS
+  // O backend às vezes devolve a data como string de Date do JS
   // ("Sat Aug 15 2026 00:00:00 GMT-0300 ...") em vez de ISO.
   const parsed = new Date(iso)
   return Number.isNaN(parsed.getTime())
@@ -458,7 +458,7 @@ function buildAlunoDashboard(real: DashAlunoResponse): DashboardAlunoData {
   return {
     summaryCards: [
       {
-        label: 'Tema Atual',
+        label: 'Tema atual',
         value: real.temaAtual.exibir ? temaTitulo : 'Nenhum tema',
         icon: 'pi pi-book',
         action: 'Ver detalhes',

@@ -17,7 +17,7 @@ const registerSchema = z.object({
 	email: z
 		.string()
 		.min(1, "Informe seu e-mail.")
-		.email("Informe um e-mail valido."),
+		.email("Informe um e-mail válido."),
 	senha: z.string().min(8, "A senha deve ter no mínimo 8 caracteres."),
 })
 

@@ -655,7 +655,7 @@ export function OrientationManagementPage() {
       </Dialog>
 
       <Dialog
-        header="Nota da Banca"
+        header="Nota da banca"
         onHide={() => setCompletingStage({ stageId: null, nota: undefined })}
         style={{ width: 'min(24rem, calc(100vw - 2rem))' }}
         visible={completingStage.stageId !== null}
@@ -677,7 +677,7 @@ export function OrientationManagementPage() {
       >
         <div className="form-group">
           <label>
-            Nota da Banca <span className="required">*</span>
+            Nota da banca <span className="required">*</span>
           </label>
           <InputNumber
             value={completingStage.nota}
@@ -694,7 +694,7 @@ export function OrientationManagementPage() {
       </Dialog>
 
       <Dialog
-        header="Definir Prazos das Etapas"
+        header="Definir prazos das etapas"
         onHide={() => setApprovingWithDeadlines(null)}
         style={{ width: 'min(32rem, calc(100vw - 2rem))' }}
         visible={approvingWithDeadlines !== null}
@@ -706,7 +706,7 @@ export function OrientationManagementPage() {
               text
             />
             <Button
-              label="Aprovar com Prazos"
+              label="Aprovar com prazos"
               onClick={submitDeadlines}
               disabled={!deadlines['Tema aprovado']}
               loading={isSaving}
