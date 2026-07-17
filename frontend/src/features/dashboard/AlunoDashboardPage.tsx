@@ -10,6 +10,7 @@ import { DescriptionList } from '../../shared/ui/molecules/DescriptionList/Descr
 import { SummaryCards } from '../../shared/ui/organisms/SummaryCards/SummaryCards'
 import { TimelinePanel } from '../../shared/ui/organisms/TimelinePanel/TimelinePanel'
 import { AlertsPanel } from '../../shared/ui/organisms/AlertsPanel/AlertsPanel'
+import { DraggablePanels } from '../../shared/ui/organisms/DraggablePanels/DraggablePanels'
 
 // Rota para onde cada card de resumo deve levar. Mapeado pelo label porque os
 // dados vêm da API/mock sem uma rota associada.
@@ -100,51 +101,67 @@ export function AlunoDashboardPage() {
         }))}
       />
 
-      <section className="student-dashboard-grid">
-        <div className="work-panel">
-          <div className="section-title">
-            <h2>Meu tema</h2>
-            <Button label="Ver detalhes" link onClick={() => navigate('/tema')} />
-          </div>
-          <DescriptionList
-            items={[
-              { label: 'Título do tema', value: data.meuTema.titulo, wide: true },
-              { label: 'Área de interesse', value: data.meuTema.areaInteresse },
-              { label: 'Orientador', value: data.meuTema.orientador },
-              { label: 'Última atualização', value: data.meuTema.ultimaAtualizacao },
-              {
-                label: 'Status atual',
-                value: (
-                  <Tag
-                    severity={data.meuTema.statusAtual.severity}
-                    value={data.meuTema.statusAtual.label}
-                  />
-                ),
-              },
-            ]}
-          />
-        </div>
+      <DraggablePanels
+        className="student-dashboard-grid"
+        panels={[
+          {
+            id: 'meu-tema',
+            content: (
+              <div className="work-panel">
+                <div className="section-title">
+                  <h2>Meu tema</h2>
+                  <Button label="Ver detalhes" link onClick={() => navigate('/tema')} />
+                </div>
+                <DescriptionList
+                  items={[
+                    { label: 'Título do tema', value: data.meuTema.titulo, wide: true },
+                    { label: 'Área de interesse', value: data.meuTema.areaInteresse },
+                    { label: 'Orientador', value: data.meuTema.orientador },
+                    { label: 'Última atualização', value: data.meuTema.ultimaAtualizacao },
+                    {
+                      label: 'Status atual',
+                      value: (
+                        <Tag
+                          severity={data.meuTema.statusAtual.severity}
+                          value={data.meuTema.statusAtual.label}
+                        />
+                      ),
+                    },
+                  ]}
+                />
+              </div>
+            ),
+          },
+          {
+            id: 'linha-tempo',
+            content: (
+              <TimelinePanel
+                emptyText="Nenhuma etapa real cadastrada para o seu TCC."
+                onViewAll={() => navigate('/tccs')}
+                title="Linha do tempo"
+                items={data.timelineItems}
+              />
+            ),
+          },
+          {
+            id: 'avisos-pendencias',
+            content: (
+              <AlertsPanel
+                emptyText="Nenhum aviso real registrado para o seu TCC."
+                onViewAll={() => navigate('/mensagens')}
+                title="Avisos e pendências"
+                alerts={data.alerts.map((alert) => {
+                  const route = alert.target ?? alertActionRoutes[alert.action]
 
-        <TimelinePanel
-          emptyText="Nenhuma etapa real cadastrada para o seu TCC."
-          onViewAll={() => navigate('/tccs')}
-          title="Linha do tempo"
-          items={data.timelineItems}
-        />
-      </section>
-
-      <AlertsPanel
-        emptyText="Nenhum aviso real registrado para o seu TCC."
-        onViewAll={() => navigate('/mensagens')}
-        title="Avisos e pendências"
-        alerts={data.alerts.map((alert) => {
-          const route = alert.target ?? alertActionRoutes[alert.action]
-
-          return {
-            ...alert,
-            onAction: route ? () => navigate(route) : undefined,
-          }
-        })}
+                  return {
+                    ...alert,
+                    onAction: route ? () => navigate(route) : undefined,
+                  }
+                })}
+              />
+            ),
+          },
+        ]}
       />
     </div>
   )

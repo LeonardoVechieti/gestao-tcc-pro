@@ -10,7 +10,7 @@ import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { getTccList, type TccRow } from '../../shared/api/tcc-api'
 import { useAuthStore } from '../../shared/stores/auth-store'
-import { getSubmissionByAluno } from '../../shared/utils/document-submission-storage'
+import { getTccDocumentoByTcc } from '../../shared/api/tcc-documento-api'
 import {
   initialTccFilters,
   tccFiltersReducer,
@@ -99,6 +99,7 @@ function getHeaderDescription(profileName?: string): string {
 export function TccListPage() {
   const [filters, dispatch] = useReducer(tccFiltersReducer, initialTccFilters)
   const [tccs, setTccs] = useState<TccRow[] | null>(null)
+  const [sentDocumentAlunos, setSentDocumentAlunos] = useState<Map<string, boolean>>(new Map())
   const [hasError, setHasError] = useState(false)
   const user = useAuthStore((state) => state.user)
   const navigate = useNavigate()
@@ -126,14 +127,44 @@ export function TccListPage() {
     }
   }, [])
 
-  const sentDocumentAlunos = useMemo(() => {
-    const map = new Map<string, boolean>()
-    tccs?.forEach((tcc) => {
-      if (tcc.uuidAluno && getSubmissionByAluno(tcc.uuidAluno)) {
-        map.set(tcc.uuidAluno, true)
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDocumentStatus() {
+      if (!tccs || tccs.length === 0) {
+        return
       }
-    })
-    return map
+
+      const results = await Promise.all(
+        tccs.map(async (tcc) => {
+          try {
+            const documento = await getTccDocumentoByTcc(tcc.id)
+            return [tcc.uuidAluno, Boolean(documento)] as const
+          } catch {
+            return [tcc.uuidAluno, false] as const
+          }
+        }),
+      )
+
+      if (cancelled) {
+        return
+      }
+
+      const map = new Map<string, boolean>()
+      results.forEach(([uuidAluno, sent]) => {
+        if (uuidAluno) {
+          map.set(uuidAluno, sent)
+        }
+      })
+
+      setSentDocumentAlunos(map)
+    }
+
+    loadDocumentStatus()
+
+    return () => {
+      cancelled = true
+    }
   }, [tccs])
 
   const statusOptions = useMemo<{ label: string; value: TccStatus }[]>(() => {

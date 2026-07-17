@@ -19,7 +19,7 @@ import {
   type OrientationStage,
   type OrientationStatus,
 } from '../../shared/api/orientation-api'
-import { createTemaTcc, getTemaTccList, type TemaTcc } from '../../shared/api/tema-tcc-api'
+import { createTemaTcc, type TemaTcc } from '../../shared/api/tema-tcc-api'
 import {
   getProfessorRecommendations,
   getProfessorResearchOptions,

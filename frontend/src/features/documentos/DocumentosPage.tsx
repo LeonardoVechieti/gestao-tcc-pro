@@ -1,20 +1,13 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { InputTextarea } from 'primereact/inputtextarea'
 import { Message } from 'primereact/message'
 import { Tag } from 'primereact/tag'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 import { useAuthStore } from '../../shared/stores/auth-store'
-import { getSubmissionByAluno, saveSubmission, type DocumentSubmission, type SubmittedFile } from '../../shared/utils/document-submission-storage'
 import { getTccList, type TccRow } from '../../shared/api/tcc-api'
-
-type UploadedDocument = {
-  id: string
-  name: string
-  size: string
-  comment: string
-  uploadedAt: string
-}
+import { uploadTccDocumento, getTccDocumentoByTcc, type TccDocumento } from '../../shared/api/tcc-documento-api'
 
 function formatFileSize(size: number) {
   if (size >= 1_000_000) {
@@ -30,12 +23,12 @@ function formatFileSize(size: number) {
 
 export function DocumentosPage() {
   const user = useAuthStore((state) => state.user)
+  const [searchParams] = useSearchParams()
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
   const [comment, setComment] = useState('')
-  const [submissions, setSubmissions] = useState<UploadedDocument[]>([])
+  const [fileError, setFileError] = useState<string | null>(null)
+  const [submission, setSubmission] = useState<TccDocumento | null>(null)
   const [isSending, setIsSending] = useState(false)
-  const [submissionStatus, setSubmissionStatus] = useState<'nenhum' | 'enviado'>('nenhum')
-  const [, setExistingSubmission] = useState<DocumentSubmission | null>(null)
   const [studentTcc, setStudentTcc] = useState<TccRow | null>(null)
   const [isLoadingTcc, setIsLoadingTcc] = useState(true)
 
@@ -65,22 +58,17 @@ export function DocumentosPage() {
           return
         }
 
-        const student = tccs.find((item) => item.uuidAluno === user.uuidAluno)
+        const requestedTccId = searchParams.get('tccId')
+        const student = requestedTccId
+          ? tccs.find((item) => item.id === requestedTccId)
+          : tccs.find((item) => item.uuidAluno === user.uuidAluno)
+
         if (student) {
           setStudentTcc(student)
-        }
-
-        const existing = getSubmissionByAluno(user.uuidAluno)
-        if (existing) {
-          setExistingSubmission(existing)
-          setSubmissionStatus('enviado')
-          setSubmissions(existing.files.map((file) => ({
-            id: `${file.name}-${file.size}-${Date.now()}`,
-            name: file.name,
-            size: formatFileSize(file.size),
-            comment: file.comment,
-            uploadedAt: file.uploadedAt,
-          })))
+          const currentDoc = await getTccDocumentoByTcc(student.id)
+          if (!cancelled && currentDoc) {
+            setSubmission(currentDoc)
+          }
         }
       } finally {
         if (!cancelled) {
@@ -97,52 +85,47 @@ export function DocumentosPage() {
   }, [user?.uuidAluno])
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    setSelectedFiles(event.target.files)
+    const files = event.target.files
+    if (!files || files.length === 0) {
+      setSelectedFiles(null)
+      setFileError(null)
+      return
+    }
+
+    const invalidFile = Array.from(files).find(
+      (file) => file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')
+    )
+
+    if (invalidFile) {
+      setSelectedFiles(null)
+      setFileError('Apenas arquivos PDF são permitidos. Remova o arquivo inválido e tente novamente.')
+      return
+    }
+
+    setSelectedFiles(files)
+    setFileError(null)
   }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
-    if (!selectedFiles || selectedFiles.length === 0 || !user?.uuidAluno || !studentTcc) {
+    if (!selectedFiles || selectedFiles.length === 0 || !user?.uuidAluno || !studentTcc || fileError) {
       return
     }
 
     setIsSending(true)
 
-    const newFiles: SubmittedFile[] = Array.from(selectedFiles).map((file) => ({
-      name: file.name,
-      size: file.size,
-      comment: comment.trim(),
-      uploadedAt: new Date().toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    }))
+    try {
+      const documentFile = selectedFiles[0]
+      const uploaded = await uploadTccDocumento(studentTcc.id, documentFile, comment.trim())
 
-    const submission: DocumentSubmission = {
-      uuidAluno: user.uuidAluno,
-      email: user.email,
-      aluno: user.nome,
-      uuidTcc: studentTcc?.id,
-      files: newFiles,
-      submittedAt: new Date().toLocaleString('pt-BR'),
+      setSubmission(uploaded)
+      setSelectedFiles(null)
+      setComment('')
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsSending(false)
     }
-
-    saveSubmission(submission)
-    setExistingSubmission(submission)
-    setSubmissionStatus('enviado')
-    setSubmissions(newFiles.map((file) => ({
-      id: `${file.name}-${file.size}-${Date.now()}`,
-      name: file.name,
-      size: formatFileSize(file.size),
-      comment: file.comment,
-      uploadedAt: file.uploadedAt,
-    })))
-    setSelectedFiles(null)
-    setComment('')
-    setIsSending(false)
   }
 
   return (
@@ -159,26 +142,28 @@ export function DocumentosPage() {
         {isLoadingTcc ? (
           <Message severity="info" text="Verificando se seu TCC com orientador está registrado..." />
         ) : studentTcc ? (
-          submissionStatus === 'enviado' ? (
-            <Message
-              severity="success"
-              text="Documento enviado. O professor verá o envio no menu TCCs."
-            />
-          ) : (
+          <>
+            {submission ? (
+              <Message
+                severity="success"
+                text="Documento enviado. Você pode enviar uma nova versão a qualquer momento."
+              />
+            ) : null}
             <form onSubmit={handleSubmit}>
               <FormField label="Anexar arquivo" htmlFor="document-file">
                 <input
                   id="document-file"
                   type="file"
-                  multiple
+                  accept="application/pdf"
                   onChange={handleFileChange}
                   disabled={isSending}
                 />
                 {hasFiles ? (
                   <small>{selectedFileNames}</small>
                 ) : (
-                  <small>Nenhum arquivo selecionado</small>
+                  <small>Somente arquivos PDF são aceitos</small>
                 )}
+                {fileError ? <p className="field-error">{fileError}</p> : null}
               </FormField>
 
               <FormField label="Observações" htmlFor="document-comment">
@@ -195,43 +180,39 @@ export function DocumentosPage() {
                 <Button label="Enviar documento" type="submit" loading={isSending} disabled={!hasFiles} />
               </div>
             </form>
-          )
+          </>
         ) : (
           <Message
             severity="warn"
-            text="Para enviar documentos, você precisa ter um TCC registrado com professor orientador."
+            text="Você precisa solicitar orientação através do menu 'Registrar tema' antes de enviar documentos."
           />
         )}
 
         <Message
           severity="info"
-          text="Este fluxo salva o envio localmente no navegador, para demonstrar o documento enviado pelo aluno." 
+          text="Este fluxo mantém apenas a versão atual do documento para o professor revisar, sem histórico de vários arquivos." 
         />
       </section>
 
       <section className="table-panel">
-        <h2>Documentos enviados</h2>
+        <h2>Versão atual do documento</h2>
 
-        {submissions.length === 0 ? (
+        {!submission ? (
           <Message
             severity="warn"
-            text="Nenhum documento enviado ainda. Anexe um arquivo para criar um envio." 
+            text="Nenhum documento enviado ainda. Anexe um arquivo para enviar a versão atual do trabalho."
           />
         ) : (
-          <div className="document-list">
-            {submissions.map((submission) => (
-              <article className="document-item" key={submission.id}>
-                <div>
-                  <strong>{submission.name}</strong>
-                  <span>{submission.size}</span>
-                </div>
-                <div>
-                  <small>{submission.uploadedAt}</small>
-                  {submission.comment ? <p>{submission.comment}</p> : null}
-                </div>
-              </article>
-            ))}
-          </div>
+          <article className="document-item">
+            <div>
+              <strong>{submission.nome}</strong>
+              <span>{formatFileSize(submission.tamanho)}</span>
+            </div>
+            <div>
+              <small>{new Date(submission.createdAt).toLocaleString('pt-BR')}</small>
+              {submission.comentario ? <p>{submission.comentario}</p> : null}
+            </div>
+          </article>
         )}
       </section>
     </div>

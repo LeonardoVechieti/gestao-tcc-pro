@@ -10,7 +10,7 @@ export type DocumentSubmission = {
   email?: string
   aluno: string
   uuidTcc?: string
-  files: SubmittedFile[]
+  file: SubmittedFile
   submittedAt: string
 }
 
