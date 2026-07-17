@@ -20,11 +20,13 @@ export default class AuthController {
 
     return {
       uuidUsuario: usuario.uuidUsuario,
+      uuidAluno: usuario.uuidAluno ?? usuario.aluno?.uuidAluno,
       nome: usuario.nome,
       email: usuario.email,
       role: usuario.perfil?.nomePerfil,
       perfilNome: usuario.perfil?.nomePerfil,
       roles,
+      aluno: usuario.aluno ?? undefined,
     }
   }
 
@@ -66,9 +68,11 @@ export default class AuthController {
       })
     }
 
+    const persistedUser = await this.usuarioRepository.show(usuario.uuidUsuario)
+
     return {
-      token: authService.generateToken(usuario),
-      user: this.serializeAuthUser(usuario),
+      token: authService.generateToken(persistedUser),
+      user: this.serializeAuthUser(persistedUser),
     }
   }
 

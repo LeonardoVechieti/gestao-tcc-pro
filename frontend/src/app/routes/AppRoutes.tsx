@@ -11,6 +11,8 @@ import { CronogramaPage } from '../../features/cronograma/CronogramaPage'
 import { MensagensPage } from '../../features/mensagens/MensagensPage'
 import { PerfilPage } from '../../features/perfil/PerfilPage'
 import { TccListPage } from '../../features/tccs/TccListPage'
+import { TccDetailPage } from '../../features/tccs/TccDetailPage'
+import { DocumentosPage } from '../../features/documentos/DocumentosPage'
 import { AdminPage } from '../../features/admin/AdminPage'
 import { UsuariosPage } from '../../features/admin/UsuariosPage'
 import { AlunosPage } from '../../features/admin/AlunosPage'
@@ -32,6 +34,8 @@ const implementedPaths = new Set([
   '/',
   '/tema',
   '/tccs',
+  '/tccs/:id',
+  '/documentos',
   '/orientacoes',
   '/admin',
   '/cronograma',
@@ -133,8 +137,24 @@ export function AppRoutes() {
         <Route
           path="tccs"
           element={
-            <RequireRole role="ROLE_TCC_VIEW">
+            <RequireRole role={['ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM']}>
               <TccListPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="tccs/:id"
+          element={
+            <RequireRole role={['ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM']}>
+              <TccDetailPage />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="documentos"
+          element={
+            <RequireRole role="ROLE_MENU_MEU_TCC">
+              <DocumentosPage />
             </RequireRole>
           }
         />

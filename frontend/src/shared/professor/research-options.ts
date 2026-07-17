@@ -3,6 +3,13 @@ export type ResearchOption = {
   value: string
 }
 
+/*
+  Essas opções estão hardcoded no frontend por enquanto.
+  O fluxo atual NÃO carrega áreas e linhas de pesquisa do backend.
+  São apenas fallback enquanto não existe um endpoint de opções.
+  Quando o backend tiver suporte para isso, remova essas constantes e
+  passe a buscar os valores do banco.
+*/
 export const professorAreaOptions: ResearchOption[] = [
   { label: 'Marketing', value: 'marketing' },
   { label: 'Sistemas de Informação', value: 'sistemas' },

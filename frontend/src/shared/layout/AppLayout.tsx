@@ -46,7 +46,7 @@ export function AppLayout() {
       ? 'Painel da coordenação'
     : isProfessor
       ? 'Meus orientandos'
-      : 'Meu TCC'
+      : 'Menu'
   const topbarSubtitle = isAdmin
     ? 'Acesse todas as áreas do sistema'
     : isCordenacao

@@ -26,6 +26,10 @@ export default class ProfessorController {
     return this.professorRepository.index(payload)
   }
 
+  async researchOptions(): Promise<{ areas: string[]; lines: string[] }> {
+    return this.professorRepository.researchOptions()
+  }
+
   async update({ request }: HttpContext): Promise<Professor> {
     const payload = (await ProfessorValidator.validate(request.all())) as unknown as Professor
     return this.professorRepository.update(payload)

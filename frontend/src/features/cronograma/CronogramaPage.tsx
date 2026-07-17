@@ -322,6 +322,96 @@ export function CronogramaPage() {
 
       {cronogramas.length > 0 ? (
         <>
+          <section className="calendar-panel">
+            <header className="calendar-panel__toolbar">
+              <div className="calendar-panel__month-nav">
+                <Button
+                  aria-label="Mês anterior"
+                  icon="pi pi-chevron-left"
+                  onClick={goToPreviousMonth}
+                  rounded
+                  text
+                />
+                <strong className="calendar-panel__month-label">
+                  {MONTH_LABELS[referenceDate.getMonth()]} {referenceDate.getFullYear()}
+                </strong>
+                <Button
+                  aria-label="Próximo mês"
+                  icon="pi pi-chevron-right"
+                  onClick={goToNextMonth}
+                  rounded
+                  text
+                />
+              </div>
+
+              <Button label="Hoje" onClick={goToToday} outlined size="small" />
+            </header>
+
+            <div className="calendar-panel__legend">
+              <span className="calendar-legend-item">
+                <i className="calendar-legend-swatch calendar-legend-swatch--weekend" />
+                Final de semana
+              </span>
+              <span className="calendar-legend-item">
+                <i className="calendar-legend-swatch calendar-legend-swatch--holiday" />
+                Feriado
+              </span>
+              <span className="calendar-legend-item">
+                <i className="calendar-legend-swatch calendar-legend-swatch--deadline" />
+                Prazo do TCC
+              </span>
+            </div>
+
+            {isCalendarLoading ? (
+              <div className="page-loading">
+                <ProgressSpinner strokeWidth="4" style={{ width: '2.5rem', height: '2.5rem' }} />
+              </div>
+            ) : (
+              <div className="calendar-grid">
+                {WEEKDAY_LABELS.map((label) => (
+                  <div className="calendar-grid__weekday" key={label}>
+                    {label}
+                  </div>
+                ))}
+
+                {days.map((day) => {
+                  const dateKey = toDateKey(day.date)
+                  const feriadoNome = feriadoPorData.get(dateKey)
+                  const isHoliday = Boolean(feriadoNome)
+                  const deadlines = deadlinesByDate.get(dateKey) ?? []
+                  const hasDeadline = deadlines.length > 0
+
+                  return (
+                    <div
+                      className={[
+                        'calendar-day',
+                        !day.isCurrentMonth && 'calendar-day--muted',
+                        day.isWeekend && 'calendar-day--weekend',
+                        isHoliday && 'calendar-day--holiday',
+                        hasDeadline && 'calendar-day--deadline',
+                        dateKey === todayKey && 'calendar-day--today',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      key={`${dateKey}-${day.isCurrentMonth ? 'current' : 'adjacent'}`}
+                      title={[feriadoNome, ...deadlines.map((stage) => stage.titulo)]
+                        .filter(Boolean)
+                        .join(' • ')}
+                    >
+                      <span className="calendar-day__number">{day.date.getDate()}</span>
+                      {isHoliday && <span className="calendar-day__label">{feriadoNome}</span>}
+                      {hasDeadline && (
+                        <span className="calendar-day__label calendar-day__label--deadline">
+                          {deadlines.length === 1 ? deadlines[0].titulo : `${deadlines.length} prazos`}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
           <section className="cronograma-summary-grid">
             {summary.map((item) => (
               <article key={item.label}>
@@ -395,95 +485,6 @@ export function CronogramaPage() {
         </section>
       )}
 
-      <section className="calendar-panel">
-        <header className="calendar-panel__toolbar">
-          <div className="calendar-panel__month-nav">
-            <Button
-              aria-label="Mês anterior"
-              icon="pi pi-chevron-left"
-              onClick={goToPreviousMonth}
-              rounded
-              text
-            />
-            <strong className="calendar-panel__month-label">
-              {MONTH_LABELS[referenceDate.getMonth()]} {referenceDate.getFullYear()}
-            </strong>
-            <Button
-              aria-label="Próximo mês"
-              icon="pi pi-chevron-right"
-              onClick={goToNextMonth}
-              rounded
-              text
-            />
-          </div>
-
-          <Button label="Hoje" onClick={goToToday} outlined size="small" />
-        </header>
-
-        <div className="calendar-panel__legend">
-          <span className="calendar-legend-item">
-            <i className="calendar-legend-swatch calendar-legend-swatch--weekend" />
-            Final de semana
-          </span>
-          <span className="calendar-legend-item">
-            <i className="calendar-legend-swatch calendar-legend-swatch--holiday" />
-            Feriado
-          </span>
-          <span className="calendar-legend-item">
-            <i className="calendar-legend-swatch calendar-legend-swatch--deadline" />
-            Prazo do TCC
-          </span>
-        </div>
-
-        {isCalendarLoading ? (
-          <div className="page-loading">
-            <ProgressSpinner strokeWidth="4" style={{ width: '2.5rem', height: '2.5rem' }} />
-          </div>
-        ) : (
-          <div className="calendar-grid">
-            {WEEKDAY_LABELS.map((label) => (
-              <div className="calendar-grid__weekday" key={label}>
-                {label}
-              </div>
-            ))}
-
-            {days.map((day) => {
-              const dateKey = toDateKey(day.date)
-              const feriadoNome = feriadoPorData.get(dateKey)
-              const isHoliday = Boolean(feriadoNome)
-              const deadlines = deadlinesByDate.get(dateKey) ?? []
-              const hasDeadline = deadlines.length > 0
-
-              return (
-                <div
-                  className={[
-                    'calendar-day',
-                    !day.isCurrentMonth && 'calendar-day--muted',
-                    day.isWeekend && 'calendar-day--weekend',
-                    isHoliday && 'calendar-day--holiday',
-                    hasDeadline && 'calendar-day--deadline',
-                    dateKey === todayKey && 'calendar-day--today',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  key={`${dateKey}-${day.isCurrentMonth ? 'current' : 'adjacent'}`}
-                  title={[feriadoNome, ...deadlines.map((stage) => stage.titulo)]
-                    .filter(Boolean)
-                    .join(' • ')}
-                >
-                  <span className="calendar-day__number">{day.date.getDate()}</span>
-                  {isHoliday && <span className="calendar-day__label">{feriadoNome}</span>}
-                  {hasDeadline && (
-                    <span className="calendar-day__label calendar-day__label--deadline">
-                      {deadlines.length === 1 ? deadlines[0].titulo : `${deadlines.length} prazos`}
-                    </span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </section>
     </div>
   )
 }
