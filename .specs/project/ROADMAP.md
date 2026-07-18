@@ -1,37 +1,64 @@
 # Roadmap
 
-## Shipped (backend-api)
+## Shipped
 
-- Core CRUD for: Role, Perfil (+ PerfilRole), Aluno, Professor, TemaTcc, Tcc, Agenda
-  (+ AgendaParticipante), Notificação (read-only list).
-- Dashboards: dash aluno, dash coordenação, dash professor (`app/controllers/dash_*`,
-  `app/services/dash_*`).
-- Static Bearer-token auth middleware (single shared `API_AUTH_TOKEN`, not per-user).
-- Swagger docs (`app/swagger/openapi.ts`, `/swagger` route).
-- Feriado (holiday) integration service, external API via `FERIADOS_API_URL`.
+- **Auth**: per-user JWT (register/login) + Google OAuth login
+  (`auth_controller.ts`, `auth_service.ts`) — supersedes the old static-token model.
+  See `.specs/project/DECISIONS.md`.
+- **Frontend app** (`frontend/`, React 19 + Vite + PrimeReact): fully scaffolded, not
+  just mockups. Features shipped: auth (login/register), dashboards (aluno/professor/
+  coordenação), `/tema` (registrar tema + acompanhamento), `/orientacoes` (gestão de
+  orientação pelo professor/coordenação/admin), `/tccs`, `/cronograma`, `/mensagens`
+  (notificações), `/perfil`, `/admin/*` (usuários, roles, perfis, alunos, professores).
+  `/documentos` and `/apresentacao` exist in the nav but are **placeholders**.
+- **Fluxo aluno ↔ professor orientador** (proposal → acceptance/refusal → theme
+  approval with deadlines → `tcc` + `tcc_timeline` creation → stage tracking →
+  comments/adjustments → notifications): implemented end-to-end. Full detail in
+  `.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md` — treat
+  that file as the source of truth for this flow, more current than this roadmap.
+- Core CRUD for: Role, Perfil (+ PerfilRole), Usuario, Aluno, Professor
+  (+ recommendations), TemaTcc, Tcc, TccDocumento, Agenda (+ AgendaParticipante),
+  Notificação, Avaliação (simplified, single-evaluator).
+- Dashboards: dash aluno, dash coordenação, dash professor, all backed by real data
+  (no mocked alerts when the backend is active).
+- Swagger docs (`app/swagger/openapi.ts`, `/tcc-pro/swagger` route).
+- Feriado (holiday) integration service, external API via `FERIADOS_API_URL`
+  (BrasilAPI).
 
-## Not started
+## In progress / partial
 
-- **frontend** — no app code yet, only design mockups in `front-tcc-pro/design/`.
-  Stack decided: React + PrimeReact (see `.specs/project/DECISIONS.md`).
-- Per-user authentication/login (Usuario model exists with password/email fields, but
-  no login/session/JWT-issuing endpoint found yet — current middleware only checks a
-  static shared token).
-- Real authorization (Role/Perfil are modeled but not enforced per-route).
-- **Curso** entity — courses aren't modeled; needed for per-course rules (max
-  orientandos, required stages, reports "por curso").
-- **Banca** as an explicit concept (orientador + avaliadores + conflict checking) —
-  today only `Agenda`/`AgendaParticipante` exist.
-- **Entrega/Documento** — mandatory-deliverable + document-upload tracking beyond
-  `TccTimeline`.
-- **Ata / relatório gerencial** generation.
-- Multi-evaluator avaliação consolidation (TCC result finalized once all required
-  avaliações are registered).
+- **Post-refusal flow** (ORIENT-014): implemented — a refused proposal doesn't block
+  a new one; student can reuse refused-proposal data as a draft.
+- **Agenda/Banca**: `Agenda`/`AgendaParticipante` exist but there's no formal `Banca`
+  entity yet (no orientador/avaliador/suplente distinction, no conflict checking).
+- **Avaliação**: simplified, tied to the orientador only when the "Banca" timeline
+  stage is completed with a grade — not the case's multi-evaluator model.
 
-See `.specs/project/PROJECT.md` → "Domain model (case) vs. implemented entities" for
-the full gap analysis, and the case's MVP list for prioritization once work resumes.
+## Not started (see `.specs/project/PROJECT.md` gap analysis + `GENERAL_TODOS.md`)
+
+- **ORIENT-008 — Entregas/Documentos**: no document upload/tracking exists yet beyond
+  the `TccDocumento` CRUD skeleton; `/documentos` is a frontend placeholder. Marked as
+  the recommended next step in the implementation plan (highest MVP priority).
+- **ORIENT-009 — Banca formal**: dedicated `banca`/`banca_participante` tables,
+  role distinction (orientador/avaliador interno/externo/suplente), agenda conflict
+  validation.
+- **ORIENT-010 — Avaliação multiavaliador**: draft/publish per evaluator, final result
+  only consolidated once all required evaluations are published.
+- **ORIENT-011 — Resultado do aluno**: published-result view, blocked until publication.
+- **ORIENT-012 — Autorização real no backend**: role-based policy per route (today,
+  scope enforcement is mostly frontend-only — see `.specs/project/DECISIONS.md`).
+- **ORIENT-013 — Remover dependência de busca por e-mail**: `/auth/me` and the JWT
+  should carry `uuidProfessor` (it already carries `uuidAluno`) so the frontend stops
+  resolving professor identity by email lookup.
+- **Curso** entity — courses aren't modeled; `Aluno.curso` is free text only, no
+  per-course rules (max orientandos, required stages, per-course reports).
+- **Ata / relatório gerencial** generation — no minutes persistence or management
+  report generation exists.
+- Deployment/CI — no Dockerfile, CI workflow, or hosting provider config anywhere in
+  the repo; only local dev scripts exist.
 
 ## How to use this file
 
 Update when a feature moves between planned → in progress → shipped. Keep entries
-terse; details belong in `.specs/features/<feature>/spec.md`.
+terse; the aluno-orientador flow's day-to-day detail belongs in
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md`, not here.

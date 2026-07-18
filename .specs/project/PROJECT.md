@@ -39,11 +39,12 @@ sofisticadas.
 - **backend-api** (`api-tcc-pro/`) — AdonisJS 6 + TypeScript REST API. Owns all domain
   logic, persistence (PostgreSQL via Lucid ORM), and Swagger-documented endpoints.
   Working code today, covers a subset of the full case domain (see gap below).
-- **frontend** (`front-tcc-pro/`) — **React + PrimeReact** (decided 2026-07-01, see
-  `.specs/project/DECISIONS.md`). No app code yet. `front-tcc-pro/design/*.png` holds
-  the UI mockups (screens listed in `.specs/frontend/.spec/ARCHITECTURE.md`). A
-  teammate owns the atomic-design component breakdown — this repo's docs describe
-  screens/use-cases, not the atomic component hierarchy.
+- **frontend** (`frontend/`) — **React 19 + Vite + TypeScript + PrimeReact**, shipped
+  (see `.specs/project/DECISIONS.md`, `.specs/frontend/.spec/`). Covers auth,
+  dashboards, the full aluno↔professor orientação flow, and admin CRUD screens.
+  `design/*.png` (repo root) still holds the original UI mockups for reference.
+  Component hierarchy follows Atomic Design, extracted incrementally — see
+  `frontend/CLAUDE.md` and `.specs/frontend/.spec/CONVENTIONS.md`.
 
 ## Actors / stakeholders (from the case)
 
@@ -62,10 +63,14 @@ sofisticadas.
 - **TI** — flags technical limits, suggests staged integration with the existing
   academic system, cares about security/backup/scalability, prefers phased delivery.
 
-Role/permission modeling exists at the DB level (Role, Perfil, PerfilRole) but no
-auth/login flow is implemented yet — see `.specs/backend-api/.spec/CONCERNS.md`. This
-blocks any UI that depends on "who is the current user" (e.g. login screen, aluno's own
-dashboard).
+Role/permission modeling exists at the DB level (Role, Perfil, PerfilRole) and per-user
+auth (JWT + Google OAuth login) is implemented and shipped — see
+`.specs/project/DECISIONS.md`. What's still missing is **enforcement**: no
+backend policy/middleware checks Role/Perfil before allowing an action, so scope rules
+("professor only sees their own orientandos", "only coordenação sees the global list")
+are currently applied in the frontend only. See `.specs/backend-api/.spec/CONCERNS.md`
+and ORIENT-012 in
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md`.
 
 ## Domain model (case) vs. implemented entities (backend-api)
 
@@ -75,8 +80,8 @@ Case domain model: Curso, Aluno, Professor (orientador/avaliador), TCC, Entrega
 professor), Ata (registro final da banca), Relatório (consolidação gerencial).
 
 Implemented in `api-tcc-pro` today (`DIAGRAMA_CLASSES.md`): Aluno, Professor,
-TemaTcc, Tcc, TccTimeline, TccNotificacao, Usuario, Perfil, Role, PerfilRole, Agenda,
-AgendaParticipante.
+TemaTcc, Tcc, TccTimeline, TccNotificacao, TccDocumento, TccOrientacaoComentario,
+Usuario, Perfil, Role, PerfilRole, Agenda, AgendaParticipante, Avaliacao (simplified).
 
 **Gaps** (case concepts with no corresponding backend entity yet):
 - **Curso** — no course entity; Aluno has a free-text `curso` field only, no
@@ -85,19 +90,26 @@ AgendaParticipante.
   there's no explicit "banca" concept distinguishing orientador vs. avaliadores or
   enforcing "no conflict" checks described in the case's `Agendar apresentação de TCC`
   use case (FE_01 conflito de agenda).
-- **Entrega / Documento** — `TccTimeline` is the closest analog (title/description/
-  due date/status) but there's no document upload/storage modeled, and the case's
-  `Enviar documentos do TCC` use case has no backend support yet.
+- **Entrega / Documento** — `TccTimeline` tracks stage/deadline/status; a
+  `TccDocumento` model + `tcc_documento_controller.ts` exist as a CRUD skeleton, but
+  there's no real upload flow wired to a timeline stage yet, and `/documentos` in the
+  frontend is a placeholder. Tracked as **ORIENT-008** (highest MVP priority) in
+  `.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md`.
 - **Ata / Relatório** — no ata (minutes) persistence or management-report generation
   exists; `dash_*` controllers cover dashboards, not the case's reporting requirement.
-- **Avaliação multiplicity** — case's `Registrar avaliação final` implies multiple
-  avaliadores each submitting a grade/parecer, with the TCC result only finalized once
-  all required avaliações are in; current `Avaliacao` model exists in the diagram but
-  its multi-evaluator consolidation logic wasn't found in `app/services/` during
-  mapping — verify before building on it.
+- **Banca** — still no explicit "banca" entity distinguishing orientador vs.
+  avaliadores or enforcing agenda-conflict checks (case's FE_01); tracked as
+  **ORIENT-009**.
+- **Avaliação multiplicity** — confirmed: the current `Avaliacao` is simplified and
+  single-evaluator, created/updated when the "Banca" `tcc_timeline` stage is completed
+  with a grade by the orientador. The case's multi-evaluator consolidation (result
+  finalized only once all required avaliações are published) is not implemented.
+  Tracked as **ORIENT-010** / **ORIENT-011**.
 
 Track closing these gaps as features under `.specs/features/` as they're picked up;
-don't assume the case's full domain model is already implemented.
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md` already
+tracks ORIENT-008 through ORIENT-013 for this cluster of gaps — check there before
+assuming a gap is unplanned.
 
 ## Core use cases (from the case, ≥8 required)
 

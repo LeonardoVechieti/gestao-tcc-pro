@@ -6,17 +6,19 @@ Japa (`@japa/runner`), invoked via `node ace test` (= `yarn test`).
 
 ## Suites (from `adonisrc.ts`)
 
-- `unit`: `tests/unit/**/*.spec(.ts|.js)` — currently empty, no unit tests exist yet.
-- `functional`: presumably `tests/functional/**/*.spec(.ts|.js)` (mirrors the one
-  existing file) — verify exact glob in `adonisrc.ts` before assuming.
+- `unit`: `tests/unit/**/*.spec(.ts|.js)` — the directory doesn't even exist on disk;
+  no unit tests exist yet.
+- `functional`: `tests/functional/**/*.spec(.ts|.js)` — only one file exists today.
 
 ## Existing coverage
 
-Only `tests/functional/auth_middleware.spec.ts` exists today, covering the static
-bearer-token middleware (401 paths + happy path + public health route). No
-controller/repository/service tests exist yet — new resource work should add
-functional tests following this file's pattern (`@japa/api-client`'s `client` fixture,
-`response.assertStatus` / `assertBodyContains`).
+Only `tests/functional/auth_middleware.spec.ts` exists. **Verify it still matches the
+current per-user JWT middleware before trusting it** — auth moved from a static shared
+bearer token to per-user JWT + Google OAuth (`.specs/project/DECISIONS.md`) and this
+test may still be asserting the old behavior. No controller/repository/service tests
+exist for any other module (including the orientação state machine) — new resource
+work should add functional tests following this file's pattern (`@japa/api-client`'s
+`client` fixture, `response.assertStatus` / `assertBodyContains`).
 
 ## Gate to run before considering backend work done
 
