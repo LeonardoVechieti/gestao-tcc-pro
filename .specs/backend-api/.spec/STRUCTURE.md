@@ -3,19 +3,23 @@
 ```
 api-tcc-pro/
 ├── app/
-│   ├── controllers/        # one per resource: agenda, aluno, dash_*, notificacao,
-│   │                        perfil, professor, role, tcc, tema_tcc
+│   ├── controllers/        # one per resource: auth, usuario, role, perfil, aluno,
+│   │                        professor, professor_recommendation, tema_tcc, tcc,
+│   │                        tcc_documento, orientacao, avaliacao, agenda, feriado,
+│   │                        notificacao, dash_alunos, dash_professor, dash_cordenacao
 │   ├── exceptions/         # generic_response_exception.ts, handler.ts
 │   ├── function/           # small pure helpers: camel_to_snake, convert_to_snake_case,
 │   │                        sequence, uuidv4
-│   ├── helpers/            # convert_files_to_base64, dashboard_helpers, get_current_date
+│   ├── helpers/            # convert_files_to_base64, dashboard_helpers, get_current_date,
+│   │                        password.ts (hash/verify)
 │   ├── interfaces/         # dash_aluno.ts, feriado.ts
-│   ├── middleware/         # auth_middleware.ts
+│   ├── middleware/         # auth_middleware.ts (per-user JWT, see ARCHITECTURE.md)
 │   ├── models/DAO/         # Lucid models — one per entity (see DIAGRAMA_CLASSES.md)
 │   ├── repositories/       # plain-CRUD data access per resource
-│   ├── services/           # cross-entity logic: dashboards, notificacao, feriado
+│   ├── services/           # cross-entity logic: auth, dashboards, orientacao,
+│   │                        notificacao, feriado
 │   ├── swagger/            # openapi.ts — Swagger/OpenAPI doc definition
-│   └── validators/         # VineJS validators, one subfolder per resource
+│   └── validators/         # VineJS validators, one subfolder per resource (incl. auth/)
 ├── config/                 # app, bodyparser, cors, database, hash, logger
 ├── database/migrations/    # one file per table, timestamp-prefixed
 ├── providers/               # app_provider.ts

@@ -1,28 +1,56 @@
 # Architecture — frontend
 
-**Not yet scaffolded.** Stack decided (React + PrimeReact, see
-`.specs/project/DECISIONS.md`); atomic-design component architecture owned by a
-teammate — not documented here yet.
+Shipped (was "not yet scaffolded" as of 2026-07-01 — fully built now, see
+`.specs/project/DECISIONS.md`).
 
-## Screens (`front-tcc-pro/design/`) mapped to case use cases and backend support
+## Shell
 
-| Mockup | Screen | Case use case | Actor | Backend today |
-|---|---|---|---|---|
-| `1_login.png` | Login | (implied by all actor pre-conditions: "está autenticado") | all | **missing** — only static shared-token middleware, no per-user login (`.specs/backend-api/.spec/CONCERNS.md`) |
-| `2_dashboard_coordenacao.png` | Coordenação dashboard | — (overview) | Coordenação | `dash_cordenacao_controller.ts` / `dash_cordenacao_service.ts` |
-| `3_coordenacao_agendar_apresentacao_tcc.png` | Agendar apresentação de TCC | Agendar apresentação de TCC (incl. FA_01 virtual, FE_01 conflito de agenda) | Coordenação | partial — `agenda_controller.ts`/`agenda_service.ts` exist; explicit conflict-checking and modalidade-virtual flow not confirmed, no explicit "Banca" concept (see `PROJECT.md` gap analysis) |
-| `4_coordenacao_alunos_aptos_tcc.png` | Alunos aptos ao TCC (list) | Cadastrar alunos aptos ao TCC (list view) | Coordenação | `aluno_controller.ts` |
-| `5_professor_dashboard.png` | Professor dashboard | — (overview) | Professor | `dash_professor_controller.ts` |
-| `6_coordnacao_cadastrar_aluno.png` | Cadastrar aluno | Cadastrar alunos aptos ao TCC (incl. FA_01 import, FE_01 matrícula duplicada) | Coordenação | `aluno_controller.ts` — bulk-import (FA_01) not confirmed to exist |
-| `7_aluno_registrar_tema_tcc.png` | Registrar tema de TCC | Registrar tema de TCC (incl. FA_01 rascunho, FE_01 dados obrigatórios) | Aluno | `tema_tcc_controller.ts` — draft/rascunho status support not confirmed |
-| `8_professor_registrar_avaliacao_final.png` | Registrar avaliação final | Registrar avaliação final (incl. FA_01 parcial, FE_01 nota fora da faixa) | Professor Avaliador | `Avaliacao` model exists in diagram; multi-evaluator consolidation logic not confirmed in `app/services/` — verify before building |
-| `9_aluno_resultado_tcc.png` | Resultado do TCC | — (result of Registrar avaliação final, once all avaliações done) | Aluno | depends on avaliação consolidation above |
-| `10_aluno_dashboard.png` | Aluno dashboard | — (overview) | Aluno | `dash_alunos_controller.ts` |
+`src/app/App.tsx` → `AppProviders` (React Query client, PrimeReact theme, Router) →
+`AppRoutes.tsx`, which wraps protected routes in `RequireAuth` (redirects to `/login`
+if no valid session; re-validates the token against `GET /tcc-pro/auth/me` on mount)
+and `AppLayout` (sidebar nav from `src/shared/layout/nav-items.ts`, filtered per-role by
+`hasAnyRole`). Routes not yet built render `ComingSoon` via an `implementedPaths` set.
 
-Not yet mocked up but required by the case: **Vincular orientador**, **Controlar
-entregas obrigatórias**, **Enviar documentos do TCC**, **Formar banca avaliadora**
-(as a distinct step from scheduling). Flag to the design teammate if these need
-screens before implementation.
+## Screens (routes) — mapped to backend support and current status
 
-Update this file once the atomic-design breakdown and routing/navigation structure
-are decided.
+Source of truth for day-to-day detail:
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md`.
+
+| Route | Actor(s) | State | Backend |
+|---|---|---|---|
+| `/login`, `/register` | all | Real | `auth_controller.ts` (JWT + Google OAuth) |
+| `/` (dashboard) | all, per-role | Real | `dash_alunos` / `dash_professor` / `dash_cordenacao` |
+| `/tema` | Aluno | Real | `tema_tcc_controller.ts`, `orientacao_controller.ts` |
+| `/orientacoes` | Professor / Coordenador / Admin | Real | `orientacao_controller.ts` |
+| `/tccs`, `/tccs/:id` | all, scoped per role | Real | `tcc_controller.ts` |
+| `/cronograma` | all, scoped per role | Real | `orientacao_controller.ts` (via `tcc_timeline`) |
+| `/mensagens` | all | Real | `notificacao_controller.ts` |
+| `/perfil` | all | Real | `usuario_controller.ts`, `professor_controller.ts` |
+| `/documentos` | Aluno | **Placeholder** | `TccDocumento` model/controller exist as a CRUD skeleton, no real upload flow wired yet (ORIENT-008) |
+| `/apresentacao` | all, scoped per role | **Placeholder** | No formal Banca entity yet (ORIENT-009) |
+| `/admin` (usuarios, alunos, professores, roles, perfis + forms) | Admin / Coordenador per role | Real | `usuario`, `aluno`, `professor`, `role`, `perfil` controllers |
+
+Original design mockups (pre-implementation) live in the repo-root `design/*.png` —
+useful for visual reference, not for routing/status (this table supersedes them).
+
+## Role/visibility model
+
+Roles come from the JWT (`role`/`roles`/`perfil` claims, see
+`.specs/project/DECISIONS.md`) and gate both nav items (`nav-items.ts`) and route access
+(`RequireRole`/`hasAnyRole`). Enforcement today is **frontend-only** — the backend
+doesn't verify these roles per-route (see `.specs/backend-api/.spec/CONCERNS.md`), so
+don't treat frontend role-gating as a real security boundary.
+
+| Perfil | Key roles | Sees |
+|---|---|---|
+| Administrador | all seeded roles | Everything, incl. `/admin/*` |
+| Aluno | `ROLE_TEMA_VIEW`, `ROLE_TCC_VIEW`, `ROLE_AGENDA_VIEW`, `ROLE_DASH_ALUNO`, `ROLE_MENU_MEU_TCC`, `ROLE_MENU_AGENDA` | Own dashboard, `/tema`, `/tccs`, `/cronograma` (own scope) |
+| Professor | `ROLE_TCC_VIEW`, `ROLE_AGENDA_VIEW`, `ROLE_DASH_PROFESSOR`, `ROLE_MENU_AGENDA` | Own dashboard, `/orientacoes`, `/tccs`, `/cronograma` (filtered to own orientandos) |
+| Coordenador | `ROLE_ALUNO_VIEW`, `ROLE_TEMA_VIEW`, `ROLE_TCC_VIEW`, `ROLE_AGENDA_VIEW`, `ROLE_PROFESSOR_VIEW`, `ROLE_DASH_COORDENADOR`, `ROLE_MENU_ADM`, `ROLE_MENU_AGENDA` | Coordination/admin screens, global listings |
+
+## Not yet mocked up / built
+
+Vincular orientador is folded into the `/tema` + `/orientacoes` flow rather than being
+a separate screen. Still fully unbuilt: **Formar banca avaliadora** as a distinct step
+(ORIENT-009), **Enviar documentos do TCC** beyond the `/documentos` placeholder
+(ORIENT-008), multi-evaluator **Registrar avaliação final** (ORIENT-010/011).

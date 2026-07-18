@@ -19,10 +19,22 @@ None currently tracked.
 
 ## Todos
 
-See `.specs/project/GENERAL_TODOS.md`.
+See `.specs/project/GENERAL_TODOS.md` (cross-cutting) and
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md` (ORIENT-00x
+backlog for the aluno-orientador flow — recommended next: ORIENT-008, entregas/documentos).
 
 ## Preferences
 
 - Model guidance: lightweight tasks (validation, state updates, session handoff) work
   well with faster/cheaper models — not yet confirmed with user, mention once when
   relevant.
+
+## Freshness note
+
+`.specs/project/`, `.specs/backend-api/.spec/`, and `.specs/frontend/.spec/` were
+brought back in line with the actual code on 2026-07-18 (they had drifted since the
+2026-07-01 brownfield mapping — frontend went from "not scaffolded" to fully built,
+auth went from a static shared token to per-user JWT + Google OAuth). Re-verify against
+the code before trusting any of these docs if it's been a while since the last update —
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md` (dated
+2026-07-16) is the most current single source for the aluno-orientador flow.

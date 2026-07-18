@@ -38,10 +38,17 @@ routes (start/routes/<resource>.ts)
 
 ## Auth boundary
 
-`AuthMiddleware` is applied per-route-group (not globally) — check `start/kernel.ts`
-and individual route files to see which groups are protected. It validates a single
-shared bearer token, not a per-user identity — `ctx` does not carry an authenticated
-user.
+`AuthMiddleware` (`app/middleware/auth_middleware.ts`) validates a per-user JWT
+(`Bearer <token>`, verified via `auth_service.verifyToken`), loads the `Usuario` by the
+token's `sub` claim, and attaches it as `ctx.request.user`. It's applied per-route-group
+via `.middleware(middleware.auth())` (registered as `middleware.auth` in
+`start/kernel.ts`), **not globally** — check each `start/routes/<resource>.ts` file to
+see whether a given group is protected. As of 2026-07-18: fully protected — `usuario`,
+`orientacao`, `avaliacao`, `tcc_documento`; partially protected — `auth` (only `/me`),
+`tema_tcc` (only `/tema-tcc/me`), `notificacao`; **unprotected** — `aluno`, `professor`,
+`professor_recommendation`, `tcc`, `agenda`, `feriado`, `role`, `perfil`, and all three
+`dash-*` modules. Even on protected routes, nothing checks the user's Role/Perfil — see
+`.specs/backend-api/.spec/CONCERNS.md`.
 
 ## Error handling
 

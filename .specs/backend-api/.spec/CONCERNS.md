@@ -1,20 +1,24 @@
 # Concerns / tech debt — backend-api
 
-## Auth is not per-user
+## Auth coverage is inconsistent across routes (resolved: per-user identity; open: coverage + authorization)
 
-`auth_middleware.ts` validates a single static `API_AUTH_TOKEN` shared across all
-clients — it does not authenticate a specific `Usuario`. `Usuario` has `email`/
-`password`/`emailVerified` fields but there is no visible login endpoint. Any feature
-that needs "who is the current user" (e.g. attributing a TccNotificacao to a user,
-enforcing that only the owning aluno can edit their TemaTcc) cannot rely on the request
-context today — this needs to be designed before building user-facing authorization.
+Per-user JWT auth shipped (`.specs/project/DECISIONS.md`) — `ctx.request.user` is a
+real `Usuario` when `middleware.auth()` runs. What's still open:
 
-## Authorization (Role/Perfil) is modeled but not enforced
+1. **Coverage is per-route-group, opt-in, not global.** ~9 of ~15 resource modules
+   have no `middleware.auth()` at all (aluno, professor, tcc, agenda, feriado, role,
+   perfil, all 3 dashboards) — any client can read/write those without a token. See
+   the full list in `.specs/backend-api/.spec/ARCHITECTURE.md` → "Auth boundary".
+2. **Role/Perfil (RBAC) is modeled but not enforced anywhere.** `Role`, `Perfil`,
+   `PerfilRole` tables/models exist and the JWT carries `role`/`roles`/`perfil` claims,
+   but no middleware/policy checks them before allowing an action — even on routes
+   that already require a valid token. Treat any "only coordenação can do X"
+   requirement as **not yet implemented** at the framework level.
 
-`Role`, `Perfil`, `PerfilRole` tables and models exist, but no middleware/policy was
-found that checks a user's role before allowing an action. Treat any "only coordenação
-can do X" requirement as **not yet implemented** at the framework level — it would need
-new middleware.
+Tracked as **ORIENT-012** in
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md` — read that
+file before touching auth/authorization, it has the current recommended scope
+(middleware/policy per role, 403 on scope violation, tests).
 
 ## Inconsistent import style
 
@@ -24,9 +28,19 @@ blocker, but don't assume one style is canonical — check the file you're editi
 
 ## No unit tests
 
-`tests/unit/` is empty; only one functional test file exists (auth middleware). Business
-logic in repositories/services (filtering, pagination, dashboard aggregation) is
-currently untested.
+`tests/unit/` doesn't even exist as a directory (only referenced in `adonisrc.ts`'s
+suite config); only one functional test file exists
+(`tests/functional/auth_middleware.spec.ts`, still testing the old bearer-token
+behavior — verify it still matches the current per-user JWT middleware before trusting
+it as documentation). Business logic in repositories/services (filtering, pagination,
+dashboard aggregation, the orientação state machine) is currently untested.
+
+## JWT doesn't carry `uuidProfessor`
+
+The JWT/`/auth/me` payload carries `uuidAluno` but not `uuidProfessor`, so several
+frontend screens (`/perfil`, `/orientacoes`) resolve the current professor's identity
+by looking up their `Professor` record by email instead. Tracked as **ORIENT-013** in
+`.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md`.
 
 ## `cordenacao` spelling
 

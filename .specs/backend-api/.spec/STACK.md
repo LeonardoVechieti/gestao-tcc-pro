@@ -16,12 +16,15 @@
   `<Resource>Validator` (create/update) and `<Resource>IndexValidator` (list/filter,
   spreads `DataIndexPaginateValidatorBase` from `app/validators/index_validator.ts` for
   `pageNumber`/`pageSize`/`sortColumn`/`sortDirection`).
-- **Auth**: custom `AuthMiddleware` (`app/middleware/auth_middleware.ts`) — static
-  Bearer token compared to `API_AUTH_TOKEN` env var. Not per-user auth (see
-  `CONCERNS.md`).
+- **Auth**: custom `AuthMiddleware` (`app/middleware/auth_middleware.ts`) — per-user
+  JWT (`jsonwebtoken`, 1h expiry, `sub` = `uuidUsuario`) issued/verified by
+  `app/services/auth_service.ts`. Google OAuth login via `google-auth-library`
+  (`OAuth2Client.verifyIdToken`). Applied per-route-group, coverage inconsistent —
+  see `CONCERNS.md`. The `API_AUTH_TOKEN` env var still exists in the schema but is
+  unreferenced/vestigial since the JWT migration.
 - **CORS**: `@adonisjs/cors`, allowlisted origins in `config/cors.ts`
-  (`localhost:4002`, `localhost:4200`, `127.0.0.1:4002` — likely the future frontend
-  dev ports).
+  (`localhost:4002`, `localhost:4003`, `localhost:4200`, `127.0.0.1:4002` — `4002` is
+  the frontend's actual Vite dev port).
 - **API docs**: Swagger UI served from `app/swagger/openapi.ts` at the `/swagger`
   route (`start/routes/swagger.ts`).
 - **Scheduling**: `adonisjs-scheduler` + `node-cron` present as deps (used for feriado
@@ -32,5 +35,6 @@
 - **Lint/format**: ESLint (`@adonisjs/eslint-config`) + Prettier (`@adonisjs/prettier-config`).
   `yarn lint` fixes, `yarn build` runs lint + prettier + prod build.
 - **Env vars** (see `start/env.ts` for the full schema): `NODE_ENV`, `PORT`, `APP_KEY`,
-  `HOST`, `LOG_LEVEL`, `API_AUTH_TOKEN`, `FERIADOS_API_URL`, `DB_CONNECTION`,
-  `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`.
+  `HOST`, `LOG_LEVEL`, `API_AUTH_TOKEN` (vestigial, see `CONCERNS.md`), `JWT_SECRET`,
+  `GOOGLE_CLIENT_ID`, `GOOGLE_DEFAULT_PERFIL_UUID`, `FERIADOS_API_URL`,
+  `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`.
