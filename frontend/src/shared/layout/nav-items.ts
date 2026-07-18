@@ -8,7 +8,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   {
     to: '/',
-    label: 'Meu TCC',
+    label: 'Home',
     icon: 'pi pi-home',
     requiredRoles: ['ROLE_DASH_ALUNO', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR'],
   },
@@ -22,7 +22,7 @@ export const navItems: NavItem[] = [
     to: '/tccs',
     label: 'TCCs',
     icon: 'pi pi-briefcase',
-    requiredRoles: ['ROLE_TCC_VIEW'],
+    requiredRoles: ['ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM'],
   },
   {
     to: '/documentos',
@@ -48,12 +48,12 @@ export const navItems: NavItem[] = [
     icon: 'pi pi-desktop',
     requiredRoles: ['ROLE_AGENDA_VIEW'],
   },
-  {
-    to: '/mensagens',
-    label: 'Mensagens',
-    icon: 'pi pi-comments',
-    requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM'],
-  },
+  // {
+  //   to: '/mensagens',
+  //   label: 'Mensagens',
+  //   icon: 'pi pi-comments',
+  //   requiredRoles: ['ROLE_MENU_MEU_TCC', 'ROLE_DASH_PROFESSOR', 'ROLE_DASH_COORDENADOR', 'ROLE_MENU_ADM'],
+  // },
   {
     to: '/admin',
     label: 'Administração',

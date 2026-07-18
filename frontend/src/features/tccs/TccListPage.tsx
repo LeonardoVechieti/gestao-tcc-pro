@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from 'primereact/button'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
@@ -9,6 +10,7 @@ import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { getTccList, type TccRow } from '../../shared/api/tcc-api'
 import { useAuthStore } from '../../shared/stores/auth-store'
+import { getTccDocumentoByTcc } from '../../shared/api/tcc-documento-api'
 import {
   initialTccFilters,
   tccFiltersReducer,
@@ -97,8 +99,10 @@ function getHeaderDescription(profileName?: string): string {
 export function TccListPage() {
   const [filters, dispatch] = useReducer(tccFiltersReducer, initialTccFilters)
   const [tccs, setTccs] = useState<TccRow[] | null>(null)
+  const [sentDocumentAlunos, setSentDocumentAlunos] = useState<Map<string, boolean>>(new Map())
   const [hasError, setHasError] = useState(false)
   const user = useAuthStore((state) => state.user)
+  const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
@@ -122,6 +126,46 @@ export function TccListPage() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDocumentStatus() {
+      if (!tccs || tccs.length === 0) {
+        return
+      }
+
+      const results = await Promise.all(
+        tccs.map(async (tcc) => {
+          try {
+            const documento = await getTccDocumentoByTcc(tcc.id)
+            return [tcc.uuidAluno, Boolean(documento)] as const
+          } catch {
+            return [tcc.uuidAluno, false] as const
+          }
+        }),
+      )
+
+      if (cancelled) {
+        return
+      }
+
+      const map = new Map<string, boolean>()
+      results.forEach(([uuidAluno, sent]) => {
+        if (uuidAluno) {
+          map.set(uuidAluno, sent)
+        }
+      })
+
+      setSentDocumentAlunos(map)
+    }
+
+    loadDocumentStatus()
+
+    return () => {
+      cancelled = true
+    }
+  }, [tccs])
 
   const statusOptions = useMemo<{ label: string; value: TccStatus }[]>(() => {
     const uniqueStatuses = new Set<string>()
@@ -215,11 +259,24 @@ export function TccListPage() {
           paginator
           rows={5}
           value={filteredTccs}
+          onRowClick={(event) => navigate(`/tccs/${event.data.id}`)}
+          rowClassName={() => 'cursor-pointer'}
         >
           <Column field="id" header="Código" style={{ width: '8rem' }} />
           <Column field="aluno" header="Aluno" />
           <Column field="titulo" header="Título" />
           <Column field="orientador" header="Orientador" />
+          <Column
+            body={(row: TccRow) => (
+              sentDocumentAlunos.get(row.uuidAluno) ? (
+                <Tag severity="success" value="Documento enviado" />
+              ) : (
+                <Tag severity="info" value="Sem envio" />
+              )
+            )}
+            header="Envio"
+            style={{ width: '11rem' }}
+          />
           <Column
             body={(row: TccRow) => (
               <Tag
@@ -229,6 +286,13 @@ export function TccListPage() {
             )}
             header="Status"
             style={{ width: '11rem' }}
+          />
+          <Column
+            body={() => (
+              <Button label="Revisar" icon="pi pi-eye" text />
+            )}
+            header="Ação"
+            style={{ width: '10rem' }}
           />
         </DataTable>
       </section>

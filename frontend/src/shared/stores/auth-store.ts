@@ -27,7 +27,8 @@ function decodeJwtPayload<T = Record<string, unknown>>(token: string): T | null 
     const [, payload] = token.split('.')
     if (!payload) return null
 
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    const paddedPayload = payload + '='.repeat((4 - (payload.length % 4)) % 4)
+    const decoded = atob(paddedPayload.replace(/-/g, '+').replace(/_/g, '/'))
     return JSON.parse(decoded) as T
   } catch {
     return null
@@ -35,14 +36,19 @@ function decodeJwtPayload<T = Record<string, unknown>>(token: string): T | null 
 }
 
 function hydrateAuthUser(user: AuthUser): AuthUser {
-  const payload = decodeJwtPayload<{ role?: string; roles?: string[]; perfil?: { nomePerfil?: string } }>(user.token)
+  const payload = decodeJwtPayload<{
+    role?: string
+    roles?: string[]
+    perfil?: { nomePerfil?: string }
+    uuidAluno?: string
+  }>(user.token)
   if (!payload) {
     return user
   }
 
   return {
     ...user,
-    uuidAluno: user.uuidAluno ?? user.aluno?.uuidAluno,
+    uuidAluno: user.uuidAluno ?? user.aluno?.uuidAluno ?? payload.uuidAluno,
     role: user.role ?? payload.role,
     roles: user.roles ?? payload.roles,
     perfilNome: user.perfilNome ?? payload.perfil?.nomePerfil,

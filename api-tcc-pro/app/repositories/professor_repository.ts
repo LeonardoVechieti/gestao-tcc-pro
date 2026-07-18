@@ -75,6 +75,35 @@ export default class ProfessorRepository {
     await professor.delete()
   }
 
+  async researchOptions(): Promise<{ areas: string[]; lines: string[] }> {
+    const professors = await Professor.query().select('areas_interesse', 'linhas_pesquisa')
+    const areaSet = new Set<string>()
+    const lineSet = new Set<string>()
+
+    for (const professor of professors) {
+      if (Array.isArray(professor.areasInteresse)) {
+        professor.areasInteresse.forEach((area) => {
+          if (area) {
+            areaSet.add(area)
+          }
+        })
+      }
+
+      if (Array.isArray(professor.linhasPesquisa)) {
+        professor.linhasPesquisa.forEach((line) => {
+          if (line) {
+            lineSet.add(line)
+          }
+        })
+      }
+    }
+
+    return {
+      areas: Array.from(areaSet).sort(),
+      lines: Array.from(lineSet).sort(),
+    }
+  }
+
   private async ensureUniqueEmail(email?: string | null, ignoredUuid?: string) {
     const normalizedEmail = email?.trim()
 

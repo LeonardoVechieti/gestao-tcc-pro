@@ -19,15 +19,20 @@ import {
   type OrientationStage,
   type OrientationStatus,
 } from '../../shared/api/orientation-api'
-import { createTemaTcc, getTemaTccList, type TemaTcc } from '../../shared/api/tema-tcc-api'
-import { getProfessorRecommendations, type ProfessorRecommendation } from '../../shared/api/professor-api'
+import { createTemaTcc, type TemaTcc } from '../../shared/api/tema-tcc-api'
 import {
-  professorAreaOptions as areaOptions,
-  professorLineOptions as lineOptions,
+  getProfessorRecommendations,
+  getProfessorResearchOptions,
+  type ProfessorRecommendation,
+} from '../../shared/api/professor-api'
+import {
+  getResearchOptionLabel,
+  professorAreaOptions as defaultAreaOptions,
+  professorLineOptions as defaultLineOptions,
+  type ResearchOption,
 } from '../../shared/professor/research-options'
 import { useAuthStore } from '../../shared/stores/auth-store'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
-import { InfoPanel } from '../../shared/ui/organisms/InfoPanel/InfoPanel'
 
 const topicSchema = z.object({
   title: z.string().min(8, 'Informe um título com pelo menos 8 caracteres.').max(150),
@@ -108,6 +113,11 @@ function isActiveOrientation(orientation: OrientationItem): boolean {
   return !isClosedOrientation(orientation)
 }
 
+type ResearchOptionsState = {
+  areas: ResearchOption[]
+  lines: ResearchOption[]
+}
+
 function getTopicDraftFromOrientation(orientation: OrientationItem): TopicForm {
   return {
     title: orientation.titulo === 'Tema não encontrado' ? '' : orientation.titulo,
@@ -117,6 +127,17 @@ function getTopicDraftFromOrientation(orientation: OrientationItem): TopicForm {
     description:
       orientation.resumo === 'Proposta de tema aguardando análise.' ? '' : orientation.resumo,
   }
+}
+
+function buildResearchOptions(values: string[] | undefined, fallback: ResearchOption[]): ResearchOption[] {
+  if (!values || values.length === 0) {
+    return fallback
+  }
+
+  return values.map((value) => ({
+    value,
+    label: getResearchOptionLabel(fallback, value),
+  }))
 }
 
 function getClosureComment(orientation: OrientationItem) {
@@ -174,17 +195,19 @@ export function StudentTopicPage() {
 
   const toast = useRef<Toast | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoadingTemas, setIsLoadingTemas] = useState(false)
-  const [hasLoadedTemas, setHasLoadedTemas] = useState(false)
-  const [temas, setTemas] = useState<TemaTcc[]>([])
   const [professores, setProfessores] = useState<ProfessorRecommendation[]>([])
   const [selectedProfessor, setSelectedProfessor] = useState<ProfessorRecommendation | null>(null)
   const [createdTema, setCreatedTema] = useState<TemaTcc | null>(null)
   const [studentOrientations, setStudentOrientations] = useState<OrientationItem[]>([])
   const [isLoadingProfessores, setIsLoadingProfessores] = useState(false)
+  const [isLoadingResearchOptions, setIsLoadingResearchOptions] = useState(false)
   const [isLoadingMinhaSolicitacao, setIsLoadingMinhaSolicitacao] = useState(false)
   const [hasLoadedMinhaSolicitacao, setHasLoadedMinhaSolicitacao] = useState(false)
   const [acompanhamentoError, setAcompanhamentoError] = useState(false)
+  const [researchOptions, setResearchOptions] = useState<ResearchOptionsState>({
+    areas: defaultAreaOptions,
+    lines: defaultLineOptions,
+  })
   const [studentReply, setStudentReply] = useState('')
   const [isSendingReply, setIsSendingReply] = useState(false)
   const [proposalDraft, setProposalDraft] = useState<TopicForm>({
@@ -268,6 +291,7 @@ export function StudentTopicPage() {
   }, [area, researchLine])
 
   useEffect(() => {
+    void loadResearchOptions()
     void loadAcompanhamentoAluno()
   }, [loadAcompanhamentoAluno])
 
@@ -277,7 +301,7 @@ export function StudentTopicPage() {
     }
 
     setProposalDraft(getTopicDraftFromOrientation(currentOrientation))
-  }, [currentOrientation])
+  }, [currentOrientation])  
 
   const requirements = [
     { label: 'Título provisório', done: title.trim().length >= 8 },
@@ -446,7 +470,7 @@ export function StudentTopicPage() {
                     <FormField label="Área revisada *" htmlFor="proposal-area">
                       <Dropdown
                         id="proposal-area"
-                        options={areaOptions}
+                        options={researchOptions.areas}
                         value={proposalDraft.area}
                         disabled={isSendingReply}
                         onChange={(event) =>
@@ -458,7 +482,7 @@ export function StudentTopicPage() {
                     <FormField label="Linha revisada *" htmlFor="proposal-line">
                       <Dropdown
                         id="proposal-line"
-                        options={lineOptions}
+                        options={researchOptions.lines}
                         value={proposalDraft.researchLine}
                         disabled={isSendingReply}
                         onChange={(event) =>
@@ -642,9 +666,9 @@ export function StudentTopicPage() {
                 <Dropdown
                   id="area"
                   invalid={Boolean(errors.area)}
-                  options={areaOptions}
+                  options={researchOptions.areas}
                   placeholder="Selecione a área de interesse"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoadingResearchOptions}
                   value={field.value}
                   onChange={(event) => field.onChange(event.value)}
                 />
@@ -664,9 +688,9 @@ export function StudentTopicPage() {
                 <Dropdown
                   id="researchLine"
                   invalid={Boolean(errors.researchLine)}
-                  options={lineOptions}
+                  options={researchOptions.lines}
                   placeholder="Selecione a linha de pesquisa"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoadingResearchOptions}
                   value={field.value}
                   onChange={(event) => field.onChange(event.value)}
                 />
@@ -734,6 +758,12 @@ export function StudentTopicPage() {
               <p>Informe área e linha de pesquisa para carregar os professores disponíveis.</p>
             </div>
           )}
+          {!selectedProfessor && area && researchLine && !isLoadingProfessores ? (
+            <Message
+              severity="warn"
+              text="A indicação de professor é obrigatória antes de enviar a solicitação."
+            />
+          ) : null}
         </div>
       </TopicFormSection>
 
@@ -767,27 +797,11 @@ export function StudentTopicPage() {
 
       <div className="form-actions">
         <Button
-          icon="pi pi-save"
-          label="Salvar como rascunho"
-          onClick={handleSubmit(handleSaveDraft)}
-          outlined
-          type="button"
-          disabled={isSubmitting || isLoadingTemas}
-        />
-        <Button
-          icon="pi pi-cloud-download"
-          label={isLoadingTemas ? 'Carregando...' : 'Buscar meus temas'}
-          onClick={loadTemas}
-          outlined
-          type="button"
-          disabled={isSubmitting || isLoadingTemas}
-        />
-        <Button
           icon="pi pi-send"
           label="Solicitar tema"
           loading={isSubmitting}
           type="submit"
-          disabled={isSubmitting || isLoadingTemas}
+          disabled={isSubmitting || !selectedProfessor}
         />
       </div>
     </form>
@@ -861,19 +875,17 @@ export function StudentTopicPage() {
     })
   }
 
-  function handleSaveDraft(data: TopicForm) {
-    localStorage.setItem('gestaotcc:tema-draft', JSON.stringify(data))
-
-    toast.current?.show({
-      severity: 'info',
-      summary: 'Rascunho salvo',
-      detail: 'Rascunho salvo localmente.',
-      life: 5000,
-    })
-  }
-
   async function handleSendTopic(data: TopicForm) {
     setIsSubmitting(true)
+
+    console.log('Student topic submit debug:', {
+      user,
+      studentId,
+      selectedProfessor,
+      title: data.title,
+      area: data.area,
+      researchLine: data.researchLine,
+    })
 
     if (!selectedProfessor) {
       toast.current?.show({
@@ -929,24 +941,23 @@ export function StudentTopicPage() {
     }
   }
 
-  async function loadTemas() {
-    setIsLoadingTemas(true)
+  async function loadResearchOptions() {
+    setIsLoadingResearchOptions(true)
 
     try {
-      const params = studentId ? { uuidAluno: studentId } : undefined
-      const data = await getTemaTccList(params)
-      setTemas(data)
+      const data = await getProfessorResearchOptions()
+      setResearchOptions({
+        areas: buildResearchOptions(data.areas, defaultAreaOptions),
+        lines: buildResearchOptions(data.lines, defaultLineOptions),
+      })
     } catch (error) {
-      console.error(error)
-      toast.current?.show({
-        severity: 'error',
-        summary: 'Erro ao carregar temas',
-        detail: 'Falha ao buscar os temas. Tente novamente.',
-        life: 5000,
+      console.error('Erro ao carregar opções de pesquisa:', error)
+      setResearchOptions({
+        areas: defaultAreaOptions,
+        lines: defaultLineOptions,
       })
     } finally {
-      setIsLoadingTemas(false)
-      setHasLoadedTemas(true)
+      setIsLoadingResearchOptions(false)
     }
   }
 
@@ -991,133 +1002,6 @@ export function StudentTopicPage() {
 
       <section className="student-topic-grid">
         {requestPanel}
-
-        <aside className="student-topic-aside">
-          <InfoPanel icon="pi pi-list-check" title="Status do envio">
-            {isLoadingMinhaSolicitacao ? (
-              <div className="loading-panel">
-                <ProgressSpinner strokeWidth="4" />
-              </div>
-            ) : currentOrientation ? (
-              <>
-                <div className="draft-status">
-                  <div className="draft-status__icon">
-                    <i className="pi pi-check-circle" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <strong>{statusLabel[currentOrientation.status]}</strong>
-                    <span>{currentOrientation.etapaAtual}</span>
-                  </div>
-                </div>
-                <p className="muted-text">
-                  Professor: {currentOrientation.professor?.nome ?? 'Não informado'}.
-                </p>
-                <Tag
-                  severity={statusSeverity[currentOrientation.status]}
-                  value={currentOrientation.sourceType === 'tcc' ? 'TCC' : 'Proposta'}
-                />
-              </>
-            ) : createdTema ? (
-              <>
-                <div className="draft-status">
-                  <div className="draft-status__icon">
-                    <i className="pi pi-send" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <strong>Solicitação enviada</strong>
-                    <span>Aguardando confirmação do acompanhamento.</span>
-                  </div>
-                </div>
-                <Tag severity="warning" value={createdTema.status ?? 'Solicitação pendente'} />
-              </>
-            ) : latestHistoricalOrientation ? (
-              <>
-                <div className="draft-status draft-status--closed">
-                  <div className="draft-status__icon">
-                    <i
-                      className={
-                        latestHistoricalOrientation.status === 'recusado'
-                          ? 'pi pi-times-circle'
-                          : 'pi pi-ban'
-                      }
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <div>
-                    <strong>{statusLabel[latestHistoricalOrientation.status]}</strong>
-                    <span>Você pode enviar uma nova proposta.</span>
-                  </div>
-                </div>
-                <p className="muted-text">
-                  Última atualização: {formatDateBr(latestHistoricalOrientation.atualizadoEm)}.
-                </p>
-                <Tag
-                  severity={statusSeverity[latestHistoricalOrientation.status]}
-                  value="Histórico"
-                />
-              </>
-            ) : (
-              <>
-                <div className="draft-status">
-                  <div className="draft-status__icon">
-                    <i className="pi pi-pencil" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <strong>Nenhuma proposta enviada</strong>
-                    <span>Seu tema ainda não foi enviado.</span>
-                  </div>
-                </div>
-                <p className="muted-text">
-                  Salve como rascunho para continuar editando. Quando estiver pronto,
-                  clique em <strong>Solicitar tema</strong> para enviar para análise.
-                </p>
-                <Tag severity="warning" value="Aguardando envio" />
-              </>
-            )}
-          </InfoPanel>
-
-          <InfoPanel icon="pi pi-clipboard" title="Requisitos">
-            <div className="requirements-progress">
-              <strong>{completedRequirements}/{requirements.length}</strong>
-              <span>itens completos</span>
-            </div>
-            <ul className="check-list">
-              {requirements.map((item) => (
-                <li key={item.label}>
-                  <i
-                    className={item.done ? 'pi pi-check-circle is-done' : 'pi pi-circle'}
-                    aria-hidden="true"
-                  />
-                  <span>{item.label}</span>
-                </li>
-              ))}
-            </ul>
-          </InfoPanel>
-
-          <InfoPanel icon="pi pi-book" title="Temas do aluno">
-            {isLoadingTemas ? (
-              <div className="loading-panel">
-                <ProgressSpinner strokeWidth="4" />
-              </div>
-            ) : temas.length > 0 ? (
-              <ul className="tema-list">
-                {temas.map((tema) => (
-                  <li key={tema.uuidTemaTcc}>
-                    <strong>{tema.titulo}</strong>
-                    <span>{tema.area}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : hasLoadedTemas ? (
-              <div className="empty-state">
-                <p>O aluno ainda não tem nenhum tema de TCC registrado.</p>
-                <p>Clique em Buscar meus temas para verificar se há temas no sistema.</p>
-              </div>
-            ) : (
-              <p>Clique em Buscar meus temas para ver os temas do aluno.</p>
-            )}
-          </InfoPanel>
-        </aside>
       </section>
     </div>
   )

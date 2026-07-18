@@ -635,6 +635,23 @@ select.p-inputtext:focus,
 	padding: var(--space-5);
 }
 
+.stat-card--draggable {
+	cursor: grab;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card--draggable:hover,
+.draggable-panel:hover {
+	cursor: grab;
+}
+
+.stat-card--draggable:active,
+.draggable-panel:active {
+	cursor: grabbing;
+	transform: scale(0.99);
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
 .stat-card span {
 	color: var(--color-text-muted);
 }
@@ -909,10 +926,25 @@ select.p-inputtext:focus,
   font-size: var(--font-size-sm);
 }
 
-.professor-dashboard-grid {
+.professor-dashboard-grid,
+.student-dashboard-grid,
+.draggable-panels {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.9fr);
+}
+
+.draggable-pane,
+.draggable-panel {
+  min-width: 0;
+}
+
+.draggable-panel {
+  background: transparent;
+}
+
+.draggable-panel:active {
+  opacity: 0.95;
 }
 
 .professor-schedule-list {
@@ -1010,6 +1042,14 @@ select.p-inputtext:focus,
 	display: grid;
 	gap: var(--space-6);
 	grid-template-columns: minmax(0, 1fr) 24rem;
+}
+
+.student-topic-grid.has-sidebar {
+	grid-template-columns: minmax(0, 1fr) 24rem;
+}
+
+.student-topic-grid:not(.has-sidebar) {
+	grid-template-columns: minmax(0, 1fr);
 }
 
 .form-panel,

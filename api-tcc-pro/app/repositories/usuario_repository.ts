@@ -17,6 +17,7 @@ export default class UsuarioRepository {
       .preload('perfil', (perfilQuery) => {
         perfilQuery.preload('perfilRoles', (perfilRoleQuery) => perfilRoleQuery.preload('role'))
       })
+      .preload('aluno')
       .where('email', email)
       .first()
   }
