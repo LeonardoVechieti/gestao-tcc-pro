@@ -92,6 +92,11 @@ export default class AuthController {
         emailVerified: true,
         uuidPerfil: env.get('GOOGLE_DEFAULT_PERFIL_UUID'),
       })
+    } else if (!usuario.emailVerified || !usuario.nome) {
+      usuario = await this.usuarioRepository.update(usuario.uuidUsuario, {
+        nome: usuario.nome ?? googlePayload.nome,
+        emailVerified: true,
+      })
     }
 
     const persistedUser = await this.usuarioRepository.show(usuario.uuidUsuario)

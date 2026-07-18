@@ -7,42 +7,43 @@ import { convertFileToBase64 } from '#helpers/convert_files_to_base64'
 export default class TccDocumentoController {
   constructor(private tccDocumentoRepository: TccDocumentoRepository) {}
 
-  async store({ request, params }: HttpContext) {
+  async store({ request, response, params }: HttpContext) {
     const usuario = (request as any).user
     const file = request.file('documento')
     const uuidTcc = params.uuidTcc as string
 
     if (!uuidTcc) {
-      return request.response.badRequest({
+      return response.badRequest({
         message: 'UUID do TCC não informado',
         error: 'UUID_TCC_REQUIRED',
       })
     }
 
     if (!usuario?.uuidAluno && !usuario?.aluno?.uuidAluno) {
-      return request.response.unauthorized({
+      return response.unauthorized({
         message: 'Aluno não identificado',
         error: 'ALUNO_NOT_FOUND',
       })
     }
 
     if (!file) {
-      return request.response.badRequest({
+      return response.badRequest({
         message: 'Arquivo não encontrado',
         error: 'FILE_REQUIRED',
       })
     }
 
     if (!file.isValid) {
-      return request.response.badRequest({
+      return response.badRequest({
         message: 'Arquivo inválido',
         error: 'INVALID_FILE',
       })
     }
 
-    const validType = file.type === 'application/pdf' || file.clientName?.toLowerCase().endsWith('.pdf')
+    const validType =
+      file.type === 'application/pdf' || file.clientName?.toLowerCase().endsWith('.pdf')
     if (!validType) {
-      return request.response.badRequest({
+      return response.badRequest({
         message: 'Apenas arquivos PDF são permitidos',
         error: 'INVALID_FILE_TYPE',
       })
