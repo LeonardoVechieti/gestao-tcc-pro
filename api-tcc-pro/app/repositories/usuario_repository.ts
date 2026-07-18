@@ -1,6 +1,11 @@
 import Usuario from '#models/DAO/usuario'
 import { ModelPaginatorContract } from '@adonisjs/lucid/types/model'
 
+function normalizeEmail(email?: string | null): string | undefined {
+  const normalizedEmail = email?.trim().toLowerCase()
+  return normalizedEmail || undefined
+}
+
 export default class UsuarioRepository {
   async show(id: string): Promise<Usuario> {
     return await Usuario.query()
@@ -13,22 +18,42 @@ export default class UsuarioRepository {
   }
 
   async findByEmail(email: string): Promise<Usuario | null> {
+    const normalizedEmail = normalizeEmail(email)
+
+    if (!normalizedEmail) {
+      return null
+    }
+
     return await Usuario.query()
       .preload('perfil', (perfilQuery) => {
         perfilQuery.preload('perfilRoles', (perfilRoleQuery) => perfilRoleQuery.preload('role'))
       })
       .preload('aluno')
-      .where('email', email)
+      .whereRaw('LOWER(email) = ?', [normalizedEmail])
       .first()
   }
 
   async create(payload: Partial<Usuario>): Promise<Usuario> {
-    return await Usuario.create(payload)
+    const data = { ...payload }
+    const normalizedEmail = normalizeEmail(data.email)
+
+    if (normalizedEmail) {
+      data.email = normalizedEmail
+    }
+
+    return await Usuario.create(data)
   }
 
   async update(uuidUsuario: string, payload: Partial<Usuario>): Promise<Usuario> {
     const model = await Usuario.findOrFail(uuidUsuario)
-    model.merge(payload)
+    const data = { ...payload }
+    const normalizedEmail = normalizeEmail(data.email)
+
+    if (data.email !== undefined && normalizedEmail) {
+      data.email = normalizedEmail
+    }
+
+    model.merge(data)
     await model.save()
     return this.show(model.uuidUsuario)
   }
