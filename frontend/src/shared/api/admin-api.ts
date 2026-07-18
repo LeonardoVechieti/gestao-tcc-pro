@@ -65,6 +65,11 @@ export async function getUsuario(uuidUsuario: string): Promise<UsuarioRow> {
   return data
 }
 
+export async function updateUsuario(payload: UsuarioRow): Promise<UsuarioRow> {
+  const { data } = await apiClient.put<UsuarioRow>('/tcc-pro/usuario', payload)
+  return data
+}
+
 export async function getAlunos(search?: string): Promise<AlunoRow[]> {
   const searchParams = search?.trim()
   const params = searchParams

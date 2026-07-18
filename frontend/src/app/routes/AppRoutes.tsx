@@ -13,6 +13,7 @@ import { PerfilPage } from '../../features/perfil/PerfilPage'
 import { TccListPage } from '../../features/tccs/TccListPage'
 import { AdminPage } from '../../features/admin/AdminPage'
 import { UsuariosPage } from '../../features/admin/UsuariosPage'
+import { UsuarioFormPage } from '../../features/admin/UsuarioFormPage'
 import { AlunosPage } from '../../features/admin/AlunosPage'
 import { AlunoFormPage } from '../../features/admin/AlunoFormPage'
 import { ProfessoresPage } from '../../features/admin/ProfessoresPage'
@@ -183,7 +184,7 @@ export function AppRoutes() {
           path="admin/usuarios/:id"
           element={
             <RequireRole role="ROLE_USUARIO_VIEW">
-              <UsuariosPage />
+              <UsuarioFormPage />
             </RequireRole>
           }
         />

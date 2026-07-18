@@ -5,6 +5,7 @@ import { UsuarioIndexValidator } from '#validators/usuario/usuario_index_validat
 import { UsuarioValidator } from '#validators/usuario/usuario_validator'
 import GenericResponseException from '#exceptions/generic_response_exception'
 import { hashPassword } from '#helpers/password'
+import * as authService from '#services/auth_service'
 import UsuarioRepository from '../repositories/usuario_repository.js'
 import Usuario from '#models/DAO/usuario'
 
@@ -25,7 +26,13 @@ export default class UsuarioController {
     const payload = await UsuarioValidator.validate(request.all())
     const authenticatedUser = (request as unknown as { user?: Usuario }).user
 
-    if (authenticatedUser?.uuidUsuario && authenticatedUser.uuidUsuario !== payload.uuidUsuario) {
+    const authorizationHeader = request.header('Authorization') || ''
+    const token = authorizationHeader.split(' ')[1] || ''
+    const tokenPayload = authService.verifyToken(token)
+    const canEditOtherUsers = Boolean(tokenPayload.roles?.includes('ROLE_USUARIO_EDIT'))
+
+    const isSelfUpdate = authenticatedUser?.uuidUsuario === payload.uuidUsuario
+    if (!isSelfUpdate && !canEditOtherUsers) {
       throw new GenericResponseException('Usuário não autorizado para esta alteração', 403)
     }
 
@@ -49,6 +56,10 @@ export default class UsuarioController {
 
     if (password) {
       data.password = hashPassword(password)
+    }
+
+    if (payload.uuidPerfil !== undefined) {
+      data.uuidPerfil = payload.uuidPerfil || null
     }
 
     return this.usuarioRepository.update(payload.uuidUsuario, data)

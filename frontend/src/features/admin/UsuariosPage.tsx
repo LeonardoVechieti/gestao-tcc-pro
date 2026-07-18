@@ -7,16 +7,49 @@ import { ProgressSpinner } from 'primereact/progressspinner'
 import { Tag } from 'primereact/tag'
 import { Toast } from 'primereact/toast'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getUsuario, getUsuarios, type UsuarioRow } from '../../shared/api/admin-api'
+import { Controller, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { getUsuario, getUsuarios, getPerfis, updateUsuario, type PerfilRow, type UsuarioRow } from '../../shared/api/admin-api'
+import { useAuthStore } from '../../shared/stores/auth-store'
+import { hasRole } from '../../shared/auth/roles'
+import { FormField } from '../../shared/ui/molecules/FormField/FormField'
+
+const usuarioSchema = z.object({
+  nome: z.string().min(3, 'Informe o nome do usuário.'),
+  email: z.string().email('Informe um e-mail válido.'),
+  uuidPerfil: z.string().optional(),
+  ativo: z.boolean().optional(),
+})
+
+type UsuarioFormData = z.infer<typeof usuarioSchema>
 
 export function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<UsuarioRow[] | null>(null)
   const [selectedUsuario, setSelectedUsuario] = useState<UsuarioRow | null>(null)
+  const [perfils, setPerfis] = useState<PerfilRow[] | null>(null)
   const [isLoadingSelected, setIsLoadingSelected] = useState(false)
   const [search, setSearch] = useState('')
   const toast = useRef<Toast | null>(null)
   const navigate = useNavigate()
   const { id } = useParams<{ id?: string }>()
+  const user = useAuthStore((state) => state.user)
+  const canEditUsuarios = hasRole(user, 'ROLE_USUARIO_EDIT')
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<UsuarioFormData>({
+    defaultValues: {
+      nome: '',
+      email: '',
+      uuidPerfil: '',
+      ativo: true,
+    },
+    resolver: zodResolver(usuarioSchema),
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -24,6 +57,20 @@ export function UsuariosPage() {
     getUsuarios().then((data) => {
       if (!cancelled) {
         setUsuarios(data)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    getPerfis().then((data) => {
+      if (!cancelled) {
+        setPerfis(data)
       }
     })
 
@@ -45,6 +92,12 @@ export function UsuariosPage() {
       .then((usuario) => {
         if (!cancelled) {
           setSelectedUsuario(usuario)
+          reset({
+            nome: usuario.nome ?? '',
+            email: usuario.email ?? '',
+            uuidPerfil: usuario.uuidPerfil ?? '',
+            ativo: usuario.ativo ?? true,
+          })
         }
       })
       .catch(() => {
@@ -67,7 +120,37 @@ export function UsuariosPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, reset])
+
+  async function handleSave(data: UsuarioFormData) {
+    if (!id) return
+
+    try {
+      const payload: UsuarioRow = {
+        uuidUsuario: id,
+        nome: data.nome,
+        email: data.email,
+        uuidPerfil: data.uuidPerfil || undefined,
+        ativo: data.ativo,
+      }
+
+      const updatedUsuario = await updateUsuario(payload)
+      setSelectedUsuario(updatedUsuario)
+      toast.current?.show({
+        severity: 'success',
+        summary: 'Usuário atualizado',
+        detail: 'O usuário foi atualizado com sucesso.',
+        life: 3000,
+      })
+    } catch (error) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Erro ao salvar',
+        detail: 'Não foi possível atualizar o usuário. Verifique os dados e tente novamente.',
+        life: 5000,
+      })
+    }
+  }
 
   const filteredUsuarios = useMemo(() => {
     return (usuarios ?? []).filter((usuario) => {
@@ -121,30 +204,76 @@ export function UsuariosPage() {
                   onClick={() => navigate('/admin/usuarios')}
                 />
               </div>
-              <div className="admin-detail-grid">
-                <div>
-                  <span>Perfil</span>
-                  <strong>{selectedUsuario.perfil?.nomePerfil ?? 'Sem perfil'}</strong>
+
+              {!canEditUsuarios ? (
+                <div className="admin-form-note" role="status">
+                  <strong>Visualização apenas.</strong> Você não tem permissão para alterar este usuário.
                 </div>
-                <div>
-                  <span>Aluno vinculado</span>
-                  <strong>{selectedUsuario.aluno?.nome ?? 'Sem vínculo'}</strong>
-                </div>
-                <div>
-                  <span>Status</span>
-                  <Tag
-                    severity={selectedUsuario.ativo ? 'success' : 'warning'}
-                    value={selectedUsuario.ativo ? 'Ativo' : 'Inativo'}
+              ) : null}
+
+              <form className="admin-form admin-form-grid" onSubmit={handleSubmit(handleSave)}>
+                <FormField label="Nome" htmlFor="nome" error={errors.nome?.message}>
+                  <Controller
+                    control={control}
+                    name="nome"
+                    render={({ field }) => (
+                      <InputText id="nome" placeholder="Nome do usuário" disabled={!canEditUsuarios} {...field} />
+                    )}
                   />
-                </div>
-                <div>
-                  <span>E-mail verificado</span>
-                  <Tag
-                    severity={selectedUsuario.emailVerified ? 'success' : 'warning'}
-                    value={selectedUsuario.emailVerified ? 'Sim' : 'Não'}
+                </FormField>
+
+                <FormField label="E-mail" htmlFor="email" error={errors.email?.message}>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field }) => (
+                      <InputText id="email" placeholder="E-mail do usuário" disabled={!canEditUsuarios} {...field} />
+                    )}
                   />
+                </FormField>
+
+                <FormField label="Perfil" htmlFor="uuidPerfil" error={errors.uuidPerfil?.message}>
+                  <Controller
+                    control={control}
+                    name="uuidPerfil"
+                    render={({ field }) => (
+                      <select id="uuidPerfil" className="p-inputtext" disabled={!canEditUsuarios} {...field}>
+                        <option value="">Nenhum perfil</option>
+                        {perfils?.map((perfil) => (
+                          <option key={perfil.uuidPerfil} value={perfil.uuidPerfil}>
+                            {perfil.nomePerfil ?? perfil.uuidPerfil}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </FormField>
+
+                <FormField label="Ativo" htmlFor="ativo" error={errors.ativo?.message}>
+                  <Controller
+                    control={control}
+                    name="ativo"
+                    render={({ field }) => (
+                      <select
+                        id="ativo"
+                        className="p-inputtext"
+                        disabled={!canEditUsuarios}
+                        value={field.value === true ? 'true' : 'false'}
+                        onChange={(event) => field.onChange(event.target.value === 'true')}
+                        onBlur={field.onBlur}
+                      >
+                        <option value="true">Sim</option>
+                        <option value="false">Não</option>
+                      </select>
+                    )}
+                  />
+                </FormField>
+
+                <div className="form-actions">
+                  <Button type="submit" label="Salvar" loading={isSubmitting} disabled={!canEditUsuarios} />
+                  <Button type="button" label="Cancelar" className="p-button-text" onClick={() => navigate('/admin/usuarios')} />
                 </div>
-              </div>
+              </form>
             </>
           ) : (
             <div className="orientation-empty">
@@ -197,8 +326,8 @@ export function UsuariosPage() {
               <div className="table-actions">
                 <Button
                   className="p-button-text"
-                  icon="pi pi-search"
-                  label="Ver"
+                  icon="pi pi-pencil"
+                  label="Editar"
                   onClick={() => navigate(`/admin/usuarios/${row.uuidUsuario}`)}
                 />
               </div>
