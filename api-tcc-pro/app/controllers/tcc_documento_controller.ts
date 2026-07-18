@@ -40,7 +40,8 @@ export default class TccDocumentoController {
       })
     }
 
-    const validType = file.type === 'application/pdf' || file.clientName?.toLowerCase().endsWith('.pdf')
+    const validType =
+      file.type === 'application/pdf' || file.clientName?.toLowerCase().endsWith('.pdf')
     if (!validType) {
       return request.response.badRequest({
         message: 'Apenas arquivos PDF são permitidos',

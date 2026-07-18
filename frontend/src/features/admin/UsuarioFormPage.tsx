@@ -8,7 +8,7 @@ import { ProgressSpinner } from 'primereact/progressspinner'
 import { Toast } from 'primereact/toast'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { getUsuario, getPerfis, updateUsuario, type PerfilRow, type UsuarioRow } from '../../shared/api/admin-api'
+import { getUsuario, getPerfis, getAlunos, updateUsuario, type AlunoRow, type PerfilRow, type UsuarioRow } from '../../shared/api/admin-api'
 import { FormField } from '../../shared/ui/molecules/FormField/FormField'
 import { getApiErrorMessage } from '../../shared/api/api-errors'
 import { useAuthStore } from '../../shared/stores/auth-store'
@@ -18,6 +18,7 @@ const usuarioSchema = z.object({
   nome: z.string().min(3, 'Informe o nome do usuário.'),
   email: z.string().email('Informe um e-mail válido.'),
   uuidPerfil: z.string().optional(),
+  uuidAluno: z.string().optional(),
   ativo: z.boolean().optional(),
 })
 
@@ -29,6 +30,7 @@ export function UsuarioFormPage() {
   const toast = useRef<Toast | null>(null)
   const [selectedUsuario, setSelectedUsuario] = useState<UsuarioRow | null>(null)
   const [perfils, setPerfis] = useState<PerfilRow[] | null>(null)
+  const [alunos, setAlunos] = useState<AlunoRow[] | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const user = useAuthStore((state) => state.user)
   const canEditUsuarios = hasRole(user, 'ROLE_USUARIO_EDIT')
@@ -43,6 +45,7 @@ export function UsuarioFormPage() {
       nome: '',
       email: '',
       uuidPerfil: '',
+      uuidAluno: '',
       ativo: true,
     },
     resolver: zodResolver(usuarioSchema),
@@ -54,6 +57,12 @@ export function UsuarioFormPage() {
     getPerfis().then((data) => {
       if (!cancelled) {
         setPerfis(data)
+      }
+    })
+
+    getAlunos().then((data) => {
+      if (!cancelled) {
+        setAlunos(data)
       }
     })
 
@@ -79,6 +88,7 @@ export function UsuarioFormPage() {
             nome: usuario.nome ?? '',
             email: usuario.email ?? '',
             uuidPerfil: usuario.uuidPerfil ?? '',
+            uuidAluno: usuario.uuidAluno ?? '',
             ativo: usuario.ativo ?? true,
           })
         }
@@ -114,6 +124,7 @@ export function UsuarioFormPage() {
         nome: data.nome,
         email: data.email,
         uuidPerfil: data.uuidPerfil || undefined,
+        uuidAluno: data.uuidAluno || undefined,
         ativo: data.ativo,
       }
 
@@ -203,6 +214,23 @@ export function UsuarioFormPage() {
                   {perfils?.map((perfil) => (
                     <option key={perfil.uuidPerfil} value={perfil.uuidPerfil}>
                       {perfil.nomePerfil ?? perfil.uuidPerfil}
+                    </option>
+                  ))}
+                </select>
+              )}
+            />
+          </FormField>
+
+          <FormField label="Aluno vinculado" htmlFor="uuidAluno" error={errors.uuidAluno?.message}>
+            <Controller
+              control={control}
+              name="uuidAluno"
+              render={({ field }) => (
+                <select id="uuidAluno" className="p-inputtext" disabled={!canEditUsuarios} {...field}>
+                  <option value="">Nenhum aluno</option>
+                  {alunos?.map((aluno) => (
+                    <option key={aluno.uuidAluno} value={aluno.uuidAluno}>
+                      {aluno.nome ?? aluno.uuidAluno}
                     </option>
                   ))}
                 </select>

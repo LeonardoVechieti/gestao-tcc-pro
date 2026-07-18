@@ -2,7 +2,10 @@ import TccDocumento from '#models/DAO/tcc_documento'
 
 export default class TccDocumentoRepository {
   async deactivateCurrent(uuidTcc: string): Promise<number> {
-    return await TccDocumento.query().where('uuid_tcc', uuidTcc).andWhere('ativo', true).update({ ativo: false })
+    return await TccDocumento.query()
+      .where('uuid_tcc', uuidTcc)
+      .andWhere('ativo', true)
+      .update({ ativo: false })
   }
 
   async store(data: Partial<TccDocumento>): Promise<TccDocumento> {

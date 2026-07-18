@@ -62,6 +62,10 @@ export default class UsuarioController {
       data.uuidPerfil = payload.uuidPerfil || null
     }
 
+    if (payload.uuidAluno !== undefined) {
+      data.uuidAluno = payload.uuidAluno || null
+    }
+
     return this.usuarioRepository.update(payload.uuidUsuario, data)
   }
 }

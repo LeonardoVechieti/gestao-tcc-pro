@@ -4,7 +4,11 @@ const TccDocumentoController = () => import('#controllers/tcc_documento_controll
 
 router
   .group(() => {
-    router.post('/tccs/:uuidTcc/documentos', [TccDocumentoController, 'store']).middleware(middleware.auth())
-    router.get('/tccs/:uuidTcc/documentos', [TccDocumentoController, 'index']).middleware(middleware.auth())
+    router
+      .post('/tccs/:uuidTcc/documentos', [TccDocumentoController, 'store'])
+      .middleware(middleware.auth())
+    router
+      .get('/tccs/:uuidTcc/documentos', [TccDocumentoController, 'index'])
+      .middleware(middleware.auth())
   })
   .prefix('tcc-pro')
