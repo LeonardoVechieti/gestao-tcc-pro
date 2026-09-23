@@ -73,7 +73,16 @@ function assertSafeMigrationCommand(commandName: string) {
 
 const commandName = process.argv[2]
 
-if (commandName === 'test') {
+/* `node ace test unit` roda só testes de domínio puro, sem banco. */
+function isOnlyUnitSuite() {
+  const suites = process.argv.slice(3).filter((arg) => !arg.startsWith('-'))
+  return suites.length > 0 && suites.every((suite) => suite === 'unit')
+}
+
+if (commandName === 'test' && isOnlyUnitSuite()) {
+  process.env.NODE_ENV = 'test'
+  loadEnvFiles({ useTestOverrides: true })
+} else if (commandName === 'test') {
   assertSafeTestDatabase()
 } else if (DESTRUCTIVE_MIGRATION_COMMANDS.has(commandName)) {
   assertSafeMigrationCommand(commandName)
