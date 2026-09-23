@@ -30,8 +30,10 @@ se sobrepõem no mesmo dia.
 | 4 | Aluno já tem apresentação no horário | agenda | recusa `CONFLITO_ALUNO` |
 | 5 | Modalidade virtual sem link | agenda | recusa `LINK_OBRIGATORIO` |
 | 6 | Modalidade presencial sem sala | agenda | recusa `SALA_OBRIGATORIA` |
-| 7 | Banca sem orientador, com < 2 avaliadores ou com membro repetido | forma banca | recusa `BANCA_INVALIDA` |
-| 8 | Data é feriado | agenda | recusa `FERIADO` |
+| 7 | Banca sem orientador | forma banca | recusa `BANCA_INVALIDA` |
+| 8 | Banca com só 1 avaliador | forma banca | recusa `BANCA_INVALIDA` |
+| 9 | Professor repetido na banca | forma banca | recusa `BANCA_INVALIDA` |
+| 10 | Data é feriado | agenda | recusa `FERIADO` |
 
 ## Design
 
@@ -59,8 +61,20 @@ se sobrepõem no mesmo dia.
 
 ## Tarefas
 
-- [ ] T1 Liberar suíte `unit` sem banco de testes
-- [ ] T2 Domínio via TDD, um ciclo vermelho → verde → refatora por cenário (1–8)
-- [ ] T3 Integrar `AgendaService`/controller ao domínio (rota protegida por auth)
-- [ ] T4 Tela Apresentação no frontend
-- [ ] T5 Script de extração da entrega (antes/depois, cenários, diagrama)
+- [x] T1 Liberar suíte `unit` sem banco de testes (`bin/console.ts`, `bin/test.ts`,
+  `tests/bootstrap.ts`)
+- [x] T2 Domínio via TDD, ciclos vermelho → verde → refatora cobrindo os cenários 1–10
+  (15 testes; diário em `entrega-tdd/evolucao-tdd.md`)
+- [x] T3 `POST`/`GET /tcc-pro/apresentacoes` com auth; só coordenação/admin agenda
+- [x] T4 Tela Apresentação no frontend (`features/apresentacao/`)
+- [x] T5 `entrega-tdd/gerar_entrega.py` monta o .zip (PDF, diagrama, projeto isolado,
+  antes/depois)
+
+## Pendências
+
+- Migration `1782696000000_add_professor_to_agenda_participante` **escrita, não executada**
+  (decisão do time). Até rodar `node ace migration:run`, `POST`/`GET /apresentacoes`
+  falham (coluna `uuid_professor` inexistente).
+- Sem teste funcional da API: não há banco de testes dedicado configurado.
+- Remarcação/cancelamento (EAP 5.7) e convite de avaliadores (5.6) fora do escopo; um TCC
+  pode receber mais de uma apresentação em horários diferentes.

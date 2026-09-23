@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="600" viewBox="0 0 920 600" font-family="Segoe UI, Arial, sans-serif">
+  <title>Diagrama conceitual — Agendar apresentação de TCC</title>
+  <rect width="920" height="600" fill="#ffffff"/>
+  <text x="460" y="26" text-anchor="middle" font-size="16" font-weight="600" fill="#1e293b">GestãoTCC Pro — Diagrama conceitual (Agendar apresentação de TCC)</text>
+
+  <g stroke="#334155" stroke-width="1.5" fill="none">
+    <!-- Curso — Aluno -->
+    <line x1="180" y1="85" x2="280" y2="85"/>
+    <!-- Aluno — TCC -->
+    <line x1="420" y1="85" x2="520" y2="85"/>
+    <!-- TCC — TemaTcc -->
+    <line x1="660" y1="85" x2="740" y2="85"/>
+    <!-- Professor — TCC (orienta) -->
+    <line x1="180" y1="280" x2="540" y2="110"/>
+    <!-- TCC — Apresentação -->
+    <line x1="590" y1="110" x2="590" y2="270"/>
+    <!-- Apresentação — Horário -->
+    <line x1="660" y1="295" x2="740" y2="295"/>
+    <!-- Apresentação — Banca -->
+    <line x1="530" y1="320" x2="380" y2="480"/>
+    <!-- Banca — MembroBanca -->
+    <line x1="180" y1="505" x2="280" y2="505"/>
+    <!-- MembroBanca — Professor -->
+    <line x1="110" y1="480" x2="110" y2="320"/>
+    <!-- Apresentação — Sala -->
+    <line x1="590" y1="320" x2="590" y2="480"/>
+  </g>
+
+  <g fill="#f1f5f9" stroke="#334155" stroke-width="1.5">
+    <rect x="40" y="60" width="140" height="50" rx="4"/>
+    <rect x="280" y="60" width="140" height="50" rx="4"/>
+    <rect x="520" y="60" width="140" height="50" rx="4"/>
+    <rect x="740" y="60" width="140" height="50" rx="4"/>
+    <rect x="40" y="270" width="140" height="50" rx="4"/>
+    <rect x="520" y="270" width="140" height="50" rx="4"/>
+    <rect x="740" y="270" width="140" height="50" rx="4"/>
+    <rect x="40" y="480" width="140" height="50" rx="4"/>
+    <rect x="280" y="480" width="140" height="50" rx="4"/>
+    <rect x="520" y="480" width="140" height="50" rx="4"/>
+  </g>
+
+  <g font-size="15" font-weight="600" fill="#0f172a" text-anchor="middle">
+    <text x="110" y="90">Curso</text>
+    <text x="350" y="90">Aluno</text>
+    <text x="590" y="90">TCC</text>
+    <text x="810" y="90">TemaTcc</text>
+    <text x="110" y="300">Professor</text>
+    <text x="590" y="300">Apresentação</text>
+    <text x="810" y="300">Horário</text>
+    <text x="110" y="510">MembroBanca</text>
+    <text x="350" y="510">Banca</text>
+    <text x="590" y="510">Sala</text>
+  </g>
+
+  <g font-size="13" fill="#b91c1c">
+    <!-- Curso 1 — * Aluno -->
+    <text x="186" y="78">1</text>
+    <text x="266" y="78">*</text>
+    <!-- Aluno 1 — 0..1 TCC -->
+    <text x="426" y="78">1</text>
+    <text x="488" y="78">0..1</text>
+    <!-- TCC 1 — 1 TemaTcc -->
+    <text x="666" y="78">1</text>
+    <text x="728" y="78">1</text>
+    <!-- Professor 1 — * TCC -->
+    <text x="188" y="266">1</text>
+    <text x="520" y="132">*</text>
+    <!-- TCC 1 — 0..1 Apresentação -->
+    <text x="597" y="128">1</text>
+    <text x="597" y="262">0..1</text>
+    <!-- Apresentação 1 — 1 Horário -->
+    <text x="666" y="288">1</text>
+    <text x="728" y="288">1</text>
+    <!-- Apresentação 1 — 1 Banca -->
+    <text x="508" y="340">1</text>
+    <text x="392" y="470">1</text>
+    <!-- Banca 1 — 3..* MembroBanca -->
+    <text x="186" y="498">3..*</text>
+    <text x="268" y="498">1</text>
+    <!-- MembroBanca * — 1 Professor -->
+    <text x="118" y="472">*</text>
+    <text x="118" y="338">1</text>
+    <!-- Apresentação * — 0..1 Sala -->
+    <text x="597" y="338">*</text>
+    <text x="597" y="472">0..1</text>
+  </g>
+
+  <g font-size="12" font-style="italic" fill="#475569">
+    <text x="230" y="78" text-anchor="middle">possui</text>
+    <text x="470" y="100" text-anchor="middle">realiza</text>
+    <text x="700" y="100" text-anchor="middle">define</text>
+    <text x="360" y="186" text-anchor="middle">orienta</text>
+    <text x="630" y="194">é apresentado em</text>
+    <text x="700" y="312" text-anchor="middle">ocupa</text>
+    <text x="470" y="408">avaliada por</text>
+    <text x="230" y="524" text-anchor="middle">compõe</text>
+    <text x="118" y="404">atua como</text>
+    <text x="630" y="404">ocorre em</text>
+  </g>
+
+  <text x="40" y="580" font-size="12" fill="#475569">MembroBanca representa o papel do professor na banca (orientador ou avaliador). Regra: 1 orientador + ao menos 2 avaliadores distintos.</text>
+</svg>

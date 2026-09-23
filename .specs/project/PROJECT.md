@@ -86,10 +86,11 @@ Usuario, Perfil, Role, PerfilRole, Agenda, AgendaParticipante, Avaliacao (simpli
 **Gaps** (case concepts with no corresponding backend entity yet):
 - **Curso** — no course entity; Aluno has a free-text `curso` field only, no
   per-course rules (e.g. max orientandos, required stages) can be modeled.
-- **Banca** — `Agenda`/`AgendaParticipante` model a single meeting + participants, but
-  there's no explicit "banca" concept distinguishing orientador vs. avaliadores or
-  enforcing "no conflict" checks described in the case's `Agendar apresentação de TCC`
-  use case (FE_01 conflito de agenda).
+- **Banca** — partially closed by `features/agendar-apresentacao-de-tcc/`: a pure
+  domain (`api-tcc-pro/app/domain/apresentacao/`) models Banca (1 orientador + ≥2
+  avaliadores) and rejects professor/sala/aluno conflicts and holidays (FE_01), persisted
+  on `agenda` + `agenda_participante.cargo`. Needs its pending migration applied; banca
+  invites (EAP 5.6) and rescheduling (5.7) are still missing (**ORIENT-009**).
 - **Entrega / Documento** — `TccTimeline` tracks stage/deadline/status; a
   `TccDocumento` model + `tcc_documento_controller.ts` exist as a CRUD skeleton, but
   there's no real upload flow wired to a timeline stage yet, and `/documentos` in the
@@ -97,9 +98,6 @@ Usuario, Perfil, Role, PerfilRole, Agenda, AgendaParticipante, Avaliacao (simpli
   `.specs/features/fluxo-aluno-professor-orientador/PLANO_IMPLEMENTACAO.md`.
 - **Ata / Relatório** — no ata (minutes) persistence or management-report generation
   exists; `dash_*` controllers cover dashboards, not the case's reporting requirement.
-- **Banca** — still no explicit "banca" entity distinguishing orientador vs.
-  avaliadores or enforcing agenda-conflict checks (case's FE_01); tracked as
-  **ORIENT-009**.
 - **Avaliação multiplicity** — confirmed: the current `Avaliacao` is simplified and
   single-evaluator, created/updated when the "Banca" `tcc_timeline` stage is completed
   with a grade by the orientador. The case's multi-evaluator consolidation (result

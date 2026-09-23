@@ -16,7 +16,7 @@ const orientadora = MembroBanca.orientador('prof-ana', 'Ana')
 const avaliadorBruno = MembroBanca.avaliador('prof-bruno', 'Bruno')
 const avaliadoraCarla = MembroBanca.avaliador('prof-carla', 'Carla')
 
-test.group('Cenário 7: composição da banca', () => {
+test.group('Formação da banca (pré-condição do cenário 1)', () => {
   test('Dado orientador e 2 avaliadores, Quando forma a banca, Então a banca é válida', ({
     assert,
   }) => {
@@ -25,7 +25,9 @@ test.group('Cenário 7: composição da banca', () => {
     assert.equal(banca.orientador.professorId, 'prof-ana')
     assert.lengthOf(banca.avaliadores, 2)
   })
+})
 
+test.group('Cenário 7: banca sem orientador', () => {
   test('Dado uma banca sem orientador, Quando forma a banca, Então recusa BANCA_INVALIDA', ({
     assert,
   }) => {
@@ -34,7 +36,9 @@ test.group('Cenário 7: composição da banca', () => {
     assert.instanceOf(erro, AgendamentoError)
     assert.equal(erro.codigo, 'BANCA_INVALIDA')
   })
+})
 
+test.group('Cenário 8: banca com apenas 1 avaliador', () => {
   test('Dado apenas 1 avaliador, Quando forma a banca, Então recusa BANCA_INVALIDA', ({
     assert,
   }) => {
@@ -42,7 +46,9 @@ test.group('Cenário 7: composição da banca', () => {
 
     assert.equal(erro.codigo, 'BANCA_INVALIDA')
   })
+})
 
+test.group('Cenário 9: professor repetido na banca', () => {
   test('Dado o orientador repetido como avaliador, Quando forma a banca, Então recusa BANCA_INVALIDA', ({
     assert,
   }) => {

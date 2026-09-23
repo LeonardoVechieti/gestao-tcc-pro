@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import * as relations from '@adonisjs/lucid/types/relations'
 import Agenda from './agenda.js'
 import Usuario from './usuario.js'
+import Professor from './professor.js'
 
 export default class AgendaParticipante extends BaseModel {
   static get table() {
@@ -16,7 +17,10 @@ export default class AgendaParticipante extends BaseModel {
   declare uuidAgenda: string
 
   @column()
-  declare uuidUsuario: string
+  declare uuidUsuario?: string | null
+
+  @column()
+  declare uuidProfessor?: string | null
 
   @column()
   declare cargo?: string
@@ -38,4 +42,10 @@ export default class AgendaParticipante extends BaseModel {
     foreignKey: 'uuidUsuario',
   })
   declare usuario: relations.BelongsTo<typeof Usuario>
+
+  @belongsTo(() => Professor, {
+    localKey: 'uuidProfessor',
+    foreignKey: 'uuidProfessor',
+  })
+  declare professor: relations.BelongsTo<typeof Professor>
 }

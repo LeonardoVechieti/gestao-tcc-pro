@@ -1,0 +1,18 @@
+[
+  {
+    "uuidAgenda": "mock-apresentacao-1",
+    "uuidTcc": "mock-tcc-1",
+    "tituloTcc": "Plataforma de gestão de TCC",
+    "aluno": { "uuidAluno": "mock-aluno-1", "nome": "Aluno Teste" },
+    "data": "2026-11-10",
+    "hora": "14:00",
+    "modalidade": "presencial",
+    "sala": "204",
+    "link": null,
+    "banca": [
+      { "uuidProfessor": "mock-prof-1", "nome": "Prof. Ana", "papel": "orientador" },
+      { "uuidProfessor": "mock-prof-2", "nome": "Prof. Bruno", "papel": "avaliador" },
+      { "uuidProfessor": "mock-prof-3", "nome": "Prof. Carla", "papel": "avaliador" }
+    ]
+  }
+]

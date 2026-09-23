@@ -3192,3 +3192,87 @@ select.p-inputtext:focus,
 		text-align: left;
 	}
 }
+
+// Apresentação (agendamento de bancas)
+.apresentacao-form h2,
+.apresentacao-list h2 {
+	color: var(--color-text-strong);
+	font-size: var(--font-size-xl);
+	margin: 0;
+}
+
+.apresentacao-form__grid,
+.apresentacao-grid {
+	display: grid;
+	gap: var(--space-5);
+	grid-template-columns: minmax(0, 1fr);
+
+	@include bp.mq(md) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.apresentacao-form__actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.apresentacao-list {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.apresentacao-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--color-shadow);
+	display: grid;
+	gap: var(--space-4);
+	padding: var(--space-5);
+}
+
+.apresentacao-card__header {
+	align-items: flex-start;
+	display: flex;
+	gap: var(--space-3);
+	justify-content: space-between;
+
+	p {
+		margin: var(--space-1) 0 0;
+	}
+}
+
+.apresentacao-card__when {
+	color: var(--color-text-strong);
+	font-size: var(--font-size-lg);
+}
+
+.apresentacao-card__place {
+	align-items: center;
+	color: var(--color-text);
+	display: flex;
+	gap: var(--space-2);
+	margin: 0;
+}
+
+.apresentacao-card__banca {
+	display: grid;
+	gap: var(--space-2);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+
+	li {
+		align-items: center;
+		border-top: 1px solid var(--color-border);
+		display: flex;
+		justify-content: space-between;
+		padding-top: var(--space-2);
+	}
+}
+
+.apresentacao-card__membro {
+	color: var(--color-text);
+	font-weight: 600;
+}
