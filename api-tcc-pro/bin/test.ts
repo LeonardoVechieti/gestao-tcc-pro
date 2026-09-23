@@ -27,20 +27,10 @@ const APP_ROOT = new URL('../', import.meta.url)
 dotenv.config({ path: fileURLToPath(new URL('.env', APP_ROOT)) })
 dotenv.config({ path: fileURLToPath(new URL('.env.test', APP_ROOT)), override: true })
 
-function assertSafeTestDatabase() {
-  const databaseName = process.env.DB_DATABASE
-
-  if (!databaseName || !/(^test_|_test$|test)/i.test(databaseName)) {
-    throw new Error(
-      [
-        `Recusando executar testes com DB_DATABASE="${databaseName ?? 'indefinido'}".`,
-        'Configure um banco dedicado de testes, por exemplo DB_DATABASE=dev_tcc_pro_test.',
-      ].join(' ')
-    )
-  }
-}
-
-assertSafeTestDatabase()
+/**
+ * A trava de banco de testes dedicado fica em tests/bootstrap.ts, aplicada só às
+ * suítes que acessam banco (functional/browser/e2e). A suíte unit roda sem banco.
+ */
 
 /**
  * The importer is used to import files in context of the

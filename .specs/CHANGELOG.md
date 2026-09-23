@@ -9,6 +9,13 @@ materially edited — see the rule in the root `claude.md` → "Keeping specs ho
 
 ---
 
+## 2026-09-23 — Spec de "Agendar apresentação de TCC"
+
+Nova `features/agendar-apresentacao-de-tcc/spec.md` (R7/R8/R9, EAP 5.1–5.5): 8 cenários
+de aceitação (conflitos de professor, aluno e sala; modalidade; banca; feriado), domínio
+puro desenvolvido com TDD e reaproveitado como entrega da disciplina de testes. Não há
+migration prevista: o schema de `agenda`/`agenda_participante` já cobre os dados.
+
 ## 2026-07-18 — Updated root `claude.md`
 
 Fixed the drift flagged in the entry below: `front-tcc-pro/` → `frontend/` (shipped,

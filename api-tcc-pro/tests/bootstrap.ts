@@ -33,11 +33,6 @@ function assertSafeTestDatabase() {
   }
 }
 
-function migrateTestDatabase() {
-  assertSafeTestDatabase()
-  return testUtils.db().migrate()
-}
-
 /**
  * Configure lifecycle function to run before and after all the
  * tests.
@@ -46,7 +41,7 @@ function migrateTestDatabase() {
  * The teardown functions are executer after all the tests
  */
 export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
-  setup: [migrateTestDatabase],
+  setup: [],
   teardown: [],
 }
 
@@ -56,9 +51,15 @@ export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
  */
 export const configureSuite: Config['configureSuite'] = (suite) => {
   if (['browser', 'functional', 'e2e'].includes(suite.name)) {
-    return suite.setup(() => {
+    // Só suítes que acessam banco exigem banco dedicado e migrations; a suíte unit não.
+    return suite.setup(async () => {
       assertSafeTestDatabase()
-      return testUtils.httpServer().start()
+      const rollback = await testUtils.db().migrate()
+      const closeServer = await testUtils.httpServer().start()
+      return async () => {
+        await closeServer()
+        await rollback()
+      }
     })
   }
 }
