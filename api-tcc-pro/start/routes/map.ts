@@ -62,6 +62,16 @@ const ROUTE_MAP = [
   { method: 'GET', path: '/tcc-pro/agenda/:id', description: 'Buscar agenda por id' },
   { method: 'PUT', path: '/tcc-pro/agenda', description: 'Atualizar agenda' },
   { method: 'DELETE', path: '/tcc-pro/agenda/:id', description: 'Remover agenda' },
+  {
+    method: 'POST',
+    path: '/tcc-pro/apresentacoes',
+    description: 'Agendar apresentação de TCC (coordenação)',
+  },
+  {
+    method: 'GET',
+    path: '/tcc-pro/apresentacoes',
+    description: 'Listar apresentações visíveis ao usuário',
+  },
   { method: 'GET', path: '/tcc-pro/dash-alunos/:uuidAluno', description: 'Dashboard do aluno' },
   {
     method: 'GET',

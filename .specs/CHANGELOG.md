@@ -9,6 +9,16 @@ materially edited — see the rule in the root `claude.md` → "Keeping specs ho
 
 ---
 
+## 2026-09-23 — Agendar apresentação de TCC: spec e implementação
+
+Nova `features/agendar-apresentacao-de-tcc/spec.md` (R7/R8/R9, EAP 5.1–5.5): 10 cenários
+de aceitação (conflitos de professor, aluno e sala; modalidade; composição da banca;
+feriado), implementados com TDD num domínio puro e reaproveitados como entrega da
+disciplina de testes (`entrega-tdd/`). Tarefas T1–T5 concluídas; a seção de pendências
+registra que a migration de `agenda_participante.uuid_professor` foi escrita, mas não
+executada. `project/PROJECT.md`: a lacuna "Banca" passa a parcialmente fechada (a entrada
+duplicada foi unificada).
+
 ## 2026-07-18 — Updated root `claude.md`
 
 Fixed the drift flagged in the entry below: `front-tcc-pro/` → `frontend/` (shipped,

@@ -1,8 +1,9 @@
 import env from '#start/env'
 import { Feriado } from '#interfaces/feriado'
 import { normalizeApiUrl } from '#helpers/normalize_api_url'
+import type { CalendarioFeriados } from '#domain/apresentacao/portas'
 
-export default class FeriadoService {
+export default class FeriadoService implements CalendarioFeriados {
   private apiUrl = normalizeApiUrl(env.get('FERIADOS_API_URL'))
 
   /* Funcao para listar os feriados de um determinado ano. */
@@ -27,5 +28,10 @@ export default class FeriadoService {
     const year = new Date(date).getFullYear()
     const feriados = await this.listByYear(year)
     return feriados.some((feriado) => feriado.date === date)
+  }
+
+  /* Porta CalendarioFeriados do domínio de apresentação. */
+  async isFeriado(data: string): Promise<boolean> {
+    return this.isHoliday(data)
   }
 }

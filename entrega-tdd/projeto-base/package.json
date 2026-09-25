@@ -1,0 +1,18 @@
+{
+  "name": "tdd-agendar-apresentacao",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GestãoTCC Pro (Grupo 3) — domínio de agendamento de apresentação de TCC desenvolvido com TDD",
+  "scripts": {
+    "test": "tsx bin/test.ts",
+    "typecheck": "tsc -p ."
+  },
+  "devDependencies": {
+    "@japa/assert": "3.0.0",
+    "@japa/runner": "3.1.4",
+    "@types/node": "20.19.23",
+    "tsx": "4.23.15",
+    "typescript": "5.4.5"
+  }
+}
