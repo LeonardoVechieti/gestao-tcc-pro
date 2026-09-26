@@ -45,7 +45,7 @@ export default class Tcc extends BaseModel {
   declare aluno: relations.BelongsTo<typeof Aluno>
 
   @belongsTo(() => Professor, {
-    localKey: 'uuidOrientador',
+    localKey: 'uuidProfessor',
     foreignKey: 'uuidOrientador',
   })
   declare orientador: relations.BelongsTo<typeof Professor>
