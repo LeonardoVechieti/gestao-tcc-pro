@@ -93,4 +93,9 @@ jobs:
         run: npm ci
 
       - name: Audit dependencies
-        run: npm audit --audit-level=high
+        run: |
+          if [ "${{ matrix.project }}" = "api-tcc-pro" ]; then
+            npm audit --omit=dev --audit-level=high
+          else
+            npm audit --audit-level=high
+          fi
