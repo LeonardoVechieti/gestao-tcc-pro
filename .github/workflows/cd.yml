@@ -1,0 +1,65 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Continuous delivery package
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            api-tcc-pro/package-lock.json
+
+      - name: Build frontend delivery artifact
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build API delivery artifact
+        working-directory: api-tcc-pro
+        run: |
+          npm ci
+          npm run build
+
+      - name: Create delivery manifest
+        run: |
+          mkdir -p delivery
+          printf 'commit=%s\nref=%s\ncreated_at=%s\n' \
+            "${{ github.event.workflow_run.head_sha }}" \
+            "${{ github.event.workflow_run.head_branch }}" \
+            "${{ github.run_started_at }}" \
+            > delivery/BUILD_INFO.txt
+          cp frontend/package.json frontend/package-lock.json delivery/
+          cp api-tcc-pro/package.json api-tcc-pro/package-lock.json delivery/
+
+      - name: Upload delivery artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gestao-tcc-pro-${{ github.event.workflow_run.head_sha }}
+          path: |
+            frontend/dist
+            api-tcc-pro/build
+            delivery
+          if-no-files-found: error
+          retention-days: 14
