@@ -99,3 +99,30 @@ jobs:
           else
             npm audit --audit-level=high
           fi
+
+  secrets:
+    name: Scan committed secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject tracked environment files
+        shell: bash
+        run: |
+          set -euo pipefail
+          forbidden=$(git ls-files | awk '
+            /(^|\/)\.env($|\.)/ && $0 !~ /\.(example|sample|template)$/ { print }
+          ')
+          if [[ -n "$forbidden" ]]; then
+            echo "Tracked environment files are not allowed:"
+            printf '%s\n' "$forbidden"
+            exit 1
+          fi
+
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
