@@ -17,6 +17,7 @@
 - createdAt: DateTime
 - updatedAt: DateTime | null
 
+
 Relações:
 
 - hasMany(Tcc) via uuidAluno → uuid_aluno
